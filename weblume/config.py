@@ -96,7 +96,13 @@ def get_llm():
             raise RuntimeError("GROQ_API_KEY is empty in .env. Get a free key at https://console.groq.com/keys")
         # Groq speaks the OpenAI API, so CrewAI's built-in OpenAI client works with Groq's address
         return LLM(model=f"openai/{model}", base_url="https://api.groq.com/openai/v1", api_key=key, temperature=0.7)
+    if PROVIDER == "bytez":
+        key = os.getenv("BYTEZ_API_KEY", "").strip()
+        if not key or not model:
+            raise RuntimeError("Bytez needs BYTEZ_API_KEY and LLM_MODEL (a model id from bytez.com) in .env.")
+        # Bytez speaks the OpenAI API at its own address
+        return LLM(model=f"openai/{model}", base_url="https://api.bytez.com/models/v2/openai/v1", api_key=key, temperature=0.7)
     if PROVIDER == "ollama":
         url = os.getenv("OLLAMA_URL", "http://localhost:11434").strip()
         return LLM(model=f"ollama/{model}", base_url=url, api_key="ollama", temperature=0.7)
-    raise RuntimeError(f"LLM_PROVIDER must be gemini, groq or ollama (got '{PROVIDER}').")
+    raise RuntimeError(f"LLM_PROVIDER must be gemini, groq, bytez or ollama (got '{PROVIDER}').")

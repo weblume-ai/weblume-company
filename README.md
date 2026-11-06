@@ -140,6 +140,7 @@ Two ways to open it, both need `start.bat` running on your laptop (that's where 
 - **Gemini (default, free)**: `LLM_PROVIDER=gemini` + `GEMINI_API_KEY`.
 - **Groq (free, very fast)**: `LLM_PROVIDER=groq` + `GROQ_API_KEY` from https://console.groq.com/keys.
   Its free limits are small for long websites; use it for Ziad/Adam, Gemini for websites.
+- **Bytez**: `LLM_PROVIDER=bytez`, `BYTEZ_API_KEY`, and `LLM_MODEL` set to a model id from your Bytez account.
 - **Ollama (your laptop, offline, free)**: `LLM_PROVIDER=ollama`. Install Ollama from https://ollama.com, then:
   ```
   ollama pull qwen2.5:7b
