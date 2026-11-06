@@ -1,18 +1,21 @@
 """Weblume AI Company dashboard server (Python standard library only). Start with:  python server.py"""
 import json
+import mimetypes
 import os
 import re
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from weblume import company, rules
 from weblume.config import OUTPUT_DIR, PROVIDER, ROOT, model_name
 from weblume.team import ORDER, TEAM
 
-HOST, PORT = "127.0.0.1", 8501
+HOST, PORT = "127.0.0.1", int(os.getenv("WEBLUME_PORT", "8501"))  # another port only for testing beside a running start.bat
 PAGE = ROOT / "index.html"
+mimetypes.add_type("image/webp", ".webp")  # not registered on every Windows
+mimetypes.add_type("text/javascript", ".js")
 LOCAL_HOST = re.compile(r"^(127\.0\.0\.1|localhost)(:\d+)?$", re.I)
 LOCAL_ORIGIN = re.compile(r"^http://(127\.0\.0\.1|localhost)(:\d+)?$")
 ONLINE = "https://weblume-ai.github.io"  # the online copy of this page (GitHub Pages) may use this server; no other site
@@ -89,8 +92,23 @@ class Handler(BaseHTTPRequestHandler):
                 # Generated sites run in their own sandboxed origin, so their scripts can't touch this dashboard
                 return self.send(200, path.read_bytes(), "text/html; charset=utf-8",
                                  {"Content-Security-Policy": "sandbox allow-scripts allow-popups allow-forms"})
+            if q.get("view") and path.suffix == ".png":  # Tarek's screenshots
+                return self.send(200, path.read_bytes(), "image/png")
             return self.send(200, path.read_bytes(), "application/octet-stream",
                              {"Content-Disposition": f"attachment; filename*=UTF-8''{_quote(path.name)}"})
+        if url.path.startswith("/site/"):
+            # A built site with its folder (pages, data.js, photos, frames): scroll scenes need http, not a file.
+            path = (OUTPUT_DIR / unquote(url.path[len("/site/"):])).resolve()
+            if path.is_dir():
+                path = path / "index.html"
+            if OUTPUT_DIR.resolve() not in path.parents or not path.is_file() or "runs" in path.relative_to(OUTPUT_DIR.resolve()).parts[:1]:
+                return self.send(404, {"error": "Not found."})
+            ctype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+            extra = {"Access-Control-Allow-Origin": "*"}  # the sandboxed page has no origin of its own
+            if path.suffix == ".html":
+                extra["Content-Security-Policy"] = "sandbox allow-scripts allow-popups allow-forms"
+                ctype += "; charset=utf-8"
+            return self.send(200, path.read_bytes(), ctype, extra)
         self.send(404, {"error": "Not found."})
 
     def do_POST(self):

@@ -44,13 +44,13 @@ assert rules.slug("Bean There Café!") == "bean-there-café" and rules.slug("ك�
 assert rules.slug("***") == "client"
 
 # Layla's plan: valid JSON is used, garbage falls back to keywords, unknown agents are dropped
-p = company.parse_plan('{"agents":["hana","karim","boss"],"client_name":"Noir"}', "x")
-assert p["agents"] == ["karim", "hana"] and p["client_name"] == "Noir"
-assert company.parse_plan("no json here", "اعمل موقع لكافيه")["agents"] == ["omar", "nour", "karim", "hana"]
-assert company.parse_plan("??", "write tiktok captions")["agents"] == ["sara"]
+p = company.parse_plan('{"agents":["mostafa","karim","boss"],"client_name":"Noir"}', "x")
+assert p["agents"] == ["karim", "mostafa"] and p["client_name"] == "Noir"
+assert company.parse_plan("no json here", "اعمل موقع لكافيه")["agents"] == ["omar", "youssef", "karim", "mostafa", "tarek"]
+assert company.parse_plan("??", "write tiktok captions")["agents"] == ["adam"]
 # a website request whose plan forgot the developer still gets the whole website team
-p = company.parse_plan('{"agents":["omar","nour","sara"]}', "Build a website for Noir café, plus TikTok ideas")
-assert p["agents"] == ["omar", "nour", "karim", "hana", "sara"], p
+p = company.parse_plan('{"agents":["omar","youssef","adam"]}', "Build a website for Noir café, plus TikTok ideas")
+assert p["agents"] == ["omar", "youssef", "karim", "mostafa", "tarek", "adam"], p
 
 # Busy model (503 / quota) hands the same call to the next model; other errors still stop the run
 from crewai import LLM  # noqa: E402
@@ -70,7 +70,7 @@ except ValueError:
 from weblume import templates  # noqa: E402
 assert templates.pick("موقع لكافيه نوار") == "cafe" and templates.pick("Build a site for a dental clinic") == "clinic"
 assert templates.pick("متجر عطور أونلاين") == "shop" and templates.pick("something else") == "cafe"
-for kind in templates.KINDS:
+for kind in set(templates.KINDS) - templates.FOLDER:
     page = templates.load(kind)
     assert templates.CSS_MARK in page and templates.JS_MARK in page, kind
     done = templates.inject_motion(page)
@@ -79,10 +79,35 @@ for kind in templates.KINDS:
 lost = templates.inject_motion("<html><head></head><body>x</body></html>")  # Karim dropped the markers
 assert lost.index("wl-motion-kit") < lost.index("</head>") and lost.index("IntersectionObserver") < lost.index("</body>")
 
-# Stock photos become placeholders for the client's real photos; invented claims are flagged
-html, n = templates.strip_stock_photos('<img class="hero ph" src="https://images.unsplash.com/photo-1?w=800" alt="بار القهوة"> <img src="logo.png" alt=""><meta property="og:image" content="https://images.pexels.com/x.jpg">')
-assert n == 2 and "pexels" not in html and 'class="ph hero"' in html and "بار القهوة · صورة حقيقية من العميل" in html and 'src="logo.png"' in html, html
+# Photo links that don't load become placeholders for real photos; working stock photos stay; claims are flagged
+page = '<img class="hero" src="https://dead.example/1.jpg" alt="بار القهوة"> <img src="https://ok.example/2.jpg" alt=""> <img src="logo.png" alt="">'
+html, n = templates.fix_broken_images(page, check=lambda url: "ok." in url)
+assert n == 1 and 'class="ph hero"' in html and "بار القهوة · صورة حقيقية من العميل" in html, html
+assert "https://ok.example/2.jpg" in html and 'src="logo.png"' in html
+
+# Café template (the Loopie design): Karim's JSON becomes a whole site; made-up image paths are repaired
+import tempfile, json as _json  # noqa: E401,E402
+with tempfile.TemporaryDirectory() as d:
+    data = {"name": "Noir", "word": "نوار", "drinks": [{"name": "لاتيه", "img": "assets/img/drink-capp.webp"},
+            {"name": "x", "img": "assets/img/made-up.webp"}], "aboutPhoto": {"src": "photos/fake.jpg", "alt": ""}}
+    fixed = templates.build_site("cafe", data, Path(d) / "noir")
+    site = Path(d) / "noir"
+    assert fixed == 2 and (site / "index.html").is_file() and (site / "assets/brew-d").is_dir()
+    assert not (site / "example-data.js").exists() and not (site / "GUIDE.md").exists()
+    js = (site / "data.js").read_text(encoding="utf-8")
+    back = _json.loads(js[len("window.CAFE = "):].rstrip().rstrip(";"))
+    assert back["demo"] is True and back["drinks"][1]["img"] == "assets/img/menu-coffee.webp" and back["aboutPhoto"]["src"] == "assets/img/mood-cup.webp"
+assert "window.CAFE" in templates.load("cafe") and "drink-esp.webp" in templates.guide("cafe")
 assert len(templates.claims_to_check('<h2>آراء زوارنا</h2><b data-count="6">0</b>')) == 2
 assert templates.claims_to_check("<h1>قهوة</h1>") == []
+
+# Prices and hours that the owner never gave are removed; the ones he gave stay
+menu = {"menu": [{"name": "قهوة", "items": [{"name": "اسبريسو", "price": 35}, {"name": "لاتيه", "price": 60}, {"name": "x", "price": ""}]}],
+        "hours": {"0": {"open": "08:00", "close": "00:00"}}}
+gone = templates.drop_unsourced(menu, "كافيه نوار، اللاتيه بـ ٦٠ جنيه")
+assert menu["menu"][0]["items"][0]["price"] == "" and menu["menu"][0]["items"][1]["price"] == 60 and "hours" not in menu, menu
+assert gone == ["price", "hours"]
+kept = {"hours": "24h"}
+assert templates.drop_unsourced(kept, "مفتوح 24 ساعة") == [] and kept["hours"] == "24h"
 
 print("All rule checks passed.")

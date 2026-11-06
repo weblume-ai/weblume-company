@@ -9,12 +9,13 @@ from pathlib import Path
 
 from crewai import Crew, Process, Task
 
-from . import config, rules, templates
+from . import config, rules, templates, tester
 from .config import CURRENCY, MAX_RPM, OUTPUT_DIR, PROVIDER, RUNS_DIR, WEBSITE, get_llm, model_name
 from .team import ORDER, TEAM, make_agent
 
 _lock = threading.Lock()
 _active: dict = {"thread": None}
+TEST_ROUNDS = 2  # Tarek tests, Karim fixes what he found, Tarek tests once more
 
 
 # ---------------------------------------------------------------- run record
@@ -30,9 +31,10 @@ class Run:
             "llm": f"{PROVIDER} / {model_name()}", "state": "running", "error": "",
             "started": datetime.now().isoformat(timespec="seconds"), "finished": "",
             "agents": {k: {"status": "idle", "output": ""} for k in ["layla", *ORDER]},
-            "tasks": [], "files": [], "leads": None,
+            "tasks": [], "files": [], "leads": None, "chat": [], "test": None, "site": "",
         }
         self.current = "layla"
+        self.kind, self.site_dir, self.site_text = "", None, ""
         self.save()
 
     def save(self):
@@ -50,20 +52,25 @@ class Run:
         with open(self.dir / "run.log", "a", encoding="utf-8") as f:
             f.write(line)
 
+    def say(self, frm: str, to: str, text: str):
+        """One teammate talks to another: shown as a chat line and a speech bubble in the 3D office."""
+        self.status["chat"].append({"t": datetime.now().isoformat(timespec="seconds"), "from": frm, "to": to, "text": text})
+        self.log(frm, f"→ {TEAM.get(to, {}).get('name', to)}: {text}")
+        self.save()
+
     def set_agent(self, key: str, status: str, output: str | None = None):
         self.status["agents"][key]["status"] = status
         if output is not None:
             self.status["agents"][key]["output"] = output
         self.save()
 
-    def write(self, name: str, text: str, copy_to: Path | None = None) -> Path:
+    def add_file(self, path: Path):
+        self.status["files"].append(str(path.relative_to(OUTPUT_DIR)))
+
+    def write(self, name: str, text: str) -> Path:
         path = self.dir / name
         path.write_text(text, encoding="utf-8")
-        self.status["files"].append(str(path.relative_to(OUTPUT_DIR)))
-        if copy_to:
-            copy_to.parent.mkdir(parents=True, exist_ok=True)
-            copy_to.write_text(text, encoding="utf-8")
-            self.status["files"].append(str(copy_to.relative_to(OUTPUT_DIR)))
+        self.add_file(path)
         self.save()
         return path
 
@@ -71,12 +78,14 @@ class Run:
 # ---------------------------------------------------------------- planning
 PLAN_HINT = {
     "omar": "client brief -> project spec and price",
-    "nour": "website copy in Egyptian Arabic + English",
-    "karim": "builds the website (HTML file)",
-    "hana": "reviews code and copy, sends fixes to Karim",
+    "youssef": "website copy in Egyptian Arabic + English",
+    "karim": "builds the website from Weblume's premium templates",
+    "mostafa": "reviews the site's code and content, sends fixes to Karim",
+    "tarek": "tests the finished site in a real browser and judges if it's good enough",
     "ziad": "lead finding and outreach messages",
-    "sara": "TikTok / Instagram ideas, scripts, captions",
+    "adam": "TikTok / Instagram ideas, scripts, captions",
 }
+WEBSITE_TEAM = ["omar", "youssef", "karim", "mostafa", "tarek"]
 
 
 def plan_task(goal: str, agent) -> Task:
@@ -85,7 +94,7 @@ def plan_task(goal: str, agent) -> Task:
         description=(
             f"The owner of Weblume asked:\n\"\"\"{goal}\"\"\"\n\n"
             f"Your team:\n{team}\n\n"
-            "Decide who is needed. A new website normally needs omar, nour, karim and hana. "
+            "Decide who is needed. A new website normally needs omar, youssef, karim, mostafa and tarek. "
             "Pick only who the request really needs.\n"
             "Also pull out the client/business name if the request is about one client's website, and any "
             "real business names the owner listed for outreach.\n"
@@ -95,9 +104,6 @@ def plan_task(goal: str, agent) -> Task:
         expected_output="A JSON object with agents, client_name, business_names and reason.",
         agent=agent,
     )
-
-
-WEBSITE_TEAM = ["omar", "nour", "karim", "hana"]
 
 
 def wants_website(goal: str) -> bool:
@@ -112,7 +118,7 @@ def keyword_plan(goal: str) -> list[str]:
     if any(w in g for w in ["lead", "outreach", "عملاء", "رسايل", "رسائل", "تواصل مع"]):
         picks.append("ziad")
     if any(w in g for w in ["tiktok", "instagram", "reel", "تيك", "انستا", "فيديو", "caption", "كابشن"]):
-        picks.append("sara")
+        picks.append("adam")
     if not picks or wants_website(goal):
         picks = [*WEBSITE_TEAM, *picks]
     return picks
@@ -136,11 +142,33 @@ def parse_plan(text: str, goal: str) -> dict:
 
 
 # ---------------------------------------------------------------- work tasks
+NO_FAKES = ("NEVER invent reviews, testimonials, ratings, years, customer counts, awards or prices: use only what "
+            "the request or spec gives.")
+
+
+def karim_brief(kind: str) -> str:
+    """What Karim is told to produce for this template."""
+    if kind in templates.FOLDER:
+        return ("The design, scroll scenes and animations of this template are finished and approved. You write ONLY "
+                "the client's content as ONE JSON object in exactly the shape of the example below, following the "
+                f"guide. {NO_FAKES}\n\nGUIDE:\n{templates.guide(kind)}\n\nEXAMPLE (another café's content: copy the "
+                f"shape, not the words):\n{templates.load(kind)}\n\nOutput ONLY the JSON object, nothing before or after.")
+    return ("Build the website by EDITING the ready Weblume template below. Fill it with the real content from the "
+            "spec and copy (Arabic in the markup, English in data-en), set the client's brand colors in the :root "
+            "variables, keep the sections the client needs, remove the rest, and put the client's WhatsApp number in "
+            "<body data-wa>. Keep it one file, mobile-first, with <title>, meta description and Open Graph filled in. "
+            f"{NO_FAKES} Photos: real photo URLs from the request, free stock (Pexels) you are sure exists, or keep "
+            f"the .ph placeholders.\n\nHOW THE ANIMATIONS WORK:\n{templates.guide()}\n\nTHE TEMPLATE ({kind}):\n"
+            f"{templates.load(kind)}\n\nOutput ONLY the full edited HTML document from <!DOCTYPE html> to </html>.")
+
+
 def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agents: dict, run: Run) -> list[tuple]:
     """Tasks for the chosen agents, always in company order. Each entry: (Task, agent key, output file)."""
     t: dict[str, Task] = {}
     steps: list[tuple[Task, str, str]] = []
-    site_path = OUTPUT_DIR / rules.slug(client or goal[:30]) / "index.html"
+    run.kind = templates.pick(f"{goal} {client}")
+    run.site_dir = OUTPUT_DIR / rules.slug(client or goal[:30])
+    ext = ".json" if run.kind in templates.FOLDER else ".html"
 
     def add(name, key, file, description, expected, context):
         task = Task(description=description, expected_output=expected, agent=agents[key],
@@ -153,52 +181,44 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             f"Request from the owner:\n\"\"\"{goal}\"\"\"\nClient: {client or 'see request'}\n\n"
             "Write the project spec in Markdown with these headings: Client summary, Goal of the site, "
             "Pages (and the sections on each page), Features (e.g. menu, WhatsApp order button, map, booking, "
-            "gallery, Arabic/English switch), Style direction (mood, colors, fonts, photos to use), "
+            "gallery, Arabic/English switch), Style direction (mood, brand colors, fonts, photos to use), "
             f"Suggested price range in {CURRENCY} (basic and with extras, with a one-line reason), "
             "Questions to ask the client. Do not invent facts about the client; mark unknowns as TODO.",
             "A Markdown project spec with all the headings above.", [])
-    if "nour" in keys:
-        add("copy", "nour", "content.md",
+    if "youssef" in keys:
+        add("copy", "youssef", "content.md",
             f"Request:\n\"\"\"{goal}\"\"\"\n\nWrite the website copy for every page and section in the spec "
             "(or in the request if there is no spec). For each section give: Arabic (Egyptian dialect) and "
-            "English. Include page titles, meta descriptions (under 155 characters), headlines, short body text "
-            "and button labels. No fake reviews, numbers or awards.",
+            "English. Include page titles, meta descriptions (under 155 characters), headlines (short, 6 words max), "
+            "short body text and button labels. No fake reviews, numbers or awards.",
             "Markdown copy, section by section, Arabic then English.", [t.get("spec")])
     if "karim" in keys:
-        kind = templates.pick(f"{goal} {client}")
-        run.log("karim", f"Template: {kind}")
-        add("build", "karim", "website_draft.html" if "hana" in keys else "website.html",
-            f"Request:\n\"\"\"{goal}\"\"\"\n\nBuild the website by EDITING the ready Weblume template below. "
-            "Fill it with the real content from the spec and copy you were given (Arabic in the markup, English "
-            "in data-en), set the client's brand colors in the :root variables, keep the sections the client "
-            "needs, remove the rest, add sections the spec asks for using the same classes, and put the client's "
-            "WhatsApp number in <body data-wa>. Keep it one file, mobile-first, with <title>, meta description "
-            "and Open Graph filled in.\n"
-            "NEVER invent reviews, testimonials, ratings, years, customer counts or awards: use only what the "
-            "request or spec gives; otherwise delete that counter, badge or section. NEVER use stock photo links "
-            "(Unsplash, Pexels…): keep the .ph placeholders unless the request gives real image URLs.\n\n"
-            f"HOW THE ANIMATIONS WORK (follow this exactly):\n{templates.guide()}\n\n"
-            f"THE TEMPLATE ({kind}):\n{templates.load(kind)}\n\n"
-            "Output ONLY the full edited HTML document from <!DOCTYPE html> to </html>, nothing before or after.",
-            "One complete HTML document based on the template.", [t.get("spec"), t.get("copy")])
-    if "hana" in keys:
-        add("review", "hana", "review.md",
-            f"Request:\n\"\"\"{goal}\"\"\"\n\nReview the work you were given. Check: bugs in HTML/CSS/JS, layout "
-            "on a 375px phone (overflow, tiny tap targets, text too small), RTL issues, spelling in Arabic and "
-            "English, SEO basics (title, meta description, one h1, alt text, Open Graph), and that the copy "
-            "matches the spec. If the site is built on a Weblume template, the animations come from the motion kit "
-            "injected at the <!--WEBLUME:...--> markers: do not ask to remove the markers or to add an animation "
-            "library; do check the kit's classes are used as documented. "
-            "List every problem as: where -> what is wrong -> exact fix. End with a verdict "
-            "line: READY or NEEDS FIXES.",
+        run.log("karim", f"Template: {run.kind}")
+        add("build", "karim", ("website_draft" if "mostafa" in keys else "website") + ext,
+            f"Request:\n\"\"\"{goal}\"\"\"\n\n{karim_brief(run.kind)}",
+            "The client's site content." if ext == ".json" else "One complete HTML document.",
+            [t.get("spec"), t.get("copy")])
+    if "mostafa" in keys:
+        add("review", "mostafa", "review.md",
+            f"Request:\n\"\"\"{goal}\"\"\"\n\nReview Karim's work. "
+            + ("It is the site's content as JSON for a finished Weblume template: check every field the guide asks "
+               "for is there and correct, valid JSON shape, natural Egyptian Arabic and clean English, the "
+               "translations match, images come only from the allowed list, brand colors are set, nothing is "
+               "invented (prices, ratings, reviews). " if ext == ".json" else
+               "Check: bugs in HTML/CSS/JS, layout on a 375px phone, RTL issues, spelling in Arabic and English, SEO "
+               "basics (title, meta description, one h1, alt text, Open Graph), and that the copy matches the spec. "
+               "The animations come from the motion kit injected at the <!--WEBLUME:...--> markers: keep the markers. ")
+            + "List every problem as: where -> what is wrong -> exact fix. End with a verdict line: READY or NEEDS FIXES.",
             "A Markdown review: a numbered list of problems with exact fixes, then the verdict.",
             [t.get("build"), t.get("copy"), t.get("spec")])
-    if "karim" in keys and "hana" in keys:
-        add("fix", "karim", "website.html",
-            "Hana reviewed your website. Apply every fix from her review to the website you built and return "
-            "the whole corrected file. Keep the <!--WEBLUME:MOTION_CSS--> and <!--WEBLUME:MOTION_JS--> markers. "
-            "Output ONLY the full HTML document from <!DOCTYPE html> to </html>.",
-            "One complete, corrected HTML document.", [t["build"], t["review"]])
+    if "karim" in keys and "mostafa" in keys:
+        add("fix", "karim", "website" + ext,
+            "Mostafa reviewed your work. Apply every fix from his review and return the whole corrected "
+            + ("JSON object only." if ext == ".json" else
+               "file. Keep the <!--WEBLUME:MOTION_CSS--> and <!--WEBLUME:MOTION_JS--> markers. Output ONLY the full "
+               "HTML document from <!DOCTYPE html> to </html>."),
+            "The corrected site content." if ext == ".json" else "One complete, corrected HTML document.",
+            [t["build"], t["review"]])
     if "ziad" in keys:
         contacted = rules.load_contacted()
         new, old = rules.split_contacted(names, contacted)
@@ -225,40 +245,66 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             '{"targets": [{"kind": "", "why": "", "template": ""}], '
             '"leads": [{"business": "", "message": ""}]}',
             "A JSON object with targets and leads.", [])
-    if "sara" in keys:
-        add("social", "sara", "social.md",
+    if "adam" in keys:
+        add("social", "adam", "social.md",
             f"Request:\n\"\"\"{goal}\"\"\"\n\nPlan TikTok / Instagram content for Weblume (black, red and white "
             "brand). For each video idea: title, hook (first 2 seconds), full short script with shots, on-screen "
             "text, caption in Egyptian Arabic, and hashtags. The call to action always sends people to the "
             f"Weblume website ({WEBSITE}). NEVER write a phone number or WhatsApp number anywhere.",
             "Markdown: numbered video ideas, each with hook, script, on-screen text, caption and hashtags.", [])
-    run.site_path = site_path
     return steps
 
 
 # ---------------------------------------------------------------- after each task
+def save_site(run: Run, key: str, file: str, raw: str, name: str) -> str:
+    """Karim's output: a draft is kept in the run folder; the final one becomes the site in output/<client>/."""
+    final = file.startswith("website.")
+    if run.kind in templates.FOLDER:
+        data = rules.extract_json(raw)
+        if not isinstance(data, dict):
+            run.log(key, "ERROR: the site content was not valid JSON; nothing was built.")
+            run.write(name.replace(".json", "_invalid.txt"), raw)
+            return "The site content was not valid JSON."
+        text = json.dumps(data, ensure_ascii=False, indent=1)
+        run.write(name, text)
+        if final:
+            made_up = templates.drop_unsourced(data, f"{run.status['goal']} {run.status['client']}")
+            if made_up:
+                run.log(key, f"RULE: removed {made_up.count('price')} price(s){' and the opening hours' if 'hours' in made_up else ''} "
+                             "that weren't in your request (add the real ones to the request).")
+            fixed = templates.build_site(run.kind, data, run.site_dir)
+            if fixed:
+                run.log(key, f"RULE: {fixed} image path(s) didn't exist, replaced with template photos.")
+    else:
+        text, dead = templates.fix_broken_images(rules.extract_html(raw))
+        text = templates.inject_motion(text)
+        if dead:
+            run.log(key, f"RULE: {dead} photo link(s) didn't load, replaced with placeholders for real photos.")
+        run.write(name, text)
+        if final:
+            run.site_dir.mkdir(parents=True, exist_ok=True)
+            (run.site_dir / "index.html").write_text(text, encoding="utf-8")
+    if final:
+        run.site_text = text
+        site = run.site_dir / "index.html"
+        run.status["site"] = str(site.relative_to(OUTPUT_DIR))
+        run.add_file(site)
+        run.log(key, f"Website saved to output/{run.site_dir.relative_to(OUTPUT_DIR).as_posix()}/")
+        for claim in templates.claims_to_check(text):
+            run.log(key, f"CHECK before sending: {claim}.")
+        run.save()
+    return text
+
+
 def handle_output(run: Run, key: str, file: str, raw: str, index: int) -> str:
     """Apply the rules to one finished task and save it. Returns the text shown on the dashboard."""
     name = f"{index:02d}_{key}_{file}"
-    if file.endswith(".html"):
-        html, stock = templates.strip_stock_photos(rules.extract_html(raw))
-        html = templates.inject_motion(html)
-        if stock:
-            run.log(key, f"RULE: replaced {stock} stock photo(s) with placeholders for the client's real photos.")
-        if file == "website.html":
-            for claim in templates.claims_to_check(html):
-                run.log(key, f"CHECK before sending: {claim}.")
-        if "<html" not in html.lower():
-            run.log(key, "WARNING: the answer does not look like a full HTML page; saved as is.")
-        final = file == "website.html"
-        run.write(name, html, copy_to=run.site_path if final else None)
-        if final:
-            run.log(key, f"Website saved to output/{run.site_path.relative_to(OUTPUT_DIR).as_posix()}")
-        return html
-    if key == "sara":
+    if key == "karim":
+        return save_site(run, key, file, raw, name)
+    if key == "adam":
         raw, n = rules.remove_phone_numbers(raw)
         if n:
-            run.log("sara", f"RULE: removed {n} phone number(s)/WhatsApp link(s), replaced with the website.")
+            run.log("adam", f"RULE: removed {n} phone number(s)/WhatsApp link(s), replaced with the website.")
     if key == "ziad":
         return save_leads(run, raw, name)
     run.write(name, raw)
@@ -306,6 +352,27 @@ def save_leads(run: Run, raw: str, name: str) -> str:
     return text
 
 
+def handoff(run: Run, key: str, file: str, text: str, nxt: str | None):
+    """What a teammate says when passing the work on (and when something needs fixing)."""
+    if key == "mostafa":
+        n = sum(1 for line in text.splitlines() if line.strip()[:3].rstrip(".)").isdigit())
+        ok = "NEEDS FIX" not in text.upper()
+        run.say("mostafa", "karim", "راجعت كل حاجة، تمام كده 👌" if ok else f"لقيت {n or 'شوية'} حاجات محتاجة تتصلح، بعتهالك بالتفصيل")
+        return
+    if key == "ziad" and (run.status.get("leads") or {}).get("skipped_contacted"):
+        n = len(set(run.status["leads"]["skipped_contacted"]))
+        run.say("ziad", "layla", f"فيه {n} أماكن اتكلمنا معاهم قبل كده، مكتبتلهمش حاجة. تحبي نكلمهم تاني؟")
+    if key == "karim":
+        if "draft" in file:
+            run.say("karim", "mostafa", "الموقع جاهز، راجعه يا مصطفى")
+        elif run.status["agents"]["mostafa"]["status"] != "idle":
+            run.say("karim", "mostafa", "صلحت كل ملاحظاتك ✓")
+        return
+    lines = {"omar": "المواصفات والسعر جاهزين، اتفضل اكتب النصوص", "youssef": "النصوص جاهزة عربي وإنجليزي، اتفضل يا كريم"}
+    if key in lines and nxt and nxt != key:
+        run.say(key, nxt, lines[key])
+
+
 # ---------------------------------------------------------------- the job
 def _kickoff(run: Run, steps: list[tuple[Task, str, str]], first_index: int):
     """Run tasks in order; statuses and files update as each one finishes."""
@@ -320,6 +387,7 @@ def _kickoff(run: Run, steps: list[tuple[Task, str, str]], first_index: int):
             run.status["tasks"][base + n]["done"] = True
             run.log(key, f"Finished: {file}")
             later = keys_in_order[n + 1:]
+            handoff(run, key, file, text, later[0] if later else None)
             run.set_agent(key, "waiting" if key in later else "done", text)
             if later:
                 run.current = later[0]
@@ -342,6 +410,62 @@ def _kickoff(run: Run, steps: list[tuple[Task, str, str]], first_index: int):
          step_callback=step, max_rpm=MAX_RPM, verbose=False).kickoff()
 
 
+def _task_row(run: Run, key: str, title: str) -> dict:
+    row = {"title": f"{TEAM[key]['name']}: {title}", "agent": key, "file": "", "done": False}
+    run.status["tasks"].append(row)
+    run.current = key
+    run.set_agent(key, "working")
+    return row
+
+
+def test_site(run: Run, agents: dict, keys: list[str]):
+    """Tarek opens the site like a visitor; if it isn't client-ready, Karim fixes what he saw and Tarek tests again."""
+    brief = f"{run.status['goal']} {run.status['client']}".strip()
+    for rnd in range(1, TEST_ROUNDS + 1):
+        row = _task_row(run, "tarek", f"test round {rnd}")
+        run.say("tarek", "karim", "بفتح الموقع على الكمبيوتر والموبايل وبجربه زي الزبون…")
+        try:
+            shots = tester.shoot(run.site_dir, run.dir / "shots", f"r{rnd}")
+            for s in shots:
+                run.add_file(s)
+            result = tester.judge(shots, brief, tester.TEMPLATE_NOTES.get(run.kind, ""))
+        except Exception as e:  # no Chrome / no Gemini key / busy: say so instead of pretending it was tested
+            run.log("tarek", f"Couldn't test: {e}")
+            run.say("tarek", "layla", f"مقدرتش أجرب الموقع: {e}")
+            row["done"] = True
+            run.set_agent("tarek", "error", f"Couldn't test: {e}")
+            return
+        result["round"] = rnd
+        run.status["test"] = result
+        rep = tester.report(result)
+        run.write(f"{len(run.status['tasks']):02d}_tarek_test_r{rnd}.md", rep)
+        row["done"] = True
+        top = (result.get("problems") or [{}])[0]
+        if result["verdict"] == "PASS":
+            run.say("tarek", "layla", f"جربته على الكمبيوتر والموبايل: {result['score']:g}/10، جاهز للعميل ✓")
+            run.set_agent("tarek", "done", rep)
+            return
+        last = rnd == TEST_ROUNDS or "karim" not in keys
+        run.say("tarek", "karim", f"{result['score']:g}/10 لسه مش جاهز. أهم حاجة: {top.get('problem', '')} → {top.get('fix', '')}"
+                + (" (وقفت هنا، محتاج قرارك)" if last else ""))
+        run.set_agent("tarek", "done" if last else "waiting", rep)
+        if last:
+            return
+        prow = _task_row(run, "karim", f"fix Tarek's notes (round {rnd})")
+        ext = ".json" if run.kind in templates.FOLDER else ".html"
+        fix = Task(
+            description=f"Tarek tested the website in a real browser and found these problems:\n{rep}\n\n"
+                        f"This is the current site content:\n{run.site_text}\n\n{karim_brief(run.kind)}\n\n"
+                        "Fix every problem Tarek listed and return the whole corrected "
+                        + ("JSON object only." if ext == ".json" else "HTML document only."),
+            expected_output="The corrected site.", agent=agents["karim"], context=[])
+        Crew(agents=[agents["karim"]], tasks=[fix], max_rpm=MAX_RPM, verbose=False).kickoff()
+        out = save_site(run, "karim", "website" + ext, fix.output.raw, f"{len(run.status['tasks']):02d}_karim_polish_r{rnd}{ext}")
+        prow["done"] = True
+        run.set_agent("karim", "done", out)
+        run.say("karim", "tarek", "صلحت اللي قلت عليه، جرب تاني يا طارق")
+
+
 def _job(run: Run, mode: str, keys: list[str]):
     try:
         config.on_switch = lambda msg: run.log("system", msg)
@@ -359,22 +483,35 @@ def _job(run: Run, mode: str, keys: list[str]):
             names = names or plan["business_names"]
             run.status.update(client=client, names=names, plan=plan)
             run.write("00_layla_plan.json", json.dumps(plan, ensure_ascii=False, indent=2))
-            run.log("layla", f"Team: {', '.join(TEAM[k]['name'] for k in keys)}. {plan['reason']}")
-            run.set_agent("layla", "waiting", f"Team: {', '.join(TEAM[k]['name'] for k in keys)}\n\n{plan['reason']}")
-        steps = build_tasks(keys, goal, client, names, agents, run)
-        _kickoff(run, steps, first_index=1)
+            team = "، ".join(TEAM[k]["name"] for k in keys)
+            run.log("layla", f"Team: {team}. {plan['reason']}")
+            run.say("layla", keys[0], f"يلا يا جماعة: {team}. ابدأ انت يا {TEAM[keys[0]]['name']}")
+            run.set_agent("layla", "waiting", f"Team: {team}\n\n{plan['reason']}")
+        crew_keys = [k for k in keys if k != "tarek"]  # Tarek works after the site exists, outside the crew
+        steps = build_tasks(crew_keys, goal, client, names, agents, run) if crew_keys else []
+        if steps:
+            _kickoff(run, steps, first_index=1)
+        if "tarek" in keys:
+            if run.site_text:
+                test_site(run, agents, keys)
+            else:
+                run.say("tarek", "layla", "مفيش موقع أجربه في الرن ده")
+                run.set_agent("tarek", "done", "No website to test in this run.")
         if mode == "whole":
             outputs = "\n\n".join(f"--- {TEAM[k]['name']} ({f}) ---\n{(t.output.raw or '')[:3000]}"
                                   for t, k, f in steps)
+            test = run.status.get("test")
+            if test:
+                outputs += f"\n\n--- Tarek (browser test) ---\n{tester.report(test)}"
             summary = Task(
                 description=f"The owner asked:\n\"\"\"{run.status['goal']}\"\"\"\n\nYour team's work "
-                            f"(long outputs are cut):\n{outputs}\n\nFiles saved: {', '.join(run.status['files'])}\n\n"
+                            f"(long outputs are cut):\n{outputs}\n\nFiles saved: {', '.join(run.status['files'][:40])}\n\n"
                             "Write the final summary for the owner: what was done, by whom, the files, anything "
                             "that needs his decision (e.g. price, already-contacted businesses), next steps.",
                 expected_output="A short Markdown summary.", agent=agents["layla"], context=[])
             run.set_agent("layla", "working")
             run.current = "layla"
-            run.status["tasks"].append({"title": "Final summary", "agent": "layla", "file": "summary.md", "done": False})
+            run.status["tasks"].append({"title": "Layla: final summary", "agent": "layla", "file": "summary.md", "done": False})
             Crew(agents=[agents["layla"]], tasks=[summary], verbose=False).kickoff()
             run.write("99_layla_summary.md", summary.output.raw)
             run.status["tasks"][-1]["done"] = True

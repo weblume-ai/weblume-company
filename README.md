@@ -1,17 +1,21 @@
 # Weblume AI Company
 
-A team of 7 AI employees for **Weblume** ("Websites that make an impact"), built with Python + CrewAI, with a
-local dashboard in Weblume colors: a live 3D office where you watch the team work.
+A team of 8 AI employees for **Weblume** ("Websites that make an impact"), built with Python + CrewAI, with a
+local dashboard in Weblume colors: a live 3D office where you watch the team work and talk to each other.
 
 | Agent | Job | Saves |
 |---|---|---|
 | 👩‍💼 Layla, CEO | Picks the team (whole-company mode) and writes the final summary | `00_layla_plan.json`, `99_layla_summary.md` |
 | 🧭 Omar, Client Analyst | Brief → spec: pages, sections, features, style, price range | `spec.md` |
-| ✍️ Nour, Copywriter | Website copy in Egyptian Arabic + English | `content.md` |
-| 💻 Karim, Front-end | One-file animated website, edited from a ready Weblume template | `website.html` + `output/<client>/index.html` |
-| 🔍 Hana, Reviewer | Bugs, mobile layout, spelling, SEO; sends fixes back to Karim | `review.md` |
+| ✍️ Youssef, Copywriter | Website copy in Egyptian Arabic + English | `content.md` |
+| 💻 Karim, Front-end | Makes Weblume's premium templates the client's own (the Loopie design for cafés) | `website.json` / `.html` + `output/<client>/` |
+| 🔍 Mostafa, Reviewer | Checks Karim's code and content; sends fixes back to him | `review.md` |
+| 🧪 Tarek, QA Tester | Opens the finished site in your real Chrome on desktop and phone, Gemini judges the screenshots out of 10; under 8, Karim fixes and Tarek tests again | `tarek_test_r1.md`, `shots/*.png` |
 | 🎯 Ziad, Lead Finder | Target businesses + personal outreach messages | `leads.md` |
-| 📱 Sara, Social Media | TikTok/Instagram ideas, scripts, captions | `social.md` |
+| 📱 Adam, Social Media | TikTok/Instagram ideas, scripts, captions | `social.md` |
+
+They talk to each other when they pass work on or find a problem ("لقيت 3 حاجات محتاجة تتصلح"): it shows as
+a speech bubble in the 3D office (the speaker walks over) and in Progress → Team chat.
 
 ## Rules the code enforces (not just "asks" the AI)
 - **Ziad never messages a business twice.** Every name you give him is checked against `contacted.json`
@@ -19,14 +23,18 @@ local dashboard in Weblume colors: a live 3D office where you watch the team wor
   ones are flagged on the dashboard, not drafted. After you really send a message, click **✔ Mark as
   contacted** on the dashboard (or add a name on the Home tab) so it's remembered. If you give no names, he
   writes templates with `[اسم المكان]`, never fake businesses.
-- **Sara never shows a phone number.** Any phone number or WhatsApp link in her output is replaced with the
+- **Adam never shows a phone number.** Any phone number or WhatsApp link in his output is replaced with the
   Weblume website, and the log says so.
+- **No made-up prices or opening hours.** Prices and hours that aren't in your request are removed from the
+  site (the page then hides them). Put the real menu prices and hours in the request.
+- **No dead photos.** Photo links that don't load become labeled placeholders; image paths that don't exist
+  are swapped for the template's photos. Reviews or ratings on a site are flagged "CHECK before sending".
 
 ## Modes
 - **Whole company**: you write the goal, Layla decides who is needed, they work in order, Layla summarizes.
-- **Focused team**: you pick the people (e.g. only Karim + Hana).
+- **Focused team**: you pick the people (e.g. only Karim + Mostafa + Tarek).
 
-Work order is always Omar → Nour → Karim → Hana → Karim (fixes) → Ziad → Sara.
+Work order is always Omar → Youssef → Karim → Mostafa → Karim (fixes) → Tarek (test; Karim fixes, Tarek retests) → Ziad → Adam.
 
 ## Folder structure
 ```
@@ -39,18 +47,20 @@ weblume-company/
 ├── contacted.json         Businesses already contacted (Ziad never drafts for these)
 ├── weblume/
 │   ├── config.py          Reads .env, builds the AI model (Gemini / Groq / Ollama)
-│   ├── team.py            The 7 agents: name, role, goal, backstory
+│   ├── team.py            The 8 agents: name, role, goal, backstory
+│   ├── tester.py          Tarek: screenshots in real Chrome + Gemini looks at them
 │   ├── company.py         Plans the work, runs the agents, saves files, live status, log
 │   ├── rules.py           contacted.json + phone-number rules, cleaning AI answers
 │   └── templates/         Karim's starting points (see below)
-│       ├── cafe.html      Cafés, restaurants, bakeries: menu tabs, WhatsApp order buttons
+│       ├── cafe/          The Loopie design: scroll scenes from real video frames. Karim writes only the
+│       │                  client's content (data.js); GUIDE.md there lists every field and photo
 │       ├── clinic.html    Clinics and services: booking form that sends to WhatsApp, steps, FAQ
 │       ├── shop.html      Stores and brands: product filters, cart that sends the order on WhatsApp
 │       ├── motion.css/js  The animation kit, added to every site automatically
 │       └── GUIDE.md       How Karim uses the kit (sent to him with the template)
 ├── tests/test_rules.py    Checks for the rules
 └── output/
-    ├── <client-name>/index.html          Final website
+    ├── <client-name>/                    Final website (open it with the dashboard's button)
     └── runs/<date_time_task>/            Every run: numbered files + run.log + status.json
 ```
 
@@ -67,6 +77,7 @@ weblume-company/
    python -m venv .venv
    .venv\Scripts\python -m pip install -r requirements.txt
    ```
+   Tarek (the tester) uses your installed Google Chrome or Edge, so there is no browser to download.
 4. **Add your settings**:
    ```
    copy .env.example .env
@@ -78,15 +89,16 @@ weblume-company/
 
 Check the rules any time: `.venv\Scripts\python tests\test_rules.py`
 
-## Website templates and animations
-Karim never starts from a blank page. The code picks the template that fits the request (café, clinic or
-shop; café if unsure), and Karim edits it: the client's content, brand colors, WhatsApp number, sections.
-The animation kit is added by the code after he finishes, so the animations can't be broken or lost:
-page loader, scroll progress bar, reveal on scroll, headings rising word by word, endless marquee strip,
-3D tilt cards, magnetic buttons, light sweep, counters, parallax, floating badges, cursor glow, mobile
-menu, Arabic/English switch, WhatsApp buttons. It respects "reduce motion" and needs no library.
-To add a template: put `name.html` in `weblume/templates/` with the two `<!--WEBLUME:...-->` markers and
-add its keywords to `KINDS` in `weblume/templates/__init__.py`.
+## Website templates
+- **Cafés and restaurants → the Loopie design** (`weblume/templates/cafe/`): the approved Loopie site with its
+  scroll scenes (coffee video frames, drinks dropping into a colored disc, a bean that roasts as you scroll).
+  Karim fills only the client's content: name, tagline, brand colors, signature drinks, menu, WhatsApp, map,
+  Arabic + English. The design can't break because he never touches it. It runs from the dashboard's
+  **Open the website** button or GitHub Pages (scroll scenes don't run when the file is double-clicked).
+- **Clinics/services and shops**: single pages Karim edits (`clinic.html`, `shop.html`), with the animation kit
+  (`motion.css/js`) added by the code after him.
+- To add a template: a folder like `cafe/` (index.html reading `window.CAFE`, assets, `GUIDE.md`,
+  `example-data.js`) or a page with the two `<!--WEBLUME:...-->` markers; add its keywords to `KINDS`.
 
 ## The dashboard
 Two ways to open it, both need `start.bat` running on your laptop (that's where the team works):
@@ -108,7 +120,7 @@ Two ways to open it, both need `start.bat` running on your laptop (that's where 
 ## Switching the AI (edit `.env`, then restart start.bat)
 - **Gemini (default, free)**: `LLM_PROVIDER=gemini` + `GEMINI_API_KEY`.
 - **Groq (free, very fast)**: `LLM_PROVIDER=groq` + `GROQ_API_KEY` from https://console.groq.com/keys.
-  Its free limits are small for long websites; use it for Ziad/Sara, Gemini for websites.
+  Its free limits are small for long websites; use it for Ziad/Adam, Gemini for websites.
 - **Ollama (your laptop, offline, free)**: `LLM_PROVIDER=ollama`. Install Ollama from https://ollama.com, then:
   ```
   ollama pull qwen2.5:7b
