@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اسم المتجر | وصف قصير</title>
+<meta name="description" content="وصف قصير للمتجر في أقل من 155 حرف.">
+<meta property="og:title" content="اسم المتجر">
+<meta property="og:description" content="وصف قصير.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<!--WEBLUME:MOTION_CSS-->
+<style>
+/* TEMPLATE: shop — bold and modern. Fits stores, bakeries that sell boxes, brands, gift shops. */
+:root{--bg:#f4f2ee;--ink:#111;--muted:#6b6b6b;--card:#fff;--accent:#ff4d2e;--accent-ink:#fff;--line:#e3e0da;--radius:18px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 Cairo,system-ui,sans-serif;overflow-x:hidden}
+a{color:inherit}.wrap{width:min(1240px,100% - 32px);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.8rem 1.4rem;border-radius:12px;background:var(--ink);color:#fff;text-decoration:none;font:inherit;font-weight:700;border:0;cursor:pointer}
+.btn.accent{background:var(--accent);color:var(--accent-ink)}
+h1{font-size:clamp(3rem,10vw,8.5rem);line-height:.95;margin:.2em 0;font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(2rem,5vw,3.6rem);line-height:1.05;margin:.3em 0;font-weight:900}
+.en-num{font-family:"Space Grotesk",sans-serif}
+section{padding:clamp(60px,9vw,120px) 0}
+.ph{background:linear-gradient(160deg,#ddd8cf,#b9b1a4);border-radius:var(--radius);display:grid;place-items:center;color:#fff;font-weight:700;min-height:240px;text-align:center;padding:1rem}
+.ph::after{content:attr(data-label)}
+
+header{position:fixed;inset:0 0 auto;z-index:50}
+header.wl-header-scrolled{background:color-mix(in srgb,var(--bg) 88%,transparent)}
+.nav{display:flex;align-items:center;gap:1rem;height:70px}
+.logo{font-weight:900;font-size:1.5rem;text-decoration:none}.logo b{color:var(--accent)}
+nav[data-menu]{display:flex;gap:1.3rem;margin-inline-start:auto}nav[data-menu] a{text-decoration:none;font-weight:700}
+.lang,.cart-btn{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:.45rem .9rem;font:inherit;font-weight:700;cursor:pointer;color:inherit}
+.cart-btn span{background:var(--accent);color:#fff;border-radius:99px;padding:0 .45rem;margin-inline-start:.3rem;font-size:.85rem}
+.burger{display:none;background:none;border:0;font-size:1.6rem;cursor:pointer;color:inherit}
+@media (max-width:860px){.burger{display:block;margin-inline-start:auto}nav[data-menu]{flex-direction:column;background:var(--card);padding:1.2rem;border-radius:16px;box-shadow:0 20px 50px #0002}}
+
+.hero{padding-top:120px;overflow:hidden}
+.hero-row{display:flex;align-items:end;justify-content:space-between;gap:2rem;flex-wrap:wrap}
+.hero p{max-width:36ch;color:var(--muted);font-size:1.15rem}
+.hero-media{display:grid;grid-template-columns:2fr 1fr 1fr;gap:1rem;margin-top:2.5rem}
+.hero-media .ph{min-height:clamp(220px,40vw,460px)}
+.hero-media .ph:nth-child(2){margin-top:3rem}
+@media (max-width:700px){.hero-media{grid-template-columns:1fr 1fr}.hero-media .ph:first-child{grid-column:1/-1}}
+main{overflow-x:clip} /* the tilted ticker is wider than the screen on purpose */
+.ticker{background:var(--accent);color:var(--accent-ink);padding:1rem 0;font-weight:900;font-size:clamp(1.2rem,3vw,1.8rem);transform:rotate(-1.5deg);margin:2rem -2%}
+
+.filters{display:flex;gap:.5rem;flex-wrap:wrap;margin:1.2rem 0 2rem}
+.filters button{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:.45rem 1.1rem;font:inherit;font-weight:700;cursor:pointer;color:inherit}
+.filters button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.3rem}
+.prod{display:flex;flex-direction:column;gap:.4rem}
+.prod .ph{min-height:300px;transition:transform .5s}
+.prod:hover .ph{transform:scale(1.02)}
+.prod h3{margin:.4rem 0 0;font-size:1.1rem}
+.prod .row{display:flex;justify-content:space-between;align-items:center}
+.prod[hidden]{display:none}
+
+.perks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.perks div{background:var(--card);border-radius:var(--radius);padding:1.5rem;border:1px solid var(--line)}
+.perks b{font-size:1.8rem}
+
+.drawer{position:fixed;inset:0 auto 0 0;width:min(420px,100%);background:var(--card);z-index:80;transform:translateX(-105%);transition:transform .45s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;padding:1.4rem;box-shadow:20px 0 60px #0003}
+.drawer.open{transform:none}
+.drawer ul{list-style:none;padding:0;margin:1rem 0;flex:1;overflow:auto}
+.drawer li{display:flex;justify-content:space-between;gap:.5rem;padding:.7rem 0;border-bottom:1px solid var(--line)}
+.drawer li button{background:none;border:0;cursor:pointer;color:var(--muted);font:inherit}
+.shade{position:fixed;inset:0;background:#0006;z-index:70;opacity:0;pointer-events:none;transition:opacity .3s}
+.shade.open{opacity:1;pointer-events:auto}
+footer{background:var(--ink);color:#fff;padding:2.5rem 0;text-align:center}
+</style>
+</head>
+<!-- data-wa = the CLIENT's WhatsApp number with country code, digits only -->
+<body data-wa="" data-glow>
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#top">اسم<b>.</b></a>
+    <button class="burger" data-menu-toggle aria-label="Menu" aria-expanded="false">☰</button>
+    <nav data-menu>
+      <a href="#shop" data-en="Shop">المنتجات</a>
+      <a href="#perks" data-en="Delivery">التوصيل</a>
+    </nav>
+    <button class="lang" data-lang-toggle>EN</button>
+    <button class="cart-btn" id="cart-open" aria-label="Cart">🛒<span id="cart-count">0</span></button>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-row">
+      <h1 class="split" data-en="Made to be loved">معمول عشان يتحب</h1>
+      <div class="reveal" style="--i:3">
+        <p data-en="One sentence about the brand and what it sells.">جملة واحدة عن البراند وبيبيع إيه.</p>
+        <a class="btn accent magnetic shine" href="#shop" data-en="Shop now">تسوّق دلوقتي</a>
+      </div>
+    </div>
+    <div class="hero-media">
+      <div class="ph reveal zoom" data-speed="-0.04" data-label="صورة المنتج الأشهر"></div>
+      <div class="ph reveal zoom" style="--i:1" data-label="صورة منتج"></div>
+      <div class="ph reveal zoom" style="--i:2" data-speed="0.05" data-label="صورة منتج"></div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker marquee" aria-hidden="true"><div><span>جديد ✺</span><span>توصيل سريع ✺</span><span>هدايا ✺</span><span>عروض الأسبوع ✺</span></div></div>
+
+<section id="shop">
+  <div class="wrap">
+    <h2 class="split" data-en="The collection">المجموعة</h2>
+    <div class="filters reveal">
+      <button aria-pressed="true" data-cat="all" data-en="All">الكل</button>
+      <button aria-pressed="false" data-cat="a" data-en="Category A">قسم أ</button>
+      <button aria-pressed="false" data-cat="b" data-en="Category B">قسم ب</button>
+    </div>
+    <div class="grid" data-stagger>
+      <!-- one .prod per product: data-name, data-price (number), data-cat must match a filter -->
+      <article class="prod tilt" data-cat="a" data-name="منتج 1" data-price="250">
+        <div class="ph" data-label="صورة المنتج"></div>
+        <h3 data-en="Product 1">منتج 1</h3>
+        <div class="row"><b class="en-num">250 ج.م</b><button class="btn add" data-en="Add">أضف</button></div>
+      </article>
+      <article class="prod tilt" data-cat="b" data-name="منتج 2" data-price="180">
+        <div class="ph" data-label="صورة المنتج"></div>
+        <h3 data-en="Product 2">منتج 2</h3>
+        <div class="row"><b class="en-num">180 ج.م</b><button class="btn add" data-en="Add">أضف</button></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="perks" style="padding-top:0">
+  <div class="wrap perks" data-stagger>
+    <div><b>🚚</b><h3 data-en="Delivery">توصيل</h3><p data-en="Where and how fast.">لفين وفي قد إيه.</p></div>
+    <div><b>💳</b><h3 data-en="Payment">الدفع</h3><p data-en="Cash on delivery, cards…">كاش عند الاستلام، كارت…</p></div>
+    <div><b>↩️</b><h3 data-en="Returns">الاسترجاع</h3><p data-en="The return policy in one line.">سياسة الاسترجاع في سطر.</p></div>
+  </div>
+</section>
+</main>
+
+<div class="shade" id="shade"></div>
+<aside class="drawer" id="drawer" aria-label="Cart">
+  <h3 style="margin:0" data-en="Your order">طلبك</h3>
+  <ul id="cart-list"></ul>
+  <p><b data-en="Total">الإجمالي</b>: <b id="cart-total" class="en-num">0</b></p>
+  <button class="btn accent" id="cart-send" data-en="Send order on WhatsApp">ابعت الطلب على واتساب</button>
+</aside>
+<footer>© <span data-en="Shop name">اسم المتجر</span></footer>
+
+<script>
+/* filters + cart (template part: keep it). Currency label: change CUR. */
+const CUR = "ج.م", cart = new Map(), $ = s => document.querySelector(s);
+document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  document.querySelectorAll(".prod").forEach(p => p.hidden = b.dataset.cat !== "all" && p.dataset.cat !== b.dataset.cat);
+}));
+function drawCart() {
+  const list = $("#cart-list"); list.textContent = ""; let total = 0, n = 0;
+  cart.forEach((q, name) => {
+    const price = +document.querySelector(`.prod[data-name="${CSS.escape(name)}"]`).dataset.price; total += price * q; n += q;
+    const li = document.createElement("li"), rm = document.createElement("button");
+    li.textContent = `${name} × ${q} — ${price * q} ${CUR}`; rm.textContent = "✕"; rm.setAttribute("aria-label", "Remove");
+    rm.onclick = () => { cart.delete(name); drawCart() }; li.append(rm); list.append(li);
+  });
+  $("#cart-total").textContent = `${total} ${CUR}`; $("#cart-count").textContent = n;
+}
+const toggle = open => { $("#drawer").classList.toggle("open", open); $("#shade").classList.toggle("open", open) };
+document.querySelectorAll(".prod .add").forEach(b => b.addEventListener("click", () => {
+  const name = b.closest(".prod").dataset.name; cart.set(name, (cart.get(name) || 0) + 1); drawCart();
+  b.animate([{transform: "scale(1)"}, {transform: "scale(1.15)"}, {transform: "scale(1)"}], {duration: 300});
+}));
+$("#cart-open").onclick = () => toggle(true); $("#shade").onclick = () => toggle(false);
+$("#cart-send").onclick = () => {
+  if (!cart.size) return;
+  const lines = [...cart].map(([name, q]) => `- ${name} × ${q}`).join("\n"), wa = (document.body.dataset.wa || "").replace(/\D/g, "");
+  open(`https://wa.me/${wa}?text=` + encodeURIComponent(`أهلاً، عايز أطلب:\n${lines}\nالإجمالي: ${$("#cart-total").textContent}`), "_blank", "noopener");
+};
+</script>
+<!--WEBLUME:MOTION_JS-->
+</body>
+</html>

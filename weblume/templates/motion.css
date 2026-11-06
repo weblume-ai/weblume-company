@@ -1,0 +1,50 @@
+/* Weblume motion kit: injected into every site Karim builds. Classes are documented in templates/GUIDE.md */
+html{scroll-behavior:smooth}
+body{overflow-x:clip} /* elements sliding in from the side must not create a sideways scroll */
+#wl-progress{position:fixed;inset:0 auto auto 0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:var(--accent,#e50914);z-index:999}
+#wl-loader{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg,#111);z-index:1000;transition:opacity .6s ease,visibility .6s}
+#wl-loader span{width:46px;height:46px;border-radius:50%;border:3px solid color-mix(in srgb,var(--accent,#e50914) 25%,transparent);border-top-color:var(--accent,#e50914);animation:wl-spin .8s linear infinite}
+.wl-loaded #wl-loader{opacity:0;visibility:hidden}
+@keyframes wl-spin{to{transform:rotate(360deg)}}
+
+.reveal{opacity:0;transform:translateY(42px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i,0) * 90ms)}
+.reveal.from-left{transform:translateX(-60px)}
+.reveal.from-right{transform:translateX(60px)}
+.reveal.zoom{transform:scale(.88)}
+.reveal.in{opacity:1;transform:none}
+
+.split .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em}
+.split .w>span{display:inline-block;transform:translateY(110%);transition:transform .9s cubic-bezier(.2,.8,.2,1);transition-delay:calc(var(--i) * 70ms)}
+.split.in .w>span{transform:none}
+
+.marquee{overflow:hidden;white-space:nowrap;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marquee>div{display:inline-flex;gap:3rem;padding-inline-end:3rem;animation:wl-marquee var(--speed,28s) linear infinite}
+.marquee:hover>div{animation-play-state:paused}
+[dir=rtl] .marquee>div{animation-name:wl-marquee-rtl}
+@keyframes wl-marquee{to{transform:translateX(-50%)}}
+@keyframes wl-marquee-rtl{to{transform:translateX(50%)}}
+
+.tilt{transform-style:preserve-3d;transition:transform .25s ease;will-change:transform}
+.tilt .tilt-pop{transform:translateZ(36px)}
+.magnetic{transition:transform .25s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.float{animation:wl-float 6s ease-in-out infinite}
+@keyframes wl-float{50%{transform:translateY(-14px)}}
+.shine{position:relative;overflow:hidden}
+.shine::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-100%);transition:transform .8s}
+.shine:hover::after{transform:translateX(100%)}
+
+#wl-glow{position:fixed;width:420px;height:420px;border-radius:50%;pointer-events:none;z-index:0;left:0;top:0;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent,#e50914) 22%,transparent),transparent 65%);transform:translate(-50%,-50%);opacity:0;transition:opacity .4s}
+.wl-glow-on #wl-glow{opacity:1}
+
+.wl-header-scrolled{backdrop-filter:blur(12px);box-shadow:0 6px 30px rgba(0,0,0,.12)}
+[data-menu]{transition:transform .35s ease,opacity .35s}
+@media (max-width:860px){
+  [data-menu]{position:fixed;inset:64px 12px auto 12px;transform:translateY(-12px);opacity:0;pointer-events:none}
+  .wl-menu-open [data-menu]{transform:none;opacity:1;pointer-events:auto}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .reveal,.split .w>span{opacity:1!important;transform:none!important}
+  #wl-glow{display:none}
+}

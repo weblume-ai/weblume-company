@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اسم العيادة | التخصص في المدينة</title>
+<meta name="description" content="وصف قصير للعيادة أو الخدمة في أقل من 155 حرف.">
+<meta property="og:title" content="اسم العيادة">
+<meta property="og:description" content="وصف قصير.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<!--WEBLUME:MOTION_CSS-->
+<style>
+/* TEMPLATE: clinic — calm, clean, trustworthy. Also fits services: salons, gyms, lawyers, schools. */
+:root{--bg:#f7fafa;--ink:#10292b;--muted:#5b7375;--card:#fff;--accent:#0f8b8d;--accent-ink:#fff;--soft:#e3f2f1;--line:#dbe7e7;--radius:20px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.75 Tajawal,system-ui,sans-serif;overflow-x:hidden}
+a{color:inherit}.wrap{width:min(1180px,100% - 32px);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 1.5rem;border-radius:14px;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:700;border:0;cursor:pointer;font:inherit;font-weight:700}
+.btn.ghost{background:var(--soft);color:var(--ink)}
+.kicker{display:inline-block;background:var(--soft);color:var(--accent);font-weight:700;border-radius:99px;padding:.2rem .9rem;font-size:.85rem}
+h1{font-size:clamp(2.4rem,6vw,4.6rem);line-height:1.12;margin:.4em 0;font-weight:800}
+h2{font-size:clamp(1.9rem,4vw,3rem);line-height:1.2;margin:.4em 0;font-weight:800}
+section{padding:clamp(70px,9vw,120px) 0}
+.ph{background:linear-gradient(135deg,#bfe3e1,#6fb7b5);border-radius:var(--radius);display:grid;place-items:center;color:#fff;font-weight:700;min-height:200px;text-align:center;padding:1rem}
+.ph::after{content:attr(data-label)}
+
+header{position:fixed;inset:0 0 auto;z-index:50}
+header.wl-header-scrolled{background:color-mix(in srgb,var(--card) 88%,transparent)}
+.nav{display:flex;align-items:center;gap:1.2rem;height:72px}
+.logo{font-weight:800;font-size:1.35rem;text-decoration:none;display:flex;gap:.5rem;align-items:center}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--accent);display:inline-block}
+nav[data-menu]{display:flex;gap:1.3rem;margin-inline-start:auto}nav[data-menu] a{text-decoration:none;font-weight:600}
+.lang{background:var(--soft);border:0;border-radius:10px;padding:.4rem .9rem;font:inherit;font-weight:700;cursor:pointer;color:inherit}
+.burger{display:none;background:none;border:0;font-size:1.6rem;cursor:pointer;color:inherit}
+@media (max-width:860px){.burger{display:block;margin-inline-start:auto}nav[data-menu]{flex-direction:column;background:var(--card);padding:1.2rem;border-radius:16px;box-shadow:0 20px 50px #0002}.nav .btn{display:none}}
+
+.hero{padding-top:130px;background:radial-gradient(circle at 85% 20%,var(--soft),transparent 55%)}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center}
+.hero p{color:var(--muted);font-size:1.15rem;max-width:40ch}
+.book{background:var(--card);border-radius:24px;padding:1.6rem;box-shadow:0 30px 70px #0f8b8d22;border:1px solid var(--line)}
+.book label{display:block;font-weight:700;font-size:.9rem;margin:.8rem 0 .3rem}
+.book input,.book select{width:100%;padding:.75rem 1rem;border:1px solid var(--line);border-radius:12px;font:inherit;background:var(--bg);color:inherit}
+.book .btn{width:100%;justify-content:center;margin-top:1.2rem}
+.trust{display:flex;gap:1.5rem;margin-top:1.6rem;flex-wrap:wrap;color:var(--muted)}
+@media (max-width:860px){.hero-grid{grid-template-columns:1fr}}
+
+.services{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.2rem;margin-top:2rem}
+.svc{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:1.6rem}
+.svc b{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:var(--soft);font-size:1.5rem}
+.svc h3{margin:.8rem 0 .3rem}.svc p{margin:0;color:var(--muted)}
+
+.band{background:var(--ink);color:#fff;border-radius:28px;padding:2.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1.5rem;text-align:center}
+.band b{font-size:2.8rem;display:block;line-height:1.1;color:#7fd8d6}
+
+.steps{display:grid;gap:1rem;margin-top:2rem;counter-reset:s}
+.step{display:flex;gap:1.2rem;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:1.3rem}
+.step::before{counter-increment:s;content:counter(s);flex:none;width:46px;height:46px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800}
+.step h3{margin:0}.step p{margin:.2rem 0 0;color:var(--muted)}
+
+.team{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.2rem;margin-top:2rem}
+.team .ph{min-height:260px}.team h3{margin:.7rem 0 0}.team p{margin:0;color:var(--muted)}
+
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1rem 1.3rem;margin-bottom:.8rem}
+summary{cursor:pointer;font-weight:700;list-style:none}summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:inline-end;color:var(--accent);font-size:1.3rem;transition:transform .3s}
+details[open] summary::after{transform:rotate(45deg)}
+.visit{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center}
+.map{border:0;width:100%;min-height:340px;border-radius:var(--radius)}
+@media (max-width:860px){.visit{grid-template-columns:1fr}}
+footer{border-top:1px solid var(--line);padding:2rem 0;text-align:center;color:var(--muted)}
+.wa-float{position:fixed;inset:auto auto 20px 20px;z-index:60;width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;display:grid;place-items:center;font-size:1.6rem;box-shadow:0 12px 30px #0003;text-decoration:none}
+</style>
+</head>
+<!-- data-wa = the CLIENT's WhatsApp number with country code, digits only -->
+<body data-wa="">
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#top"><i></i><span data-en="Clinic name">اسم العيادة</span></a>
+    <button class="burger" data-menu-toggle aria-label="Menu" aria-expanded="false">☰</button>
+    <nav data-menu>
+      <a href="#services" data-en="Services">الخدمات</a>
+      <a href="#how" data-en="How it works">إزاي بنشتغل</a>
+      <a href="#team" data-en="Team">الفريق</a>
+      <a href="#visit" data-en="Location">المكان</a>
+    </nav>
+    <button class="lang" data-lang-toggle>EN</button>
+    <a class="btn magnetic" href="#book" data-en="Book now">احجز</a>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker reveal" data-en="Specialty · City">التخصص · المدينة</span>
+      <h1 class="split" data-en="Care you can trust, close to home">رعاية تثق فيها، قريبة منك</h1>
+      <p class="reveal" style="--i:3" data-en="One sentence about the doctor or the service and who it helps.">جملة واحدة عن الدكتور أو الخدمة وبتساعد مين.</p>
+      <div class="trust reveal" style="--i:4"><span data-en="✓ Real certifications">✓ شهادات حقيقية</span><span data-en="✓ Fixed prices">✓ أسعار واضحة</span></div>
+    </div>
+    <form class="book reveal zoom" id="book" onsubmit="return false">
+      <h3 style="margin:0" data-en="Book a visit">احجز ميعاد</h3>
+      <label for="b-name" data-en="Your name">اسمك</label><input id="b-name" required>
+      <label for="b-svc" data-en="Service">الخدمة</label>
+      <select id="b-svc"><option data-en="Checkup">كشف</option><option data-en="Follow-up">متابعة</option></select>
+      <label for="b-day" data-en="Preferred day">اليوم المناسب</label><input id="b-day" type="date">
+      <button class="btn magnetic shine" data-wa-msg="أهلاً، عايز أحجز ميعاد:" data-wa-from="#b-name,#b-svc,#b-day" data-en="Send on WhatsApp">ابعت على واتساب</button>
+    </form>
+  </div>
+</section>
+
+<section id="services">
+  <div class="wrap">
+    <span class="kicker reveal" data-en="Services">الخدمات</span>
+    <h2 class="split" data-en="What we do best">إحنا شاطرين في إيه</h2>
+    <div class="services" data-stagger>
+      <div class="svc tilt"><b>🦷</b><h3 data-en="Service one">خدمة أولى</h3><p data-en="One line about it.">سطر واحد عنها.</p></div>
+      <div class="svc tilt"><b>✨</b><h3 data-en="Service two">خدمة تانية</h3><p data-en="One line about it.">سطر واحد عنها.</p></div>
+      <div class="svc tilt"><b>🩺</b><h3 data-en="Service three">خدمة تالتة</h3><p data-en="One line about it.">سطر واحد عنها.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap band reveal zoom">
+    <div><b data-count="12" data-suffix="+">0</b><span data-en="years of experience">سنة خبرة</span></div>
+    <div><b data-count="5000" data-suffix="+">0</b><span data-en="patients">مريض</span></div>
+    <div><b data-count="4.9">0</b><span data-en="Google rating">تقييم جوجل</span></div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <span class="kicker reveal" data-en="How it works">إزاي بنشتغل</span>
+    <h2 class="split" data-en="Three simple steps">تلات خطوات بس</h2>
+    <div class="steps" data-stagger>
+      <div class="step"><div><h3 data-en="Book">احجز</h3><p data-en="One line.">سطر واحد.</p></div></div>
+      <div class="step"><div><h3 data-en="Visit">تعالى</h3><p data-en="One line.">سطر واحد.</p></div></div>
+      <div class="step"><div><h3 data-en="Follow up">تابع معانا</h3><p data-en="One line.">سطر واحد.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="team" style="background:var(--card)">
+  <div class="wrap">
+    <span class="kicker reveal" data-en="Team">الفريق</span>
+    <h2 class="split" data-en="The people who care for you">الناس اللي هتهتم بيك</h2>
+    <div class="team" data-stagger>
+      <div><div class="ph" data-label="صورة حقيقية للدكتور"></div><h3 data-en="Dr. Name">د. الاسم</h3><p data-en="Specialty">التخصص</p></div>
+      <div><div class="ph" data-label="صورة حقيقية"></div><h3 data-en="Dr. Name">د. الاسم</h3><p data-en="Specialty">التخصص</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap" style="max-width:820px">
+    <h2 class="split" data-en="Questions people ask">أسئلة بتتسأل كتير</h2>
+    <div data-stagger>
+      <details><summary data-en="Question one?">سؤال أول؟</summary><p data-en="Short answer.">إجابة قصيرة.</p></details>
+      <details><summary data-en="Question two?">سؤال تاني؟</summary><p data-en="Short answer.">إجابة قصيرة.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="visit" style="background:var(--card)">
+  <div class="wrap visit">
+    <div class="reveal from-right">
+      <span class="kicker" data-en="Location">المكان</span>
+      <h2 data-en="Easy to reach">سهل توصلنا</h2>
+      <p data-en="Street, area, city · Sat–Thu 10:00–22:00">الشارع، المنطقة، المدينة · السبت–الخميس 10:00–22:00</p>
+      <a class="btn magnetic" href="#" data-wa-msg="أهلاً، عندي سؤال" data-en="Ask on WhatsApp">اسأل على واتساب</a>
+    </div>
+    <iframe class="map reveal from-left" loading="lazy" title="Map" src="https://www.google.com/maps?q=Cairo&output=embed"></iframe>
+  </div>
+</section>
+</main>
+<footer>© <span data-en="Clinic name">اسم العيادة</span></footer>
+<a class="wa-float magnetic" href="#" data-wa-msg="أهلاً" aria-label="WhatsApp">✆</a>
+<!--WEBLUME:MOTION_JS-->
+</body>
+</html>

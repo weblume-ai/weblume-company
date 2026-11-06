@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weblume Company</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--panel:#0b0b0b;--card:#121212;--line:#262626;--text:#fff;--mute:#9a9a9a;--red:#e50914;--red2:#ff3b47;--ok:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 Inter,Cairo,system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.app{display:grid;grid-template-rows:auto auto 1fr;height:100vh}
+/* top bar */
+.top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:#050505;flex-wrap:wrap}
+.logo{font-weight:800;font-size:19px;letter-spacing:-.5px;white-space:nowrap}
+.logo b{color:var(--red)}
+.logo span{font-weight:500;color:var(--mute);margin-left:4px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:0;padding:7px 12px;color:var(--mute)}
+.seg button.on{background:var(--red);color:#fff}
+.goal{flex:1;min-width:220px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;outline:none}
+.goal:focus{border-color:var(--red)}
+.btn{background:var(--red);border:0;border-radius:10px;padding:8px 16px;font-weight:600}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.ghost{background:none;border:1px solid var(--line);border-radius:10px;padding:7px 12px;color:var(--mute)}
+.ghost.on{color:#fff;border-color:#555}
+.live{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:13px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#444}
+.live.on .dot{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.4}}
+/* focused team picker */
+.picker{display:none;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center;background:#050505}
+.picker.show{display:flex}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:5px 11px;color:var(--mute)}
+.chip.on{border-color:var(--red);color:#fff;background:#2a0306}
+/* main */
+.main{display:grid;grid-template-columns:1fr 390px;min-height:0}
+.stage{position:relative;min-height:0;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#141414 0,#000 70%)}
+.stage canvas{display:block;width:100%;height:100%}
+.labels{position:absolute;inset:0;pointer-events:none}
+.tag{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(0,0,0,.72);border:1px solid #333;pointer-events:auto;cursor:pointer}
+.tag.working{border-color:var(--red);box-shadow:0 0 10px rgba(229,9,20,.5)}
+.tag.waiting{border-color:var(--red2);color:#ffb3b8}
+.tag.sel{background:var(--red);border-color:var(--red)}
+.zone{position:absolute;transform:translate(-50%,-50%);font-size:11px;color:#cfcfcf;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:2px 9px;border-radius:99px;white-space:nowrap}
+.legend{position:absolute;left:12px;bottom:10px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);background:rgba(0,0,0,.6);padding:6px 10px;border-radius:10px;border:1px solid #1f1f1f}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.no3d{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--mute);text-align:center;padding:20px}
+.stage.off canvas,.stage.off .labels,.stage.off .legend{display:none}
+.stage.off .no3d{display:flex}
+/* side panel */
+.side{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:none;border:0;padding:11px 4px;color:var(--mute);border-bottom:2px solid transparent}
+.tabs button.on{color:#fff;border-bottom-color:var(--red)}
+.pane{overflow:auto;padding:14px;display:none;flex:1}
+.pane.on{display:block}
+h3{margin:4px 0 8px;font-size:15px}
+.mute{color:var(--mute)}
+.small{font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.bar{height:8px;background:#222;border-radius:99px;overflow:hidden;margin:6px 0 2px}
+.bar i{display:block;height:100%;background:var(--red);width:0;transition:width .4s}
+label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
+.in{width:100%;background:#0f0f0f;border:1px solid var(--line);border-radius:9px;padding:7px 10px;outline:none}
+.in:focus{border-color:var(--red)}
+.person{display:flex;gap:10px;align-items:center}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:16px;flex:none;border:1px solid #333}
+.pill{margin-left:auto;font-size:11px;padding:2px 9px;border-radius:99px;background:#222;color:#bbb;white-space:nowrap}
+.pill.working{background:var(--red);color:#fff}
+.pill.waiting{background:#3a0a0e;color:#ff9aa1}
+.pill.done{background:#fff;color:#000}
+.pill.error{background:#5a0000;color:#fff}
+.task{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #1b1b1b}
+pre.out{white-space:pre-wrap;word-break:break-word;unicode-bidi:plaintext;font:12.5px/1.5 Inter,Cairo,sans-serif;margin:8px 0 0;max-height:360px;overflow:auto;color:#ddd}
+details summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details summary::-webkit-details-marker{display:none}
+.msg{unicode-bidi:plaintext;white-space:pre-wrap;background:#0f0f0f;border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin:6px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.warn{border-color:#5a3b00;background:#1a1200;color:#ffd27a}
+.err{border-color:#5a0000;background:#1a0000;color:#ffb3b3}
+.okbox{border-color:#2d2d2d}
+a{color:var(--red2)}
+.log{font:11.5px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;color:#bbb;max-height:300px;overflow:auto}
+@media (max-width:900px){
+  .app{height:auto;min-height:100vh}
+  .main{grid-template-columns:1fr}
+  .stage{height:52vh}
+  .side{border-left:0;border-top:1px solid var(--line)}
+  .goal{min-width:100%;order:5}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo">Web<b>lume</b><span>Company</span></div>
+    <div class="seg" id="mode">
+      <button data-m="whole" class="on">Whole company</button>
+      <button data-m="focused">Focused team</button>
+    </div>
+    <input class="goal" id="goal" placeholder="What should the company do? e.g. Build a website for Noir café in Mansoura…" autocomplete="off">
+    <button class="btn" id="start">Start goal</button>
+    <div class="live" id="live"><span class="dot"></span><span id="liveTxt">Idle</span></div>
+    <button class="ghost" id="hide3d" title="Turn the 3D office off on slow devices">Hide 3D</button>
+  </header>
+  <div class="picker" id="picker"><span class="mute small">Pick the team:</span></div>
+  <div class="main">
+    <section class="stage" id="stage">
+      <div class="labels" id="labels"></div>
+      <div class="legend">
+        <span><i style="background:#888"></i>Walking around: free</span>
+        <span><i style="background:var(--red)"></i>At the desk: working</span>
+        <span><i style="background:var(--red2);border-radius:2px;transform:rotate(45deg)"></i>Red mark: waiting</span>
+        <span>✓ done</span>
+      </div>
+      <div class="no3d" id="no3d">3D office is off. Everything still works in the panel on the right.</div>
+    </section>
+    <aside class="side">
+      <nav class="tabs" id="tabs">
+        <button data-t="home" class="on">Home</button><button data-t="work">Work</button><button data-t="progress">Progress</button><button data-t="team">Team</button>
+      </nav>
+      <div class="pane on" id="p-home"></div>
+      <div class="pane" id="p-work"></div>
+      <div class="pane" id="p-progress"></div>
+      <div class="pane" id="p-team"></div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+"use strict";
+/* ------------------------------------------------------------ helpers */
+const $ = s => document.querySelector(s);
+function h(tag, props, ...kids) { // builds DOM without innerHTML, so AI output can never inject markup
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === "class") el.className = v; else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) el.append(c instanceof Node ? c : String(c));
+  return el;
+}
+const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter(k => k != null && k !== false)); // skip empty parts
+const store = {get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
+               set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} }};
+async function api(path, body) {
+  const r = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {cache: "no-store"});
+  const j = await r.json().catch(() => ({error: "Server not reachable"}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+const STATUS_TXT = {idle: "Free", waiting: "Waiting", working: "Working", done: "Done", error: "Error"};
+
+/* ------------------------------------------------------------ state */
+let S = {team: [], runs: [], run: null, running: false, contacted: [], llm: ""};
+let mode = "whole", picks = new Set(store.get("wl_picks", ["karim", "hana"])), runId = store.get("wl_run", null), selected = null, tab = "home";
+
+/* ------------------------------------------------------------ top bar */
+$("#mode").addEventListener("click", e => {
+  const m = e.target.dataset.m; if (!m) return;
+  mode = m; for (const b of $("#mode").children) b.classList.toggle("on", b.dataset.m === m);
+  $("#picker").classList.toggle("show", m === "focused");
+});
+function buildPicker() {
+  const p = $("#picker"); p.querySelectorAll(".chip").forEach(c => c.remove());
+  S.team.filter(t => t.key !== "layla").forEach(t => p.append(h("button", {class: "chip" + (picks.has(t.key) ? " on" : ""), onclick: e => {
+    picks.has(t.key) ? picks.delete(t.key) : picks.add(t.key); e.currentTarget.classList.toggle("on"); store.set("wl_picks", [...picks]);
+  }}, `${t.emoji} ${t.name}`)));
+}
+$("#start").addEventListener("click", startGoal);
+$("#goal").addEventListener("keydown", e => { if (e.key === "Enter") startGoal() });
+async function startGoal() {
+  const goal = $("#goal").value.trim();
+  if (!goal) { $("#goal").focus(); return }
+  try {
+    const r = await api("/api/start", {goal, mode, keys: [...picks], client: $("#client")?.value || "", names: $("#names")?.value || ""});
+    runId = r.run; store.set("wl_run", runId); $("#goal").value = ""; showTab("progress"); poll();
+  } catch (e) { alert(e.message) }
+}
+$("#tabs").addEventListener("click", e => { if (e.target.dataset.t) showTab(e.target.dataset.t) });
+function showTab(t) {
+  tab = t; for (const b of $("#tabs").children) b.classList.toggle("on", b.dataset.t === t);
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === "p-" + t));
+  render();
+}
+
+/* ------------------------------------------------------------ panel */
+function agentStatus(k) { return S.run?.agents?.[k]?.status || "idle" }
+function personRow(t) {
+  const st = agentStatus(t.key);
+  return h("div", {class: "person"}, h("div", {class: "av", style: `background:${COLORS[t.key]}22;border-color:${COLORS[t.key]}`}, t.emoji),
+    h("div", {}, h("b", {}, t.name), h("div", {class: "mute small"}, t.role)), h("span", {class: "pill " + st}, STATUS_TXT[st] || st));
+}
+function progress() {
+  const tasks = S.run?.tasks || [], done = tasks.filter(t => t.done).length;
+  return {tasks, done, pct: tasks.length ? Math.round(100 * done / tasks.length) : 0};
+}
+let homeBuilt = false;
+function buildHome() { // the form is built once, so what you type is never replaced by the live refresh
+  homeBuilt = true;
+  fill($("#p-home"),
+    h("div", {id: "h-status"}),
+    h("label", {for: "client"}, "Client name (for websites, optional)"), h("input", {class: "in", id: "client"}),
+    h("label", {for: "names"}, "Business names for Ziad, one per line (optional)"), h("textarea", {class: "in", id: "names", rows: 3}),
+    h("div", {class: "mute small", style: "margin-top:4px"}, "Names already in contacted.json are skipped and flagged for you."),
+    h("label", {for: "runs"}, "Past runs"),
+    h("select", {class: "in", id: "runs", onchange: e => { runId = e.target.value || null; store.set("wl_run", runId); poll() }}),
+    h("h3", {id: "h-ctitle", style: "margin-top:16px"}),
+    h("div", {class: "row"}, h("input", {class: "in", id: "addc", "aria-label": "Business you contacted", placeholder: "Add a business you contacted", style: "flex:1"}),
+      h("button", {class: "ghost", onclick: async () => {
+        const v = $("#addc").value.trim(); if (!v) return;
+        const r = await api("/api/contacted", {business: v}).catch(e => ({error: e.message}));
+        $("#addc").value = ""; if (r.added === false) alert("Already in the list"); poll();
+      }}, "Add")),
+    h("div", {id: "h-clist", class: "small mute", style: "margin-top:8px"}));
+}
+function renderHome() {
+  if (!homeBuilt) buildHome();
+  const {pct, done, tasks} = progress(), r = S.run;
+  fill($("#h-status"),
+    h("div", {class: "card"}, h("div", {class: "mute small"}, "AI model"), h("b", {}, S.llm || "…"),
+      h("div", {class: "mute small"}, "Change it in the .env file, then restart start.bat.")),
+    r ? h("div", {class: "card" + (r.state === "error" ? " err" : "")},
+      h("div", {class: "mute small"}, `${r.mode === "whole" ? "Whole company" : "Focused team"} · ${r.started.replace("T", " ")}`),
+      h("b", {}, r.goal),
+      h("div", {class: "bar"}, h("i", {style: `width:${pct}%`})),
+      h("div", {class: "small mute"}, `${pct}% · ${done}/${tasks.length} tasks · ${r.state === "running" ? "working…" : r.state === "done" ? "finished ✓" : "stopped"}`),
+      r.error ? h("div", {class: "small", style: "margin-top:6px"}, r.error) : null)
+      : h("div", {class: "card mute"}, "No run yet. Type a goal at the top and press Start goal."));
+  const sel = $("#runs"), opts = ["", ...S.runs];
+  if (sel.options.length !== opts.length || document.activeElement !== sel)
+    fill(sel, ...opts.map(id => h("option", {value: id, selected: id === (runId || "")}, id || "Choose…")));
+  $("#h-ctitle").textContent = `📇 Contacted (${S.contacted.length})`;
+  fill($("#h-clist"), S.contacted_error ? h("div", {class: "card err small"}, S.contacted_error) : null,
+    ...S.contacted.slice().reverse().slice(0, 50).map(c => h("div", {}, `• ${c.business} ${c.city || ""} · ${c.date || ""}`)));
+}
+function renderWork() {
+  const p = $("#p-work"), r = S.run;
+  if (!r) return fill(p, h("div", {class: "mute"}, "Start or open a run to see the work."));
+  const active = S.team.filter(t => agentStatus(t.key) !== "idle");
+  const leads = r.leads, files = [...new Set(r.files || [])];
+  fill(p, 
+    ...active.map(t => {
+      const out = r.agents[t.key].output || "";
+      const isHtml = /^\s*<(!doctype|html)/i.test(out);
+      return h("details", {class: "card", open: selected === t.key},
+        h("summary", {}, personRow(t)),
+        out ? (isHtml ? h("div", {class: "small mute", style: "margin-top:8px"}, `HTML page, ${Math.round(out.length / 1024)} KB. Open it from Files below.`)
+                      : h("pre", {class: "out"}, out))
+            : h("div", {class: "small mute", style: "margin-top:8px"}, agentStatus(t.key) === "working" ? "Working on it…" : "Nothing yet."));
+    }),
+    leads ? h("div", {}, h("h3", {}, "🎯 Ziad's leads"),
+      leads.error ? h("div", {class: "card err small"}, leads.error) : null,
+      ...[...new Set(leads.skipped_contacted || [])].map(b => h("div", {class: "card warn small"}, `⚠️ ${b} was already contacted. No message drafted. Ask yourself before contacting again.`)),
+      ...(leads.leads || []).map(l => {
+        const already = S.contacted.some(c => norm(c.business) === norm(l.business));
+        return h("div", {class: "card"}, h("b", {}, l.business), h("div", {class: "msg"}, l.message),
+          h("div", {class: "row"},
+            h("button", {class: "ghost", onclick: () => navigator.clipboard?.writeText(l.message)}, "Copy"),
+            h("button", {class: "ghost", disabled: already, onclick: async () => { await api("/api/contacted", {business: l.business, note: "run " + r.id}); poll() }},
+              already ? "✔ Contacted" : "✔ Mark as contacted")));
+      })) : null,
+    files.length ? h("div", {}, h("h3", {}, "📁 Files"), ...files.map(f => h("div", {class: "row small"},
+      h("span", {style: "flex:1;word-break:break-all"}, f.split(/[\\/]/).pop()),
+      /\.html$/i.test(f) ? h("a", {href: "/api/file?view=1&path=" + encodeURIComponent(f), target: "_blank", rel: "noopener"}, "Open") : null,
+      h("a", {href: "/api/file?path=" + encodeURIComponent(f)}, "Download")))) : null
+  );
+}
+const norm = s => String(s || "").normalize("NFKD").replace(/[̀-ًͯ-ٟ]/g, "").toLowerCase().replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/[\W_]+/gu, "");
+let logLines = [];
+function renderProgress() {
+  const p = $("#p-progress"), {tasks, done, pct} = progress();
+  if (!S.run) return fill(p, h("div", {class: "mute"}, "No run selected."));
+  fill(p, 
+    h("h3", {}, `Progress · ${pct}%`), h("div", {class: "bar"}, h("i", {style: `width:${pct}%`})),
+    h("div", {class: "mute small", style: "margin-bottom:8px"}, `${done} of ${tasks.length} tasks done`),
+    ...tasks.map(t => h("div", {class: "task"}, h("span", {}, t.done ? "✅" : (agentStatus(t.agent) === "working" ? "⏳" : "▫️")),
+      h("span", {}, t.title))),
+    h("h3", {style: "margin-top:14px"}, "📜 Log (who did what)"),
+    h("div", {class: "log card"}, logLines.length ? logLines.join("\n") : "…"));
+}
+function renderTeam() {
+  const p = $("#p-team");
+  fill(p, h("h3", {}, "The team"), h("div", {class: "mute small", style: "margin-bottom:10px"}, `${S.team.length} people · click someone to follow them in the office`),
+    ...S.team.map(t => h("div", {class: "card", style: "cursor:pointer" + (selected === t.key ? ";border-color:var(--red)" : ""),
+      onclick: () => select(t.key)}, personRow(t))));
+}
+function render() {
+  $("#start").disabled = S.running;
+  $("#live").classList.toggle("on", S.running);
+  $("#liveTxt").textContent = S.running ? "Live" : "Idle";
+  ({home: renderHome, work: renderWork, progress: renderProgress, team: renderTeam})[tab]();
+}
+function select(k) { selected = selected === k ? null : k; if (selected) showTab("work"); else render() }
+
+/* ------------------------------------------------------------ polling */
+let pollT = 0;
+async function poll() {
+  clearTimeout(pollT);
+  try {
+    const j = await api("/api/state" + (runId ? "?run=" + encodeURIComponent(runId) : ""));
+    const first = !S.team.length;
+    S = j;
+    if (!S.run && S.running && S.runs[0]) { runId = S.runs[0]; store.set("wl_run", runId); return poll() }
+    if (first) { buildPicker(); world && world.addPeople(S.team) }
+    if (runId) logLines = (await api("/api/log?run=" + encodeURIComponent(runId))).lines;
+    render();
+  } catch (e) { $("#liveTxt").textContent = "Server stopped" }
+  pollT = setTimeout(poll, S.running ? 1500 : 4000);
+}
+
+/* ------------------------------------------------------------ 3D office */
+const COLORS = {layla: "#e50914", omar: "#d9d9d9", nour: "#ff8a8a", karim: "#3a3a3a", hana: "#ffffff", ziad: "#b30710", sara: "#ff4d5a"};
+const ZONES = [ // two rows of four rooms; the 8th room is the lounge where free people hang out
+  ["layla", "Management", -9, -4], ["omar", "Client Analysis", -3, -4], ["nour", "Copywriting", 3, -4], ["karim", "Engineering", 9, -4],
+  ["hana", "Quality & Review", -9, 4], ["ziad", "Sales & Leads", -3, 4], ["sara", "Social Media", 3, 4], ["lounge", "Lounge", 9, 4]];
+let world = null;
+
+function makeWorld() {
+  if (!window.THREE) { $("#no3d").textContent = "The 3D office needs internet to load. Everything still works in the panel."; $("#stage").classList.add("off"); return null }
+  const stage = $("#stage"), labels = $("#labels");
+  const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
+  cam.position.set(22, 22, 22); cam.lookAt(0, 0, 0);
+  const controls = THREE.OrbitControls ? new THREE.OrbitControls(cam, renderer.domElement) : null;
+  if (controls) { controls.enableDamping = true; controls.maxPolarAngle = 1.25; controls.minZoom = 0.6; controls.maxZoom = 3; controls.enablePan = true }
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x220000, 0.55));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.85); sun.position.set(10, 22, 8); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, {left: -18, right: 18, top: 18, bottom: -18}); scene.add(sun);
+
+  const mat = c => new THREE.MeshStandardMaterial({color: c, roughness: .8});
+  const box = (w, hh, d, c, x, y, z, parent = scene) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), mat(c)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m };
+  // floor slab, rooms and glass walls
+  box(27, .5, 18, "#161616", 0, -.25, 0);
+  ZONES.forEach(([k, , x, z], i) => {
+    const tile = box(5.4, .06, 5.4, k === "lounge" ? "#1d1414" : (i % 2 ? "#1f1f1f" : "#232323"), x, .03, z);
+    tile.castShadow = false;
+  });
+  const glass = new THREE.MeshStandardMaterial({color: 0xffffff, transparent: true, opacity: .07});
+  [[0, -9, 27, .08], [0, 9, 27, .08], [-13.5, 0, .08, 18], [13.5, 0, .08, 18]].forEach(([x, z, w, d]) => {
+    const g = new THREE.Mesh(new THREE.BoxGeometry(w, 1.4, d), glass); g.position.set(x, .7, z); scene.add(g);
+  });
+  // red glowing orbit ring: the Weblume mark, spins faster while the team works
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(2.3, .07, 16, 100), new THREE.MeshBasicMaterial({color: 0xe50914}));
+  ring.position.set(-1, 3.4, -10.2); ring.rotation.x = .25; scene.add(ring); // neon sign on the back wall
+  const ring2 = ring.clone(); ring2.scale.setScalar(.72); ring2.rotation.y = .9; scene.add(ring2);
+
+  // desks with a monitor and chair per room
+  const desks = {};
+  ZONES.forEach(([k, , x, z]) => {
+    if (k === "lounge") { // sofa, table, plants
+      box(3, .45, .9, "#2a2a2a", x, .25, z - 1.3); box(3, .9, .25, "#2a2a2a", x, .5, z - 1.75);
+      box(1.4, .35, .8, "#e50914", x, .2, z + .2);
+      [[-2.2, -2.2], [2.2, -2.2], [2.2, 2.1]].forEach(([dx, dz]) => plant(x + dx, z + dz));
+      return;
+    }
+    const dz = z - 1, d = new THREE.Group(); d.position.set(x, 0, dz); scene.add(d);
+    box(2, .08, .9, "#0d0d0d", 0, .78, 0, d);
+    [[-.9, -.38], [.9, -.38], [-.9, .38], [.9, .38]].forEach(([a, b]) => box(.06, .78, .06, "#333", a, .39, b, d));
+    box(.08, .35, .08, "#222", 0, .97, -.2, d);
+    const screen = box(1.1, .62, .06, "#111", 0, 1.35, -.22, d);
+    screen.material = new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0x000000});
+    box(.6, .07, .6, "#262626", 0, .48, .95, d); box(.6, .55, .07, "#262626", 0, .78, 1.24, d);
+    plant(x + 2.2, z - 2.2);
+    desks[k] = {screen, seat: new THREE.Vector3(x, 0, dz + .95), stand: new THREE.Vector3(x + 1.25, 0, dz + 1.4)};
+  });
+  function plant(x, z) { box(.35, .4, .35, "#f2f2f2", x, .2, z); const s = new THREE.Mesh(new THREE.SphereGeometry(.38, 12, 10), mat("#2f6b3a")); s.position.set(x, .72, z); s.castShadow = true; scene.add(s) }
+
+  // zone labels (HTML, follow the camera)
+  const zoneTags = ZONES.map(([, name, x, z]) => { const el = h("div", {class: "zone"}, name); labels.append(el); return {el, p: new THREE.Vector3(x, .1, z + 2.35)} });
+
+  // people
+  const people = {};
+  const CORR = 0, SIDE = 1.45, FLOOR = {x: 12.4, z: 8.2};
+  function person(t) {
+    const g = new THREE.Group(), c = COLORS[t.key] || "#ccc";
+    const legs = [-.12, .12].map(x => box(.13, .45, .13, "#151515", x, .23, 0, g));
+    const body = box(.5, .55, .32, c, 0, .72, 0, g);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.24, 18, 14), mat("#e8b896")); head.position.y = 1.25; head.castShadow = true; g.add(head);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(.255, 18, 14, 0, Math.PI * 2, 0, Math.PI / 2), mat(t.key === "layla" || t.key === "nour" || t.key === "hana" || t.key === "sara" ? "#2b1a12" : "#111"));
+    hair.position.y = 1.27; hair.rotation.x = -.25; g.add(hair);
+    const mark = new THREE.Mesh(new THREE.OctahedronGeometry(.17), new THREE.MeshBasicMaterial({color: 0xff3b47})); mark.position.y = 1.85; mark.visible = false; g.add(mark);
+    const home = desks[t.key];
+    g.position.copy(home ? home.stand : new THREE.Vector3(9, 0, 4)); scene.add(g);
+    const tag = h("div", {class: "tag", onclick: () => select(t.key)}, t.name); labels.append(tag);
+    people[t.key] = {g, legs, body, mark, tag, home, path: [], wait: Math.random() * 2, state: "idle", seated: false, t};
+  }
+  function wanderPoint() {
+    if (Math.random() < .45) { const [, , x, z] = ZONES[7]; return new THREE.Vector3(x + (Math.random() - .5) * 3.6, 0, z + .6 + Math.random() * 1.6) }
+    return new THREE.Vector3((Math.random() - .5) * 2 * (FLOOR.x - 1), 0, CORR + (Math.random() - .5) * 1.2);
+  }
+  function route(p, to) { // around desks: step aside, use the corridor, then come in from the side lane
+    const a = p.g.position, s = SIDE;
+    p.path = [new THREE.Vector3(a.x + s, 0, a.z), new THREE.Vector3(a.x + s, 0, CORR), new THREE.Vector3(to.x + s, 0, CORR), new THREE.Vector3(to.x + s, 0, to.z), to.clone()];
+    p.dest = to.clone(); p.seated = false;
+  }
+  function goal(p) {
+    const st = p.state, home = p.home;
+    if (!home) return null;
+    if (st === "working") return home.seat;
+    if (st === "waiting" || st === "error") return home.stand;
+    return null;
+  }
+  const v = new THREE.Vector3();
+  function step(p, dt, time) {
+    const want = goal(p);
+    if (want && (!p.dest || p.dest.distanceTo(want) > .05)) route(p, want);
+    if (!want && p.dest && p.home && (p.dest.equals(p.home.seat) || p.dest.equals(p.home.stand))) { p.dest = null; p.path = []; p.wait = .3 }
+    if (p.path.length) {
+      const target = p.path[0]; v.subVectors(target, p.g.position); v.y = 0;
+      const d = v.length(), sp = 2.4 * dt;
+      if (d <= sp) { p.g.position.copy(target); p.path.shift() } else { v.normalize(); p.g.position.addScaledVector(v, sp); p.g.rotation.y = Math.atan2(v.x, v.z) }
+      const sw = Math.sin(time * 12); p.legs[0].rotation.x = sw * .5; p.legs[1].rotation.x = -sw * .5; p.body.position.y = .72 + Math.abs(sw) * .03;
+    } else {
+      p.legs.forEach(l => l.rotation.x = 0);
+      if (want === p.home?.seat) { // sit and type
+        p.seated = true; p.g.rotation.y = Math.PI; p.g.position.y = -.12; p.body.position.y = .72 + Math.sin(time * 9) * .02;
+      } else if (want) { p.g.position.y = 0; p.g.rotation.y = Math.PI * .75 }
+      else if ((p.wait -= dt) <= 0) { p.g.position.y = 0; route(p, wanderPoint()); p.dest = null; p.wait = 1.5 + Math.random() * 3 }
+    }
+    if (!p.seated) p.g.position.y = 0;
+    p.mark.visible = p.state === "waiting"; if (p.mark.visible) { p.mark.rotation.y += dt * 3; p.mark.position.y = 1.85 + Math.sin(time * 4) * .06 }
+    if (p.home) { const on = p.state === "working" && p.seated; p.home.screen.material.emissive.set(on ? 0xe50914 : 0x000000); p.home.screen.material.emissiveIntensity = on ? .6 + Math.sin(time * 6) * .15 : 0 }
+  }
+
+  function resize() {
+    const w = stage.clientWidth, hh = stage.clientHeight, aspect = w / Math.max(1, hh), size = w < 600 ? 12.5 : 9.6;
+    Object.assign(cam, {left: -size * aspect, right: size * aspect, top: size, bottom: -size}); cam.updateProjectionMatrix();
+    renderer.setSize(w, hh, false);
+  }
+  addEventListener("resize", resize); resize();
+
+  const tmp = new THREE.Vector3();
+  function place(el, pos, yOff) {
+    tmp.copy(pos); tmp.y += yOff; tmp.project(cam);
+    el.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + "px"; el.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + "px";
+  }
+  let last = performance.now(), on = true;
+  function frame(now) {
+    if (!on) return;
+    const dt = Math.min(.05, (now - last) / 1000), time = now / 1000; last = now;
+    for (const [k, p] of Object.entries(people)) {
+      const st = agentStatus(k);
+      p.state = st === "done" ? "idle" : st;
+      step(p, dt, time);
+      p.tag.textContent = p.t.name + (st === "working" ? " · working" : st === "waiting" ? " · waiting" : st === "done" ? " ✓" : st === "error" ? " ✕" : "");
+      p.tag.className = "tag " + st + (selected === k ? " sel" : "");
+      place(p.tag, p.g.position, 2.2);
+    }
+    zoneTags.forEach(z => place(z.el, z.p, 0));
+    ring.rotation.z += dt * (S.running ? 1.6 : .35); ring2.rotation.z -= dt * (S.running ? 1.1 : .25);
+    if (controls) { if (selected && people[selected]) controls.target.lerp(people[selected].g.position, .05); else controls.target.lerp(tmp.set(0, 0, 0), .03); controls.update() }
+    renderer.render(scene, cam);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  return {
+    addPeople(team) { team.forEach(t => { if (!people[t.key]) person(t) }) },
+    setOn(v) { on = v; if (v) { last = performance.now(); resize(); requestAnimationFrame(frame) } },
+  };
+}
+
+/* ------------------------------------------------------------ start */
+let hide3d = store.get("wl_hide3d", false);
+function apply3d() {
+  $("#stage").classList.toggle("off", hide3d); $("#hide3d").classList.toggle("on", hide3d);
+  $("#hide3d").textContent = hide3d ? "Show 3D" : "Hide 3D";
+  if (world) world.setOn(!hide3d);
+}
+$("#hide3d").addEventListener("click", () => { hide3d = !hide3d; store.set("wl_hide3d", hide3d); apply3d() });
+try { world = makeWorld() } catch (e) { console.error(e); $("#stage").classList.add("off") }
+apply3d();
+poll();
+</script>
+</body>
+</html>
