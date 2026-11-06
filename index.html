@@ -74,6 +74,20 @@ label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
 .pill.waiting{background:#3a0a0e;color:#ff9aa1}
 .pill.done{background:#fff;color:#000}
 .pill.error{background:#5a0000;color:#fff}
+.pill.asking{background:#ffd27a;color:#000}
+.dot-ask{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffd27a;margin-inline-start:4px;animation:pulse 1s infinite}
+.chatpane.on{display:flex;flex-direction:column}
+#c-list{flex:1;overflow:auto}
+.cm{max-width:88%;margin:6px 0;padding:8px 11px;border-radius:14px;background:var(--card);border:1px solid var(--line);unicode-bidi:plaintext;white-space:pre-wrap}
+.cm b{display:block;font-size:11px;color:var(--mute)}
+.cm.me{margin-inline-start:auto;background:#2a0306;border-color:#5a0a10}
+.ask{border:1px solid #ffd27a;background:#1d1708;border-radius:14px;padding:12px;margin-bottom:10px;white-space:pre-wrap;unicode-bidi:plaintext}
+.ask .row button{flex:1}
+.composer{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.composer textarea{flex:1;resize:none}
+.fb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
+.fb .on{border-color:var(--red);color:#fff}
+video.vid{width:100%;max-height:520px;border-radius:12px;background:#000;margin-top:6px}
 .task{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #1b1b1b}
 .chat{padding:6px 0;border-bottom:1px solid #1b1b1b;unicode-bidi:plaintext}
 .chat b{display:block;font-size:12px;color:var(--mute)}
@@ -129,13 +143,14 @@ a{color:var(--red2)}
     </section>
     <aside class="side">
       <nav class="tabs" id="tabs">
-        <button data-t="home" class="on">Home</button><button data-t="work">Work</button><button data-t="progress">Progress</button><button data-t="team">Team</button>
+        <button data-t="home" class="on">Home</button><button data-t="work">Work</button><button data-t="progress">Progress</button><button data-t="team">Team</button><button data-t="chat">Chat <span class="dot-ask" id="askdot" hidden></span></button>
       </nav>
       <div class="card err" id="offline" hidden style="margin:12px 14px 0"><b>Not connected to your laptop.</b><div class="small">Double-click <b>start.bat</b> on your laptop and keep it open. If Chrome asks about <b>local network access</b>, choose <b>Allow</b>. The team runs on your laptop; this page only shows it.</div></div>
       <div class="pane on" id="p-home"></div>
       <div class="pane" id="p-work"></div>
       <div class="pane" id="p-progress"></div>
       <div class="pane" id="p-team"></div>
+      <div class="pane chatpane" id="p-chat"></div>
     </aside>
   </div>
 </div>
@@ -167,7 +182,7 @@ async function api(path, body) {
   if (!r.ok) throw new Error(j.error || r.statusText);
   return j;
 }
-const STATUS_TXT = {idle: "Free", waiting: "Waiting", working: "Working", done: "Done", error: "Error"};
+const STATUS_TXT = {idle: "Free", waiting: "Waiting", working: "Working", done: "Done", error: "Error", asking: "Asking you"};
 
 /* ------------------------------------------------------------ state */
 let S = {team: [], runs: [], run: null, running: false, contacted: [], llm: ""};
@@ -244,6 +259,8 @@ function renderHome() {
       h("div", {class: "bar"}, h("i", {style: `width:${pct}%`})),
       h("div", {class: "small mute"}, `${pct}% · ${done}/${tasks.length} tasks · ${r.state === "running" ? "working…" : r.state === "done" ? "finished ✓" : "stopped"}`),
       r.error ? h("div", {class: "small", style: "margin-top:6px"}, r.error) : null,
+      r.ask ? h("button", {class: "btn", style: "display:block;width:100%;margin-top:10px;background:#ffd27a;color:#000",
+        onclick: () => showTab("chat")}, `⏸ ${nameOf(r.ask.agent)} مستني ردك — افتح الشات`) : null,
       r.test ? h("div", {class: "small", style: "margin-top:8px"}, `🧪 Tarek: ${r.test.score}/10 · ${r.test.verdict === "PASS" ? "ready for the client ✓" : "needs your look"}`) : null,
       // the finished site gets one big button (served as a folder so its scroll scenes run)
       r.site ? h("a", {class: "btn", style: "display:block;text-align:center;margin-top:10px;text-decoration:none",
@@ -274,6 +291,8 @@ function renderWork() {
     leads ? h("div", {}, h("h3", {}, "🎯 Ziad's leads"),
       leads.error ? h("div", {class: "card err small"}, leads.error) : null,
       ...[...new Set(leads.skipped_contacted || [])].map(b => h("div", {class: "card warn small"}, `⚠️ ${b} was already contacted. No message drafted. Ask yourself before contacting again.`)),
+      leads.approved === false ? h("div", {class: "card small"}, "👎 You rejected these messages.") : null,
+      leads.approved ? h("div", {class: "card small"}, "✓ You approved these messages" + (leads.note ? ": " + leads.note : "")) : null,
       ...(leads.leads || []).map(l => {
         const already = S.contacted.some(c => norm(c.business) === norm(l.business));
         return h("div", {class: "card"}, h("b", {}, l.business), h("div", {class: "msg"}, l.message),
@@ -282,6 +301,11 @@ function renderWork() {
             h("button", {class: "ghost", disabled: already, onclick: async () => { await api("/api/contacted", {business: l.business, note: "run " + r.id}); poll() }},
               already ? "✔ Contacted" : "✔ Mark as contacted")));
       })) : null,
+    r.site ? h("div", {}, h("h3", {}, "🌐 The website"), h("a", {class: "btn", href: siteUrl(r.site), target: "_blank", rel: "noopener",
+      style: "display:inline-block;text-decoration:none"}, "Open the website"), feedbackBox(r, "site")) : null,
+    r.video ? h("div", {}, h("h3", {}, "🎬 Hassan's video"), h("video", {class: "vid", controls: true, preload: "metadata",
+      src: SRV + "/api/file?view=1&path=" + encodeURIComponent(r.video)}),
+      h("div", {class: "row small"}, h("a", {href: SRV + "/api/file?path=" + encodeURIComponent(r.video)}, "Download MP4")), feedbackBox(r, "video")) : null,
     r.test ? h("div", {}, h("h3", {}, `🧪 Tarek's test: ${r.test.score}/10 · ${r.test.verdict}`),
       h("div", {class: "card small"}, r.test.good || "", ...(r.test.problems || []).map((x, i) =>
         h("div", {style: "margin-top:6px"}, h("b", {}, `${i + 1}. ${x.where || ""}: `), `${x.problem || ""} → ${x.fix || ""}`))),
@@ -297,6 +321,57 @@ function renderWork() {
 }
 const norm = s => String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/[^\p{L}\p{N}]+/gu, ""); // like Python's \w: keeps Arabic letters
 let logLines = [];
+const fbDraft = {};
+function feedbackBox(r, kind) { // the owner's 👍/👎 teaches the team his taste
+  const done = (r.feedback || {})[kind];
+  if (done) return h("div", {class: "fb small"}, `${done.vote === "up" ? "👍" : "👎"} saved${done.comment ? ": " + done.comment : ""} — the team will follow it next time.`);
+  const st = fbDraft[r.id + kind] = fbDraft[r.id + kind] || {vote: null, comment: ""}; // survives the live refresh
+  const comment = h("input", {class: "in", "aria-label": "Why?", placeholder: kind === "site" ? "Why? (colors, fonts, layout…)" : "Why? (pace, text, music…)",
+    style: "flex:1;min-width:160px", oninput: e => { st.comment = e.target.value }});
+  comment.value = st.comment;
+  const pick = v => { st.vote = v; up.classList.toggle("on", v === "up"); down.classList.toggle("on", v === "down") };
+  const up = h("button", {class: "ghost", "aria-label": "I like it", onclick: () => pick("up")}, "👍");
+  const down = h("button", {class: "ghost", "aria-label": "I don't like it", onclick: () => pick("down")}, "👎");
+  if (st.vote) setTimeout(() => pick(st.vote));
+  const save = h("button", {class: "btn", onclick: async () => {
+    if (!st.vote) return alert("Pick 👍 or 👎 first");
+    try { await api("/api/feedback", {run: r.id, kind, vote: st.vote, comment: st.comment}); poll() } catch (e) { alert(e.message) }
+  }}, "Save");
+  return h("div", {class: "fb"}, up, down, comment, save);
+}
+let chatBuilt = false;
+function renderChat() {
+  const p = $("#p-chat");
+  if (!chatBuilt) {
+    chatBuilt = true;
+    const box = h("textarea", {class: "in", id: "c-text", rows: 2, placeholder: "اكتب للفريق… (اذكر الاسم: «كريم غيّر اللون للأخضر»). من غير رن شغال = تعديل على آخر موقع"});
+    const send = async () => {
+      const text = box.value.trim(); if (!text) return;
+      try { const r = await api("/api/message", {text}); box.value = ""; if (r.run) { runId = r.run; store.set("wl_run", runId) } poll() } catch (e) { alert(e.message) }
+    };
+    box.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send() } });
+    fill(p, h("div", {id: "c-ask"}), h("div", {id: "c-list"}), h("div", {class: "composer"}, box, h("button", {class: "btn", onclick: send}, "Send")));
+  }
+  const r = S.run, ask = r && r.ask;
+  const askEl = $("#c-ask");
+  if (!ask) fill(askEl);
+  else if (askEl.dataset.id !== String(ask.id) + r.id) {
+    askEl.dataset.id = String(ask.id) + r.id;
+    const note = h("textarea", {class: "in", rows: 2, placeholder: "ملاحظة أو إجابة بكلامك (اختياري)"});
+    const reply = async choice => { try { await api("/api/answer", {run: r.id, id: ask.id, choice, text: note.value}); askEl.dataset.id = ""; poll() } catch (e) { alert(e.message) } };
+    fill(askEl, h("div", {class: "ask"}, h("b", {}, `⏸ ${nameOf(ask.agent)} مستني ردك`), h("div", {style: "margin:6px 0"}, ask.question),
+      h("div", {class: "row"}, ...ask.options.map((o, i) => h("button", {class: i ? "ghost" : "btn", onclick: () => reply(o)}, o))),
+      note, h("div", {class: "row"}, h("button", {class: "ghost", onclick: () => reply("")}, "ابعت ردي المكتوب"))));
+  }
+  const list = $("#c-list"), atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  const msgs = (r && r.chat) || [];
+  if (list.dataset.n !== String(msgs.length) + (r && r.id)) {
+    list.dataset.n = String(msgs.length) + (r && r.id);
+    fill(list, msgs.length ? null : h("div", {class: "mute small"}, "Messages from the team show here. Write below to talk to them."),
+      ...msgs.map(m => h("div", {class: "cm" + (m.from === "you" ? " me" : "")}, h("b", {}, `${nameOf(m.from)} → ${nameOf(m.to)} · ${(m.t || "").slice(11, 16)}`), m.text)));
+    if (atBottom || msgs.length) list.scrollTop = list.scrollHeight;
+  }
+}
 function renderProgress() {
   const p = $("#p-progress"), {tasks, done, pct} = progress();
   if (!S.run) return fill(p, h("div", {class: "mute"}, "No run selected."));
@@ -320,22 +395,25 @@ function render() {
   $("#start").disabled = S.running;
   $("#live").classList.toggle("on", S.running);
   $("#liveTxt").textContent = S.running ? "Live" : "Idle";
-  ({home: renderHome, work: renderWork, progress: renderProgress, team: renderTeam})[tab]();
+  $("#askdot").hidden = !(S.run && S.run.ask);
+  const typing = document.activeElement && document.activeElement.matches("#p-work input, #p-work textarea");
+  if (tab === "work" && typing) return; // don't rebuild the Work tab under the owner's fingers
+  ({home: renderHome, work: renderWork, progress: renderProgress, team: renderTeam, chat: renderChat})[tab]();
 }
-const nameOf = k => (S.team.find(t => t.key === k) || {name: k}).name;
+const nameOf = k => k === "you" ? "إنت" : (S.team.find(t => t.key === k) || {name: k}).name;
 const siteUrl = f => SRV + "/site/" + f.replace(/[\\/]index\.html$/i, "/").split(/[\\/]/).map(encodeURIComponent).join("/");
 function select(k) { selected = selected === k ? null : k; if (selected) showTab("work"); else render() }
 
 /* ------------------------------------------------------------ polling */
-let pollT = 0;
+let pollT = 0, teamBuilt = false;
 async function poll() {
   clearTimeout(pollT);
   try {
     const j = await api("/api/state" + (runId ? "?run=" + encodeURIComponent(runId) : ""));
-    const first = !S.team.length;
     S = j;
-    if (!S.run && S.running && S.runs[0]) { runId = S.runs[0]; store.set("wl_run", runId); return poll() }
-    if (first) { buildPicker(); world && world.addPeople(S.team) }
+    // a new run started (here, from the chat, or another window): follow it
+    if (S.running && S.runs[0] && S.runs[0] !== runId && (!S.run || S.run.state !== "running")) { runId = S.runs[0]; store.set("wl_run", runId); return poll() }
+    if (!teamBuilt && S.team.length) { teamBuilt = true; buildPicker(); world && world.addPeople(S.team) } // once, whichever poll gets here first
     if (runId) logLines = (await api("/api/log?run=" + encodeURIComponent(runId))).lines;
     render();
     $("#offline").hidden = true;
@@ -344,11 +422,11 @@ async function poll() {
 }
 
 /* ------------------------------------------------------------ 3D office */
-const COLORS = {layla: "#c8102e", omar: "#2f4f6f", youssef: "#6b7f3a", karim: "#2b2b2b", mostafa: "#8a5a3c", tarek: "#3c6e8f", ziad: "#7a1f2b", adam: "#d9d4cc"};
+const COLORS = {layla: "#c8102e", omar: "#2f4f6f", youssef: "#6b7f3a", karim: "#2b2b2b", mostafa: "#8a5a3c", tarek: "#3c6e8f", ziad: "#7a1f2b", adam: "#d9d4cc", hassan: "#5b3f8c"};
 const FEMALE = new Set(["layla"]);
 const ZONES = [ // two rows of five rooms; free people hang out in the lounge and at the coffee bar
   ["layla", "Management", -12, -4.6], ["omar", "Client Analysis", -6, -4.6], ["youssef", "Copywriting", 0, -4.6], ["karim", "Engineering", 6, -4.6], ["mostafa", "Code Review", 12, -4.6],
-  ["tarek", "QA Testing", -12, 4.6], ["ziad", "Sales & Leads", -6, 4.6], ["adam", "Social Media", 0, 4.6], ["lounge", "Lounge", 6, 4.6], ["bar", "Coffee Bar", 12, 4.6]];
+  ["tarek", "QA Testing", -12, 4.6], ["ziad", "Sales & Leads", -6, 4.6], ["adam", "Social Media", 0, 4.6], ["lounge", "Lounge", 6, 4.6], ["hassan", "Video Studio", 12, 4.6]];
 let world = null;
 
 function canvasTex(w, hh, draw) {
@@ -413,7 +491,7 @@ function makeWorld() {
   // rooms: a soft rug per room, low glass partitions between them
   const rugCols = ["#2a2522", "#232628", "#26241f", "#22252a", "#2a2324"];
   ZONES.forEach(([k, , x, z], i) => {
-    const rug = box(4.6, .03, 4.2, M(k === "lounge" ? "#5a1f22" : k === "bar" ? "#3a2c22" : rugCols[i % 5], {roughness: 1}), x, .02, z + (z < 0 ? -.3 : .3));
+    const rug = box(4.6, .03, 4.2, M(k === "lounge" ? "#5a1f22" : rugCols[i % 5], {roughness: 1}), x, .02, z + (z < 0 ? -.3 : .3));
     rug.castShadow = false;
   });
   const part = M("#ffffff", {transparent: true, opacity: .12, roughness: .1});
@@ -440,13 +518,6 @@ function makeWorld() {
       cyl(.03, .03, 1.7, dark, x + 1.9, .85, z + 1.2); const lamp = cyl(.25, .32, .35, M("#f4e6cc", {emissive: 0xffd9a0, emissiveIntensity: .8}), x + 1.9, 1.8, z + 1.2);
       lamp.castShadow = false; const pl = new THREE.PointLight(0xffc98a, .9, 6, 2); pl.position.set(x + 1.9, 1.6, z + 1.2); scene.add(pl);
       plant(x - 2, z + 1.6, 1.3);
-      return;
-    }
-    if (k === "bar") {
-      box(3.6, 1.05, .7, M("#2b2b2b", {roughness: .4}), x, .52, z - 1); box(3.7, .07, .8, M("#7a5a3e", {roughness: .45}), x, 1.07, z - 1);
-      box(.7, .55, .45, M("#c0c0c0", {metalness: .9, roughness: .25}), x - .9, 1.38, z - 1.1); box(.3, .14, .3, M("#e50914"), x + .6, 1.18, z - 1.1);
-      for (const dx of [-1.1, 0, 1.1]) { cyl(.22, .22, .06, "#1e1e1e", x + dx, .78, z - .25); cyl(.04, .04, .75, metal, x + dx, .38, z - .25) }
-      plant(x + 2, z + 1.6, 1.2);
       return;
     }
     const back = z < 0 ? -1 : 1, dz = z + back * 1.1, d = new THREE.Group(); d.position.set(x, 0, dz); d.rotation.y = back < 0 ? 0 : Math.PI; scene.add(d);
@@ -499,7 +570,7 @@ function makeWorld() {
   function freeSpot() {
     const r = Math.random();
     if (r < .35) return new THREE.Vector3(6 + (Math.random() - .5) * 2.6, 0, 4.8 + Math.random() * 1.4); // lounge
-    if (r < .6) return new THREE.Vector3(12 + (Math.random() - .5) * 2.4, 0, 4.5); // coffee bar
+    if (r < .6) return new THREE.Vector3(6 + (Math.random() - .5) * 3.4, 0, 2.2); // by the lounge
     return new THREE.Vector3((Math.random() - .5) * 26, 0, (Math.random() - .5) * 1.4); // corridor
   }
   const SIDE = 1.6;
@@ -512,7 +583,7 @@ function makeWorld() {
     if (p.talk) return p.talk.spot;
     if (!p.home) return null;
     if (p.state === "working") return p.home.seat;
-    if (p.state === "waiting" || p.state === "error") return p.home.stand;
+    if (p.state === "waiting" || p.state === "error" || p.state === "asking") return p.home.stand;
     return null;
   }
   const v = new THREE.Vector3();
@@ -543,7 +614,8 @@ function makeWorld() {
         else if ((p.wait -= dt) <= 0) { route(p, freeSpot()); p.dest = null; p.wait = 2 + Math.random() * 4 }
       }
     }
-    p.mark.visible = p.state === "waiting" && !p.talk;
+    p.mark.visible = (p.state === "waiting" || p.state === "asking") && !p.talk;
+    p.mark.material.color.set(p.state === "asking" ? 0xffd27a : 0xff3b47);
     if (p.mark.visible) { p.mark.rotation.y += dt * 3; p.mark.position.y = 2.15 + Math.sin(time * 4) * .06 }
     const m = screens[p.t.key];
     if (m) m.emissiveIntensity += ((p.state === "working" && p.seated ? .95 : .08) - m.emissiveIntensity) * Math.min(1, dt * 4);
@@ -584,7 +656,7 @@ function makeWorld() {
       if (p.talk && !p.talk.until && !p.path.length && p.dest) p.talk.until = now + 6500; // arrived: say it for 6.5s
       if (p.talk && ((p.talk.until && now > p.talk.until) || now > p.talk.giveUp)) { p.talk = null; p.dest = null; p.path = [] }
       step(p, dt, time);
-      p.tag.textContent = p.t.name + (st === "working" ? " · working" : st === "waiting" ? " · waiting" : st === "done" ? " ✓" : st === "error" ? " ✕" : "");
+      p.tag.textContent = p.t.name + (st === "working" ? " · working" : st === "asking" ? " · asking you ⏸" : st === "waiting" ? " · waiting" : st === "done" ? " ✓" : st === "error" ? " ✕" : "");
       p.tag.className = "tag " + st + (selected === k ? " sel" : "");
       place(p.tag, p.g.position, 2.45);
       const talking = p.talk && !p.path.length;

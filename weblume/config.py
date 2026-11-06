@@ -1,5 +1,8 @@
 """Settings from .env, and the one place that decides which AI model the whole team uses."""
+import contextvars
 import os
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as CallTimeout
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -28,6 +31,8 @@ def model_name() -> str:
 
 
 on_switch = print  # company.py points this at the run log while a run is going
+CALL_TIMEOUT = int(os.getenv("LLM_CALL_TIMEOUT", "120"))  # Gemini's client has no timeout; a stuck call froze runs
+_calls = ThreadPoolExecutor(max_workers=4, thread_name_prefix="llm")
 _BUSY = ("503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "overloaded", "high demand", "rate limit")
 
 
@@ -39,9 +44,20 @@ def with_fallback(llms):
     def call(*args, **kwargs):
         for i, c in enumerate(calls):
             try:
-                return c(*args, **kwargs)
+                # shortcut: a call that hangs keeps its thread busy in the background until the provider gives up;
+                # fine for one run at a time, revisit if runs ever go parallel.
+                job = _calls.submit(contextvars.copy_context().run, c, *args, **kwargs)
+                try:
+                    return job.result(timeout=CALL_TIMEOUT)
+                except CallTimeout:
+                    raise RuntimeError(f"503 no answer from {llms[i].model} in {CALL_TIMEOUT}s (overloaded)") from None
             except Exception as e:
-                if i == len(calls) - 1 or not any(s.lower() in str(e).lower() for s in _BUSY):
+                if not any(s.lower() in str(e).lower() for s in _BUSY):
+                    raise
+                if i == len(calls) - 1:
+                    if "per day" in str(e).lower() or "perday" in str(e).lower():
+                        raise RuntimeError("Gemini's free daily limit is used up on every model (it resets in about a day). "
+                                           "Wait, or set LLM_PROVIDER=groq or ollama in .env and restart start.bat.") from None
                     raise
                 on_switch(f"{llms[i].model} is busy, switching to {llms[i + 1].model}")
 
@@ -49,10 +65,22 @@ def with_fallback(llms):
     return first
 
 
+def _cap_provider_wait():
+    """CrewAI sleeps as long as the provider says ("retry in 12h" on a used-up daily quota), which freezes a run.
+    Cap it at 20s so we move on to the next model instead."""
+    from crewai.llms import retry
+    if getattr(retry, "_weblume_capped", False):
+        return
+    retry._weblume_capped = True
+    original = retry._retry_after_seconds
+    retry._retry_after_seconds = lambda e: (lambda s: None if s is None else min(s, 20.0))(original(e))
+
+
 def get_llm():
     """Build the LLM for every agent. Change LLM_PROVIDER in .env to switch."""
     from crewai import LLM
 
+    _cap_provider_wait()
     model = model_name()
     if PROVIDER == "gemini":
         key = os.getenv("GEMINI_API_KEY", "").strip()

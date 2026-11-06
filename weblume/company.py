@@ -1,6 +1,7 @@
 """Runs the company: plans the work, runs the agents in order, saves every output and a live status file."""
 import json
 import os
+import re
 import threading
 import time
 import traceback
@@ -9,12 +10,12 @@ from pathlib import Path
 
 from crewai import Crew, Process, Task
 
-from . import config, rules, templates, tester
+from . import config, knowledge, rules, templates, tester, video
 from .config import CURRENCY, MAX_RPM, OUTPUT_DIR, PROVIDER, RUNS_DIR, WEBSITE, get_llm, model_name
 from .team import ORDER, TEAM, make_agent
 
 _lock = threading.Lock()
-_active: dict = {"thread": None}
+_active: dict = {"thread": None, "run": None}
 TEST_ROUNDS = 2  # Tarek tests, Karim fixes what he found, Tarek tests once more
 
 
@@ -32,9 +33,11 @@ class Run:
             "started": datetime.now().isoformat(timespec="seconds"), "finished": "",
             "agents": {k: {"status": "idle", "output": ""} for k in ["layla", *ORDER]},
             "tasks": [], "files": [], "leads": None, "chat": [], "test": None, "site": "",
+            "ask": None, "video": "", "feedback": {},
         }
         self.current = "layla"
         self.kind, self.site_dir, self.site_text = "", None, ""
+        self.steps, self.inbox, self.answers, self.cond = [], [], {}, threading.Condition()
         self.save()
 
     def save(self):
@@ -57,6 +60,36 @@ class Run:
         self.status["chat"].append({"t": datetime.now().isoformat(timespec="seconds"), "from": frm, "to": to, "text": text})
         self.log(frm, f"→ {TEAM.get(to, {}).get('name', to)}: {text}")
         self.save()
+
+    def update(self, key: str, text: str):
+        """A teammate tells the owner what they're doing, finished, or doing next."""
+        self.say(key, "you", text)
+
+    def ask(self, key: str, question: str, options: list[str]) -> dict:
+        """Pause this teammate until the owner answers in the dashboard. Returns {"choice", "text"}."""
+        with self.cond:
+            qid = len(self.status["chat"])
+            prev = self.status["agents"][key]["status"]
+            self.status["ask"] = {"id": qid, "agent": key, "question": question, "options": options}
+            self.status["agents"][key]["status"] = "asking"
+            self.say(key, "you", question)
+            while qid not in self.answers:
+                self.cond.wait(timeout=1)
+            ans = self.answers.pop(qid)
+            self.status["ask"] = None
+            self.status["agents"][key]["status"] = prev
+        self.say("you", key, ans["choice"] + (f" — {ans['text']}" if ans["text"] else ""))
+        return ans
+
+    def answer(self, qid: int, choice: str, text: str):
+        with self.cond:
+            ask = self.status.get("ask")
+            if not ask or ask["id"] != qid:
+                raise ValueError("This question was already answered.")
+            if choice not in ask["options"] and not text.strip():
+                raise ValueError("Pick one of the options or write your answer.")
+            self.answers[qid] = {"choice": choice if choice in ask["options"] else "رد مكتوب", "text": text.strip()}
+            self.cond.notify_all()
 
     def set_agent(self, key: str, status: str, output: str | None = None):
         self.status["agents"][key]["status"] = status
@@ -84,6 +117,7 @@ PLAN_HINT = {
     "tarek": "tests the finished site in a real browser and judges if it's good enough",
     "ziad": "lead finding and outreach messages",
     "adam": "TikTok / Instagram ideas, scripts, captions",
+    "hassan": "turns Adam's script into a vertical video (MP4)",
 }
 WEBSITE_TEAM = ["omar", "youssef", "karim", "mostafa", "tarek"]
 
@@ -117,8 +151,10 @@ def keyword_plan(goal: str) -> list[str]:
     picks = []
     if any(w in g for w in ["lead", "outreach", "عملاء", "رسايل", "رسائل", "تواصل مع"]):
         picks.append("ziad")
-    if any(w in g for w in ["tiktok", "instagram", "reel", "تيك", "انستا", "فيديو", "caption", "كابشن"]):
+    if any(w in g for w in ["tiktok", "instagram", "reel", "تيك", "انستا", "فيديو", "caption", "كابشن", "video"]):
         picks.append("adam")
+    if any(w in g for w in ["فيديو", "video", "reel", "ريل"]):
+        picks.append("hassan")
     if not picks or wants_website(goal):
         picks = [*WEBSITE_TEAM, *picks]
     return picks
@@ -147,7 +183,11 @@ NO_FAKES = ("NEVER invent reviews, testimonials, ratings, years, customer counts
 
 
 def karim_brief(kind: str) -> str:
-    """What Karim is told to produce for this template."""
+    """What Karim is told to produce for this template, starting with the owner's saved taste."""
+    return (knowledge.taste("site") + "\n\n" if knowledge.taste("site") else "") + _karim_brief(kind)
+
+
+def _karim_brief(kind: str) -> str:
     if kind in templates.FOLDER:
         return ("The design, scroll scenes and animations of this template are finished and approved. You write ONLY "
                 "the client's content as ONE JSON object in exactly the shape of the example below, following the "
@@ -167,6 +207,12 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
     t: dict[str, Task] = {}
     steps: list[tuple[Task, str, str]] = []
     run.kind = templates.pick(f"{goal} {client}")
+    if "karim" in keys:  # the owner chooses the template
+        labels = {"cafe": "كافيه/مطعم (تصميم Loopie)", "clinic": "عيادة/خدمات", "shop": "متجر"}
+        ans = run.ask("karim", "هعمل الموقع على أي قالب؟ الأول هو اقتراحي.", [labels[run.kind], *[v for k, v in labels.items() if k != run.kind]])
+        run.kind = next((k for k, v in labels.items() if v == ans["choice"]), run.kind)
+        if ans["text"]:
+            goal += f"\nThe owner's note on the design: {ans['text']}"
     run.site_dir = OUTPUT_DIR / rules.slug(client or goal[:30])
     ext = ".json" if run.kind in templates.FOLDER else ".html"
 
@@ -208,6 +254,8 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
                "Check: bugs in HTML/CSS/JS, layout on a 375px phone, RTL issues, spelling in Arabic and English, SEO "
                "basics (title, meta description, one h1, alt text, Open Graph), and that the copy matches the spec. "
                "The animations come from the motion kit injected at the <!--WEBLUME:...--> markers: keep the markers. ")
+            + ("Also check the work against the owner's saved taste below and report anything that goes against it.\n"
+               + knowledge.taste("site") + "\n" if knowledge.taste("site") else "")
             + "List every problem as: where -> what is wrong -> exact fix. End with a verdict line: READY or NEEDS FIXES.",
             "A Markdown review: a numbered list of problems with exact fixes, then the verdict.",
             [t.get("build"), t.get("copy"), t.get("spec")])
@@ -252,6 +300,17 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             "text, caption in Egyptian Arabic, and hashtags. The call to action always sends people to the "
             f"Weblume website ({WEBSITE}). NEVER write a phone number or WhatsApp number anywhere.",
             "Markdown: numbered video ideas, each with hook, script, on-screen text, caption and hashtags.", [])
+    if "hassan" in keys:
+        sites = video.built_sites()
+        add("video", "hassan", "video.json",
+            f"Request:\n\"\"\"{goal}\"\"\"\n\n{knowledge.taste('video')}\n\nTurn the FIRST video idea in Adam's script into "
+            "a vertical 9:16 Weblume video (black, red and white). Write it as scenes, 15–35 seconds in total. Scene types: "
+            '"hook" (the first 2 seconds, max 7 words), "text" (one short line, optional "sub"), "site" (one of our websites '
+            'scrolling inside a phone or laptop: "site" must be one of ' + json.dumps(sites, ensure_ascii=False) +
+            ', "device": "phone" or "laptop", optional "caption"). Each scene has "dur" in seconds (2–5). Egyptian Arabic. '
+            "The code adds the closing 'contact us through the Weblume website' scene. NEVER write a phone number.\n"
+            'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}',
+            "A JSON object with title and scenes.", [t.get("social")])
     return steps
 
 
@@ -296,11 +355,26 @@ def save_site(run: Run, key: str, file: str, raw: str, name: str) -> str:
     return text
 
 
+def price_section(spec: str) -> list[str]:
+    """Omar's suggested project price: the lines under his price heading (not the menu prices)."""
+    m = re.search(r"^#+[^\n]*(price range|السعر|سعر المشروع|التسعير)[^\n]*\n(.*?)(?=^#|\Z)", spec, re.I | re.M | re.S)
+    lines = [ln.strip() for ln in (m.group(2) if m else "").splitlines() if ln.strip()]
+    return lines[:6]
+
+
 def handle_output(run: Run, key: str, file: str, raw: str, index: int) -> str:
     """Apply the rules to one finished task and save it. Returns the text shown on the dashboard."""
     name = f"{index:02d}_{key}_{file}"
     if key == "karim":
         return save_site(run, key, file, raw, name)
+    if key == "omar":
+        price = price_section(raw)
+        ans = run.ask("omar", "اقتراحي للسعر:\n" + ("\n".join(price) or "(مفيش سعر في المواصفات)") + "\nموافق عليه؟",
+                      ["موافق", "سعر تاني (اكتبه)"])
+        if ans["text"] or ans["choice"] != "موافق":
+            raw += f"\n\n## The owner's decision on the price\n{ans['text'] or 'Not approved yet.'}\n"
+    if key == "hassan":
+        return make_video(run, raw, name)
     if key == "adam":
         raw, n = rules.remove_phone_numbers(raw)
         if n:
@@ -309,6 +383,29 @@ def handle_output(run: Run, key: str, file: str, raw: str, index: int) -> str:
         return save_leads(run, raw, name)
     run.write(name, raw)
     return raw
+
+
+def make_video(run: Run, raw: str, name: str) -> str:
+    """Hassan's scenes become an MP4 in output/videos/."""
+    data = rules.extract_json(raw)
+    if not isinstance(data, dict):
+        run.update("hassan", "السيناريو اللي كتبته مش مظبوط، محتاج أكتبه تاني")
+        run.write(name.replace(".json", "_invalid.txt"), raw)
+        return "The video scenes were not valid JSON."
+    spec = video.clean_spec(data, video.built_sites())
+    run.write(name, json.dumps(spec, ensure_ascii=False, indent=1))
+    out = OUTPUT_DIR / "videos" / f"{run.dir.name[:17]}_{rules.slug(spec['title'])[:30]}.mp4"
+    run.update("hassan", f"بصوّر الفيديو دلوقتي ({len(spec['scenes'])} مشاهد)…")
+    try:
+        video.render(spec, out)
+    except Exception as e:
+        run.log("hassan", f"Video failed: {e}")
+        run.update("hassan", f"مقدرتش أطلّع الفيديو: {e}")
+        return f"Video failed: {e}"
+    run.status["video"] = str(out.relative_to(OUTPUT_DIR))
+    run.add_file(out)
+    run.update("hassan", "الفيديو جاهز ✓ شوفه وقولي رأيك 👍/👎 عشان أتعلم ذوقك")
+    return json.dumps(spec, ensure_ascii=False, indent=1)
 
 
 def save_leads(run: Run, raw: str, name: str) -> str:
@@ -349,6 +446,14 @@ def save_leads(run: Run, raw: str, name: str) -> str:
         md += [f"- {b}" for b in dict.fromkeys(leads_info["skipped_contacted"])]
     text = "\n".join(md)
     run.write(name, text)
+    if leads or leads_info["targets"]:
+        ans = run.ask("ziad", f"كتبت {len(leads)} رسايل و{len(leads_info['targets'])} قوالب، شوفهم في Work. أعتمدهم؟",
+                      ["اعتمدهم", "ارفضهم"])
+        leads_info["approved"] = ans["choice"] == "اعتمدهم"
+        leads_info["note"] = ans["text"]
+        if not leads_info["approved"]:
+            leads_info["leads"], leads_info["targets"] = [], []
+        run.save()
     return text
 
 
@@ -374,6 +479,11 @@ def handoff(run: Run, key: str, file: str, text: str, nxt: str | None):
 
 
 # ---------------------------------------------------------------- the job
+WHAT = {"spec": "مواصفات المشروع والسعر", "content": "نصوص الموقع عربي وإنجليزي", "website_draft": "أول نسخة من الموقع",
+        "website": "النسخة النهائية من الموقع", "review": "مراجعة شغل كريم", "leads": "قايمة الأماكن ورسايل التواصل",
+        "social": "أفكار وسكريبتات الفيديو", "video": "الفيديو"}
+
+
 def _kickoff(run: Run, steps: list[tuple[Task, str, str]], first_index: int):
     """Run tasks in order; statuses and files update as each one finishes."""
     keys_in_order = [k for _, k, _ in steps]
@@ -389,10 +499,13 @@ def _kickoff(run: Run, steps: list[tuple[Task, str, str]], first_index: int):
             later = keys_in_order[n + 1:]
             handoff(run, key, file, text, later[0] if later else None)
             run.set_agent(key, "waiting" if key in later else "done", text)
+            if key == "omar":
+                output.raw = text  # the price decision reaches the next teammates
             if later:
                 run.current = later[0]
                 run.set_agent(later[0], "working")
                 run.log(later[0], "Started")
+                run.update(later[0], "بشتغل دلوقتي على " + WHAT.get(steps[n + 1][2].split(".")[0], steps[n + 1][2]))
 
         task.callback = done
     for k in dict.fromkeys(keys_in_order):
@@ -400,11 +513,13 @@ def _kickoff(run: Run, steps: list[tuple[Task, str, str]], first_index: int):
     run.current = keys_in_order[0]
     run.set_agent(run.current, "working")
     run.log(run.current, "Started")
+    run.update(run.current, "بشتغل دلوقتي على " + WHAT.get(steps[0][2].split(".")[0], steps[0][2]))
 
     def step(s):
         text = getattr(s, "thought", "") or getattr(s, "text", "") or getattr(s, "output", "") or str(s)
         run.log(run.current, "step: " + " ".join(str(text).split())[:300])
 
+    run.steps = steps
     agents = list({id(t.agent): t.agent for t, _, _ in steps}.values())
     Crew(agents=agents, tasks=[t for t, _, _ in steps], process=Process.sequential,
          step_callback=step, max_rpm=MAX_RPM, verbose=False).kickoff()
@@ -428,7 +543,7 @@ def test_site(run: Run, agents: dict, keys: list[str]):
             shots = tester.shoot(run.site_dir, run.dir / "shots", f"r{rnd}")
             for s in shots:
                 run.add_file(s)
-            result = tester.judge(shots, brief, tester.TEMPLATE_NOTES.get(run.kind, ""))
+            result = tester.judge(shots, brief, tester.TEMPLATE_NOTES.get(run.kind, "") + "\n" + knowledge.taste("site", 1500))
         except Exception as e:  # no Chrome / no Gemini key / busy: say so instead of pretending it was tested
             run.log("tarek", f"Couldn't test: {e}")
             run.say("tarek", "layla", f"مقدرتش أجرب الموقع: {e}")
@@ -455,6 +570,7 @@ def test_site(run: Run, agents: dict, keys: list[str]):
         ext = ".json" if run.kind in templates.FOLDER else ".html"
         fix = Task(
             description=f"Tarek tested the website in a real browser and found these problems:\n{rep}\n\n"
+                        + "".join(f"The owner also said (follow it): {m}\n" for m in run.inbox) +
                         f"This is the current site content:\n{run.site_text}\n\n{karim_brief(run.kind)}\n\n"
                         "Fix every problem Tarek listed and return the whole corrected "
                         + ("JSON object only." if ext == ".json" else "HTML document only."),
@@ -466,7 +582,36 @@ def test_site(run: Run, agents: dict, keys: list[str]):
         run.say("karim", "tarek", "صلحت اللي قلت عليه، جرب تاني يا طارق")
 
 
-def _job(run: Run, mode: str, keys: list[str]):
+def _revise(run: Run, agents: dict, base: dict):
+    """The owner's correction to the last site: Karim applies it, Tarek tests again."""
+    site = OUTPUT_DIR / base["site"]
+    run.site_dir = site.parent
+    data_js = run.site_dir / "data.js"
+    if data_js.is_file():
+        run.kind, js = "cafe", data_js.read_text(encoding="utf-8")
+        run.site_text = js[js.index("{"):js.rindex("}") + 1]
+    else:
+        run.kind, run.site_text = templates.pick(base["goal"]), site.read_text(encoding="utf-8")
+    note = run.status["goal"].split("CORRECTION FROM THE OWNER:", 1)[-1].strip()
+    run.say("you", "karim", note)
+    row = _task_row(run, "karim", "apply your correction")
+    run.update("karim", "تمام، بعدّل دلوقتي")
+    ext = ".json" if run.kind in templates.FOLDER else ".html"
+    fix = Task(description=f"The owner wants this change to the website:\n\"\"\"{note}\"\"\"\n\nCurrent site content:\n{run.site_text}\n\n"
+                           f"{karim_brief(run.kind)}\n\nApply exactly the owner's change, keep everything else, and return the "
+                           + ("whole JSON object only." if ext == ".json" else "whole HTML document only."),
+               expected_output="The corrected site.", agent=agents["karim"], context=[])
+    Crew(agents=[agents["karim"]], tasks=[fix], max_rpm=MAX_RPM, verbose=False).kickoff()
+    out = save_site(run, "karim", "website" + ext, fix.output.raw, f"01_karim_revision{ext}")
+    row["done"] = True
+    run.set_agent("karim", "done", out)
+    run.say("karim", "tarek", "عدلت اللي المدير طلبه، جربه يا طارق")
+    test_site(run, agents, ["karim", "tarek"])
+    run.status["state"] = "done"
+    run.log("system", "Revision finished")
+
+
+def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
     try:
         config.on_switch = lambda msg: run.log("system", msg)
         llm = get_llm()
@@ -487,6 +632,8 @@ def _job(run: Run, mode: str, keys: list[str]):
             run.log("layla", f"Team: {team}. {plan['reason']}")
             run.say("layla", keys[0], f"يلا يا جماعة: {team}. ابدأ انت يا {TEAM[keys[0]]['name']}")
             run.set_agent("layla", "waiting", f"Team: {team}\n\n{plan['reason']}")
+        if mode == "revise":
+            return _revise(run, agents, base)
         crew_keys = [k for k in keys if k != "tarek"]  # Tarek works after the site exists, outside the crew
         steps = build_tasks(crew_keys, goal, client, names, agents, run) if crew_keys else []
         if steps:
@@ -529,7 +676,8 @@ def _job(run: Run, mode: str, keys: list[str]):
         run.save()
 
 
-def start(goal: str, mode: str, keys: list[str] | None = None, client: str = "", names: list[str] | None = None) -> str:
+def start(goal: str, mode: str, keys: list[str] | None = None, client: str = "", names: list[str] | None = None,
+          base: dict | None = None) -> str:
     """Start a run in the background. mode: 'whole' (Layla picks the team) or 'focused' (you pick). Returns run id."""
     goal = goal.strip()
     if not goal:
@@ -542,8 +690,8 @@ def start(goal: str, mode: str, keys: list[str] | None = None, client: str = "",
             raise RuntimeError("A run is already in progress. Wait for it to finish.")
         run = Run(goal, mode, client.strip(), [n.strip() for n in (names or []) if n.strip()])
         run.log("system", f"Mode: {mode}. LLM: {run.status['llm']}. Goal: {goal}")
-        th = threading.Thread(target=_job, args=(run, mode, keys), daemon=True)
-        _active["thread"] = th
+        th = threading.Thread(target=_job, args=(run, mode, keys, base), daemon=True)
+        _active["thread"], _active["run"] = th, run
         th.start()
     return run.status["id"]
 
@@ -556,7 +704,11 @@ def load_status(run_id: str) -> dict | None:
     path = RUNS_DIR / run_id / "status.json"
     for _ in range(5):
         try:
-            return json.loads(path.read_text(encoding="utf-8"))
+            st = json.loads(path.read_text(encoding="utf-8"))
+            live = active()
+            if st.get("state") == "running" and not (live and live.status["id"] == run_id):
+                st.update(state="stopped", error="Stopped: start.bat was closed while this run was working.", ask=None)
+            return st
         except (FileNotFoundError, json.JSONDecodeError, PermissionError):
             time.sleep(0.05)
     return None
@@ -566,3 +718,64 @@ def list_runs() -> list[str]:
     if not RUNS_DIR.exists():
         return []
     return sorted((p.name for p in RUNS_DIR.iterdir() if (p / "status.json").exists()), reverse=True)
+
+
+def active() -> Run | None:
+    return _active["run"] if is_running() else None
+
+
+def answer(run_id: str, qid: int, choice: str, text: str = ""):
+    run = active()
+    if not run or run.status["id"] != run_id:
+        raise ValueError("That run isn't waiting for an answer anymore.")
+    run.answer(int(qid), str(choice), str(text))
+
+
+def message(text: str) -> dict:
+    """The owner writes in the chat. During a run it reaches the teammate he names (or the one working now) and is
+    added to that teammate's next task. With no run going, it's a correction to the last website."""
+    text = text.strip()
+    if not text:
+        raise ValueError("Write a message first.")
+    run = active()
+    if run:
+        target = next((k for k, a in TEAM.items() if a["name"].lower() in text.lower() or a.get("ar", "~") in text), run.current)
+        run.say("you", target, text)
+        run.inbox.append(text)
+        todo = [t for t, k, _ in run.steps if t.output is None]
+        mine = [t for t, k, _ in run.steps if k == target and t.output is None]
+        for t in (mine or todo)[:1]:
+            t.description += f"\n\nNEW INSTRUCTION FROM THE OWNER (follow it): {text}"
+        return {"run": run.status["id"], "to": target}
+    last = next((st for st in (load_status(r) for r in list_runs()) if st and st.get("site")), None)
+    if not last:
+        raise ValueError("No website to correct yet. Type a new goal at the top.")
+    goal = f"{last['goal']}\n\nCORRECTION FROM THE OWNER: {text}"
+    return {"run": start(goal, "revise", ["karim", "tarek"], last.get("client", ""), [], base=last)}
+
+
+def feedback(run_id: str, kind: str, vote: str, comment: str = "") -> dict:
+    """👍/👎 on a run's website or video: saved to knowledge/, 👍 also keeps the work as an approved example."""
+    st = load_status(run_id)
+    if not st or kind not in ("site", "video") or vote not in ("up", "down"):
+        raise ValueError("Unknown run, kind or vote.")
+    files = []
+    if kind == "site" and st.get("site"):
+        site = OUTPUT_DIR / st["site"]
+        files = [site.parent / "data.js" if (site.parent / "data.js").is_file() else site]
+        shots = sorted((RUNS_DIR / run_id / "shots").glob("*_desktop_1.png")) if (RUNS_DIR / run_id / "shots").exists() else []
+        files += shots[-1:]
+    elif kind == "video" and st.get("video"):
+        files = [OUTPUT_DIR / st["video"], *sorted((RUNS_DIR / run_id).glob("*_hassan_video.json"))]
+    else:
+        raise ValueError("This run has no " + kind + ".")
+    knowledge.add_feedback(kind, vote, comment, st.get("client") or st["goal"][:40], files)
+    fb = {**st.get("feedback", {}), kind: {"vote": vote, "comment": comment.strip()}}
+    run = _active["run"]
+    if run and run.status["id"] == run_id:
+        run.status["feedback"] = fb
+        run.save()
+    else:
+        st["feedback"] = fb
+        (RUNS_DIR / run_id / "status.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+    return fb

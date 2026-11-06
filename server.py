@@ -94,6 +94,8 @@ class Handler(BaseHTTPRequestHandler):
                                  {"Content-Security-Policy": "sandbox allow-scripts allow-popups allow-forms"})
             if q.get("view") and path.suffix == ".png":  # Tarek's screenshots
                 return self.send(200, path.read_bytes(), "image/png")
+            if q.get("view") and path.suffix == ".mp4":  # Hassan's videos
+                return self.send(200, path.read_bytes(), "video/mp4", {"Accept-Ranges": "none"})
             return self.send(200, path.read_bytes(), "application/octet-stream",
                              {"Content-Disposition": f"attachment; filename*=UTF-8''{_quote(path.name)}"})
         if url.path.startswith("/site/"):
@@ -124,6 +126,14 @@ class Handler(BaseHTTPRequestHandler):
                                        [str(k) for k in body.get("keys") or []], str(body.get("client", "")),
                                        str(body.get("names", "")).splitlines())
                 return self.send(200, {"run": run_id})
+            if self.path == "/api/answer":  # the owner answers a teammate's question
+                company.answer(str(body.get("run", "")), int(body.get("id", -1)), str(body.get("choice", "")), str(body.get("text", "")))
+                return self.send(200, {"ok": True})
+            if self.path == "/api/message":  # the owner writes in the chat
+                return self.send(200, company.message(str(body.get("text", ""))))
+            if self.path == "/api/feedback":  # 👍/👎 on a website or video
+                return self.send(200, {"feedback": company.feedback(str(body.get("run", "")), str(body.get("kind", "")),
+                                                                    str(body.get("vote", "")), str(body.get("comment", "")))})
             if self.path == "/api/contacted":
                 biz = str(body.get("business", "")).strip()
                 if not biz:

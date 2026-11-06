@@ -4,3 +4,6 @@ __pycache__/
 output/
 contacted.json
 graphify-out/
+
+knowledge/feedback.md
+knowledge/examples/

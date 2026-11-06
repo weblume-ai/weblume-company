@@ -115,4 +115,102 @@ with tempfile.TemporaryDirectory() as d:  # no drinks at all must not break the 
     templates.build_site("cafe", empty, Path(d) / "x")
     assert len(empty["drinks"]) == 1 and "shot=" not in (Path(d) / "x" / "index.html").read_text(encoding="utf-8")
 
+# A teammate pauses on a question until the owner answers; a wrong id or an empty answer is refused
+import shutil, threading  # noqa: E401,E402
+from weblume import knowledge  # noqa: E402
+r = company.Run("test pause", "focused", "", [])
+try:
+    got = {}
+    th = threading.Thread(target=lambda: got.update(r.ask("karim", "أي قالب؟", ["أ", "ب"])))
+    th.start()
+    while not r.status["ask"]:
+        pass
+    qid = r.status["ask"]["id"]
+    for bad in ((qid + 99, "أ", ""), (qid, "zzz", "")):
+        try:
+            r.answer(*bad)
+            raise AssertionError("bad answer accepted")
+        except ValueError:
+            pass
+    r.answer(qid, "ب", "  ملاحظة ")
+    th.join(5)
+    assert got == {"choice": "ب", "text": "ملاحظة"} and r.status["ask"] is None
+    assert r.status["agents"]["karim"]["status"] == "idle" and r.status["chat"][-1]["from"] == "you"
+finally:
+    shutil.rmtree(r.dir, ignore_errors=True)
+
+# 👍/👎 is saved to the owner's taste file; 👍 keeps an approved example
+with tempfile.TemporaryDirectory() as d:
+    old = (knowledge.FEEDBACK, knowledge.APPROVED)
+    knowledge.FEEDBACK, knowledge.APPROVED = Path(d) / "feedback.md", Path(d) / "approved"
+    try:
+        f = Path(d) / "data.js"; f.write_text("window.CAFE = {}", encoding="utf-8")
+        assert knowledge.add_feedback("site", "down", "الألوان باهتة", "Noir", [f]) is None
+        ex = knowledge.add_feedback("site", "up", "التصميم ده حلو", "Noir", [f])
+        assert (ex / "data.js").is_file() and "التصميم ده حلو" in (ex / "why.md").read_text(encoding="utf-8")
+        t = knowledge.taste("site")
+        assert "الألوان باهتة" in t and "👎" in t and "APPROVED EXAMPLE" in t
+    finally:
+        knowledge.FEEDBACK, knowledge.APPROVED = old
+
+# Videos: a line with a phone number is replaced whole; unknown sites fall back; it always ends on the website
+from weblume import video  # noqa: E402
+v = video.clean_spec({"scenes": [{"type": "text", "text": "كلمنا 01012345678"}, {"type": "site", "site": "nope"},
+                                 {"type": "weird", "text": "x"}]}, ["noir"])
+assert v["scenes"][0]["text"] == "تواصل معانا من موقع Weblume" and v["scenes"][1]["site"] == "noir"
+assert v["scenes"][2]["type"] == "text" and v["scenes"][-1]["type"] == "cta" and "01012345678" not in str(v)
+
+# Omar's project price is read from his price heading, not the menu prices
+
+spec = """# Spec
+## Features
+* Espresso – 40 EGP, Latte – 60 EGP
+### Suggested price range in EGP
+* Basic: 8,000 – 10,000 EGP (menu, map, WhatsApp)
+* With ordering: 14,000 EGP
+## Questions
+* x"""
+got = company.price_section(spec)
+assert got == ["* Basic: 8,000 – 10,000 EGP (menu, map, WhatsApp)", "* With ordering: 14,000 EGP"], got
+assert company.price_section("no price here") == []
+
+# Gemini says "retry in 12h": the wait is capped; all models out of daily quota -> one clear error
+from crewai.llms import retry  # noqa: E402
+
+# the provider's "retry in 12h" is capped to 20 seconds
+config._cap_provider_wait()
+
+
+class E(Exception):
+    pass
+
+
+e = E("429 quota, Please retry in 12h40m10s")
+e.retry_after = 45600  # whatever the original parser finds, the cap applies
+got = retry._retry_after_seconds(e)
+assert got is None or got <= 20.0, got
+
+# all models out of daily quota -> one clear error, not an endless wait
+a, b = LLM(model="ollama/a", api_key="x"), LLM(model="ollama/b", api_key="x")
+daily = RuntimeError("429 RESOURCE_EXHAUSTED Generate content requests per day limit exceeded")
+for m in (a, b):
+    object.__setattr__(m, "call", lambda *_, **__: (_ for _ in ()).throw(daily))
+try:
+    config.with_fallback([a, b]).call("hi")
+    raise AssertionError("should have failed")
+except RuntimeError as err:
+    assert "daily limit" in str(err) and "LLM_PROVIDER" in str(err), err
+
+# A model that never answers is treated as busy after the time limit
+import time  # noqa: E402
+
+old_timeout, config.CALL_TIMEOUT = config.CALL_TIMEOUT, 2
+a, b = LLM(model="ollama/a", api_key="x"), LLM(model="ollama/b", api_key="x")
+object.__setattr__(a, "call", lambda *_, **__: time.sleep(30))  # a model that never answers
+object.__setattr__(b, "call", lambda *_, **__: "from b")
+t = time.time()
+assert config.with_fallback([a, b]).call("hi") == "from b"
+assert time.time() - t < 6, time.time() - t
+config.CALL_TIMEOUT = old_timeout
+
 print("All rule checks passed.")

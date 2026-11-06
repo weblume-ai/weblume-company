@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Weblume video</title>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@600;800&family=IBM+Plex+Sans+Arabic:wght@500;700&family=Inter:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* 1080x1920 canvas for Weblume's TikTok / Reels. Every frame is a pure function of time: seek(t) draws it. */
+:root{--red:#e50914;--ink:#0a0a0a;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color:var(--white);font-family:'IBM Plex Sans Arabic',sans-serif}
+.scene{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:140px 90px}
+.scene.on{display:flex}
+.logo{position:absolute;top:90px;left:50%;transform:translateX(-50%);height:96px}
+.big{font:800 118px/1.15 Alexandria,sans-serif;text-align:center;letter-spacing:-1px}
+.mid{font:700 76px/1.3 Alexandria,sans-serif;text-align:center}
+.small{font:500 44px/1.5 'IBM Plex Sans Arabic',sans-serif;color:#cfcfcf;text-align:center}
+.w{display:inline-block;margin:0 .14em}
+.bar{height:14px;background:var(--red);border-radius:7px;margin-top:46px;transform-origin:center}
+.red{color:var(--red)}
+.device{position:relative;background:#111;border:16px solid #1c1c1c;box-shadow:0 0 0 3px #333,0 60px 120px #000}
+.phone{width:560px;height:1180px;border-radius:72px;overflow:hidden}
+.phone canvas{width:528px;height:1148px;display:block}
+.laptop{width:960px;height:600px;border-radius:26px 26px 0 0;overflow:hidden}
+.laptop canvas{width:928px;height:568px;display:block}
+.base{width:1080px;height:34px;background:#2a2a2a;border-radius:0 0 30px 30px;margin-top:-2px}
+.cap{margin-bottom:60px}
+.ring{width:300px;height:300px;border:12px solid var(--red);border-radius:50%;border-left-color:transparent;margin-bottom:60px}
+.url{font:800 54px/1 Inter,sans-serif;direction:ltr;margin-top:30px}
+.url b{color:var(--red)}
+</style>
+</head>
+<body>
+<img class="logo" id="logo" src="/knowledge/brand/weblume-logo.png" alt="">
+<div id="stage"></div>
+<script>
+"use strict";
+const ease = x => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e };
+const words = (box, text) => text.split(/\s+/).filter(Boolean).map(w => { const s = el("span", "w", w); box.append(s, " "); return s });
+
+let SCENES = [], T = 0;
+window.DURATION = 0;
+window.ready = fetch("spec.json").then(r => r.json()).then(spec => {
+  const stage = document.getElementById("stage");
+  for (const sc of spec.scenes) {
+    const node = el("div", "scene"), dur = Math.max(1.5, Math.min(8, +sc.dur || 3));
+    const item = {sc, node, start: T, dur, parts: {}};
+    if (sc.type === "site") {
+      if (sc.caption) node.append(item.parts.cap = el("div", "mid cap", sc.caption));
+      const dev = el("div", "device " + (sc.device === "laptop" ? "laptop" : "phone"));
+      const cv = el("canvas"); cv.width = sc.device === "laptop" ? 1440 : 780; cv.height = sc.device === "laptop" ? 900 : 1688;
+      dev.append(cv); node.append(dev); if (sc.device === "laptop") node.append(el("div", "base"));
+      item.parts.cv = cv; item.parts.dev = dev;
+      item.parts.imgs = Array.from({length: sc.frames || 0}, (_, k) => { const im = new Image(); im.src = `/frames/${SCENES.length}/${String(k).padStart(4, "0")}.jpg`; return im });
+    } else if (sc.type === "cta") {
+      node.append(item.parts.ring = el("div", "ring"));
+      const t = el("div", "mid"); item.parts.w = words(t, sc.text || "تواصل معانا من موقع Weblume"); node.append(t);
+      const u = el("div", "url"); u.innerHTML = String(spec.website || "weblume-sa.github.io").replace(/^https?:\/\//, "").replace(/\/$/, "").replace(/^([^.]*)/, "<b>$1</b>"); node.append(u); item.parts.url = u;
+    } else {
+      const t = el("div", sc.type === "hook" ? "big" : "mid"); item.parts.w = words(t, sc.text || ""); node.append(t);
+      if (sc.sub) node.append(item.parts.sub = el("div", "small", sc.sub));
+      node.append(item.parts.bar = el("div", "bar"));
+      item.parts.bar.style.width = sc.type === "hook" ? "420px" : "260px";
+    }
+    stage.append(node); SCENES.push(item); T += dur;
+  }
+  window.DURATION = T;
+  // every filmed frame of the sites must be loaded before the first frame is drawn
+  return Promise.all(SCENES.flatMap(s => s.parts.imgs || []).map(im => im.decode().catch(() => null)));
+});
+
+window.seek = t => {
+  for (const s of SCENES) {
+    const local = t - s.start, on = local >= 0 && local < s.dur;
+    s.node.classList.toggle("on", on);
+    if (!on) continue;
+    const p = local / s.dur, inn = ease(local / .6), out = ease((s.dur - local) / .45);
+    s.node.style.opacity = Math.min(inn, out);
+    if (s.parts.w) s.parts.w.forEach((w, i) => { const k = ease((local - i * .09) / .5); w.style.opacity = k; w.style.transform = `translateY(${(1 - k) * 60}px)` });
+    if (s.parts.bar) s.parts.bar.style.transform = `scaleX(${ease((local - .3) / .7)})`;
+    if (s.parts.sub) s.parts.sub.style.opacity = ease((local - .6) / .5);
+    if (s.parts.ring) s.parts.ring.style.transform = `rotate(${local * 160}deg) scale(${.6 + .4 * ease(local / .7)})`;
+    if (s.parts.url) s.parts.url.style.opacity = ease((local - .8) / .5);
+    if (s.parts.dev) s.parts.dev.style.transform = `translateY(${(1 - ease(local / .7)) * 140}px)`;
+    if (s.parts.imgs && s.parts.imgs.length) { // the filmed scroll of the site, frame by frame
+      const im = s.parts.imgs[Math.min(s.parts.imgs.length - 1, Math.floor(p * s.parts.imgs.length))];
+      s.parts.cv.getContext("2d").drawImage(im, 0, 0, s.parts.cv.width, s.parts.cv.height);
+    }
+  }
+  document.getElementById("logo").style.opacity = SCENES.some(s => s.sc.type === "site" && s.node.classList.contains("on")) ? 0 : 1;
+};
+</script>
+</body>
+</html>

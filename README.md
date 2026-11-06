@@ -1,6 +1,6 @@
 # Weblume AI Company
 
-A team of 8 AI employees for **Weblume** ("Websites that make an impact"), built with Python + CrewAI, with a
+A team of 9 AI employees for **Weblume** ("Websites that make an impact"), built with Python + CrewAI, with a
 local dashboard in Weblume colors: a live 3D office where you watch the team work and talk to each other.
 
 | Agent | Job | Saves |
@@ -13,9 +13,23 @@ local dashboard in Weblume colors: a live 3D office where you watch the team wor
 | 🧪 Tarek, QA Tester | Opens the finished site in your real Chrome on desktop and phone, Gemini judges the screenshots out of 10; under 8, Karim fixes and Tarek tests again | `tarek_test_r1.md`, `shots/*.png` |
 | 🎯 Ziad, Lead Finder | Target businesses + personal outreach messages | `leads.md` |
 | 📱 Adam, Social Media | TikTok/Instagram ideas, scripts, captions | `social.md` |
+| 🎬 Hassan, Video Producer | Turns Adam's script into a 9:16 MP4: animated Arabic text, Weblume branding, our sites scrolling in phone/laptop mockups | `output/videos/*.mp4` |
 
 They talk to each other when they pass work on or find a problem ("لقيت 3 حاجات محتاجة تتصلح"): it shows as
 a speech bubble in the 3D office (the speaker walks over) and in Progress → Team chat.
+
+## Talk to them, and they ask you
+- **Chat tab**: every teammate posts what they're doing now and what they finished, in Egyptian Arabic.
+  Write to them anytime: name the person ("كريم غيّر اللون للأخضر") and it goes into their next task.
+  With no run going, a message is a correction to the last website: Karim applies it and Tarek retests.
+- **They stop and ask you** (buttons + an optional note), and wait for your answer:
+  - Karim: which template to use (his suggestion first).
+  - Omar: the project price he suggests (approve, or write your own).
+  - Ziad: approve or reject the outreach messages before they count as final.
+  Nothing is published or paid for, so there's no question for those yet.
+- **Your taste**: under every website and video there's 👍 / 👎 + a comment. It's saved to
+  `knowledge/feedback.md`; 👍 also keeps the work in `knowledge/examples/approved/`. Karim and Hassan read it
+  before designing, and Mostafa and Tarek check new work against it. (These files stay on your laptop.)
 
 ## Rules the code enforces (not just "asks" the AI)
 - **Ziad never messages a business twice.** Every name you give him is checked against `contacted.json`
@@ -23,6 +37,8 @@ a speech bubble in the 3D office (the speaker walks over) and in Progress → Te
   ones are flagged on the dashboard, not drafted. After you really send a message, click **✔ Mark as
   contacted** on the dashboard (or add a name on the Home tab) so it's remembered. If you give no names, he
   writes templates with `[اسم المكان]`, never fake businesses.
+- **No phone numbers in content or videos.** Adam's text and every line of Hassan's videos are checked;
+  a line with a number is replaced with "تواصل معانا من موقع Weblume", and every video ends on the website.
 - **Adam never shows a phone number.** Any phone number or WhatsApp link in his output is replaced with the
   Weblume website, and the log says so.
 - **No made-up prices or opening hours.** Prices and hours that aren't in your request are removed from the
@@ -45,10 +61,13 @@ weblume-company/
 ├── requirements.txt
 ├── .env.example           Copy to .env (your settings and keys)
 ├── contacted.json         Businesses already contacted (Ziad never drafts for these)
+├── knowledge/             brand/ (Weblume logo), feedback.md and examples/approved/ (your taste, not uploaded)
 ├── weblume/
 │   ├── config.py          Reads .env, builds the AI model (Gemini / Groq / Ollama)
 │   ├── team.py            The 8 agents: name, role, goal, backstory
 │   ├── tester.py          Tarek: screenshots in real Chrome + Gemini looks at them
+│   ├── knowledge.py       Your 👍/👎 and approved examples, read before every design
+│   ├── video/             Hassan: player.html (the frames) + the MP4 renderer
 │   ├── company.py         Plans the work, runs the agents, saves files, live status, log
 │   ├── rules.py           contacted.json + phone-number rules, cleaning AI answers
 │   └── templates/         Karim's starting points (see below)
@@ -130,6 +149,18 @@ Two ways to open it, both need `start.bat` running on your laptop (that's where 
   New user variable `OLLAMA_CONTEXT_LENGTH` = `16384`, then restart Ollama. Small local models write weaker
   websites and sometimes break the JSON Layla/Ziad must return; the app then falls back safely (Layla) or
   tells you to run again (Ziad).
+
+## Videos (Hassan)
+Free mode only: `weblume/video/player.html` draws each frame, your Chrome captures it (Playwright) and ffmpeg
+(`imageio-ffmpeg`, installed with the requirements) writes a 1080×1920 MP4 at 24 fps with no sound. Sites are
+filmed scrolling first, then shown inside the mockups. A 20-second video takes about a minute to render.
+Paid AI clips (Higgsfield / Runway / Kling) are not connected.
+
+## When Gemini says "quota"
+The free tier allows about 20 requests per day per model, and a website run uses many. When a model is busy or
+out of quota the team switches to the next one; if all of them are out, the run stops with a clear message
+(it resets in about a day). Switch `LLM_PROVIDER` to `groq` or `ollama` in `.env` to keep working. A model that
+doesn't answer within 2 minutes counts as busy (`LLM_CALL_TIMEOUT`).
 
 ## Troubleshooting
 | Problem | Fix |
