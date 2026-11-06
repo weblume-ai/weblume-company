@@ -171,7 +171,7 @@ const STATUS_TXT = {idle: "Free", waiting: "Waiting", working: "Working", done: 
 
 /* ------------------------------------------------------------ state */
 let S = {team: [], runs: [], run: null, running: false, contacted: [], llm: ""};
-let mode = "whole", picks = new Set(store.get("wl_picks", ["karim", "hana"])), runId = store.get("wl_run", null), selected = null, tab = "home";
+let mode = "whole", picks = new Set(store.get("wl_picks", ["karim", "mostafa", "tarek"])), runId = store.get("wl_run", null), selected = null, tab = "home";
 
 /* ------------------------------------------------------------ top bar */
 $("#mode").addEventListener("click", e => {

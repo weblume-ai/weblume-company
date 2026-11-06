@@ -676,9 +676,7 @@
   brew(0); roast(0); drinks(0); pour(0); frame();
 
   /* the opening leaves on its own once the logo has had its moment; a tap skips it */
-  var intro = $("intro"), shot = /[?&]shot=([d.]+)/.exec(location.search);
-  if (intro && (!C.logo || shot)) { intro.remove(); intro = null; }
-  if (shot) setTimeout(function () { scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * +shot[1]); }, 50);
+  var intro = $("intro");
   if (intro) {
     try { sessionStorage.setItem("loopie-intro", "1"); } catch (e) {}
     var leave = function () {

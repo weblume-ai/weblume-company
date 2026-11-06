@@ -110,4 +110,9 @@ assert gone == ["price", "hours"]
 kept = {"hours": "24h"}
 assert templates.drop_unsourced(kept, "مفتوح 24 ساعة") == [] and kept["hours"] == "24h"
 
+with tempfile.TemporaryDirectory() as d:  # no drinks at all must not break the page
+    empty = {"name": "x", "drinks": []}
+    templates.build_site("cafe", empty, Path(d) / "x")
+    assert len(empty["drinks"]) == 1 and "shot=" not in (Path(d) / "x" / "index.html").read_text(encoding="utf-8")
+
 print("All rule checks passed.")

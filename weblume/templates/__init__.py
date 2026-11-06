@@ -84,6 +84,9 @@ def build_site(kind: str, data: dict, dest: Path) -> int:
     if not data.get("logo"):  # no logo yet: drop the logo opening so the page doesn't ask for a missing image
         page = dest / "index.html"
         page.write_text(re.sub(r'<div class="intro" id="intro".*?</div><i></i></div>\n?', "", page.read_text(encoding="utf-8"), count=1), encoding="utf-8")
+    if not data.get("drinks"):  # the drinks scene reads the first drink on load; an empty list breaks the page
+        data["drinks"] = [{"mood": "مستعجل", "name": "إسبريسو", "desc": "", "img": "assets/img/drink-esp.webp", "ratio": "800/550",
+                           "s": .62, "bg": "#FFFFFF", "disc": (data.get("colors") or {}).get("accent", "#EBB81F"), "fg": "#141210"}]
     data.setdefault("demo", True)
     (dest / "data.js").write_text("window.CAFE = " + json.dumps(data, ensure_ascii=False, indent=1) + ";\n", encoding="utf-8")
     return fixed
