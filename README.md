@@ -32,7 +32,7 @@ Work order is always Omar → Nour → Karim → Hana → Karim (fixes) → Ziad
 ```
 weblume-company/
 ├── server.py              Dashboard server (built-in Python, no extra packages)
-├── web/index.html         The dashboard page: 3D office + Home / Work / Progress / Team tabs
+├── index.html             The dashboard page: 3D office + Home / Work / Progress / Team tabs
 ├── start.bat              Double-click to open the dashboard
 ├── requirements.txt
 ├── .env.example           Copy to .env (your settings and keys)
@@ -89,6 +89,12 @@ To add a template: put `name.html` in `weblume/templates/` with the two `<!--WEB
 add its keywords to `KINDS` in `weblume/templates/__init__.py`.
 
 ## The dashboard
+Two ways to open it, both need `start.bat` running on your laptop (that's where the team works):
+- **On the laptop**: http://127.0.0.1:8501 (start.bat opens it).
+- **Online link**: https://weblume-ai.github.io/weblume-company/ connects to start.bat on the same
+  computer. Chrome asks once about *local network access*: choose **Allow**. Without start.bat the
+  page shows "Not connected". The server accepts only this link and 127.0.0.1, no other site.
+
 - **Top bar**: Whole company / Focused team (pick people), the goal box, **Start goal**, a Live light, and
   **Hide 3D** for slow devices.
 - **3D office**: one room per person, plus a lounge. Free people walk around; working people sit at their

@@ -12,8 +12,10 @@ from weblume.config import OUTPUT_DIR, PROVIDER, ROOT, model_name
 from weblume.team import ORDER, TEAM
 
 HOST, PORT = "127.0.0.1", 8501
-PAGE = ROOT / "web" / "index.html"
+PAGE = ROOT / "index.html"
 LOCAL_HOST = re.compile(r"^(127\.0\.0\.1|localhost)(:\d+)?$", re.I)
+LOCAL_ORIGIN = re.compile(r"^http://(127\.0\.0\.1|localhost)(:\d+)?$")
+ONLINE = "https://weblume-ai.github.io"  # the online copy of this page (GitHub Pages) may use this server; no other site
 
 
 def team_info():
@@ -30,6 +32,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-store")
+        if self.headers.get("Origin") == ONLINE:
+            self.send_header("Access-Control-Allow-Origin", ONLINE)
+            self.send_header("Vary", "Origin")
         for k, v in (extra or {}).items():
             self.send_header(k, v)
         self.end_headers()
@@ -41,10 +46,18 @@ class Handler(BaseHTTPRequestHandler):
             self.send(403, {"error": "Local use only."})
             return False
         origin = self.headers.get("Origin")
-        if self.command == "POST" and origin and not re.match(r"^http://(127\.0\.0\.1|localhost)(:\d+)?$", origin):
+        if self.command == "POST" and origin and origin != ONLINE and not LOCAL_ORIGIN.match(origin):
             self.send(403, {"error": "Local use only."})
             return False
         return True
+
+    def do_OPTIONS(self):  # browser asks before the online page sends a POST
+        if not self.local_only():
+            return
+        if self.headers.get("Origin") != ONLINE:
+            return self.send(403, {"error": "Local use only."})
+        self.send(204, b"", "text/plain", {"Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type",
+                                         "Access-Control-Allow-Private-Network": "true", "Access-Control-Max-Age": "600"})
 
     def do_GET(self):
         if not self.local_only():

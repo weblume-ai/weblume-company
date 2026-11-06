@@ -123,6 +123,7 @@ a{color:var(--red2)}
       <nav class="tabs" id="tabs">
         <button data-t="home" class="on">Home</button><button data-t="work">Work</button><button data-t="progress">Progress</button><button data-t="team">Team</button>
       </nav>
+      <div class="card err" id="offline" hidden style="margin:12px 14px 0"><b>Not connected to your laptop.</b><div class="small">Double-click <b>start.bat</b> on your laptop and keep it open. If Chrome asks about <b>local network access</b>, choose <b>Allow</b>. The team runs on your laptop; this page only shows it.</div></div>
       <div class="pane on" id="p-home"></div>
       <div class="pane" id="p-work"></div>
       <div class="pane" id="p-progress"></div>
@@ -149,8 +150,10 @@ function h(tag, props, ...kids) { // builds DOM without innerHTML, so AI output 
 const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter(k => k != null && k !== false)); // skip empty parts
 const store = {get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} }};
+// Opened from the online link (GitHub Pages)? Then talk to start.bat on this computer.
+const LOCAL = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) && location.port === "8501", SRV = LOCAL ? "" : "http://127.0.0.1:8501";
 async function api(path, body) {
-  const r = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {cache: "no-store"});
+  const r = await fetch(SRV + path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {cache: "no-store"});
   const j = await r.json().catch(() => ({error: "Server not reachable"}));
   if (!r.ok) throw new Error(j.error || r.statusText);
   return j;
@@ -268,8 +271,8 @@ function renderWork() {
       })) : null,
     files.length ? h("div", {}, h("h3", {}, "📁 Files"), ...files.map(f => h("div", {class: "row small"},
       h("span", {style: "flex:1;word-break:break-all"}, f.split(/[\\/]/).pop()),
-      /\.html$/i.test(f) ? h("a", {href: "/api/file?view=1&path=" + encodeURIComponent(f), target: "_blank", rel: "noopener"}, "Open") : null,
-      h("a", {href: "/api/file?path=" + encodeURIComponent(f)}, "Download")))) : null
+      /\.html$/i.test(f) ? h("a", {href: SRV + "/api/file?view=1&path=" + encodeURIComponent(f), target: "_blank", rel: "noopener"}, "Open") : null,
+      h("a", {href: SRV + "/api/file?path=" + encodeURIComponent(f)}, "Download")))) : null
   );
 }
 const norm = s => String(s || "").normalize("NFKD").replace(/[̀-ًͯ-ٟ]/g, "").toLowerCase().replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/[\W_]+/gu, "");
@@ -311,7 +314,8 @@ async function poll() {
     if (first) { buildPicker(); world && world.addPeople(S.team) }
     if (runId) logLines = (await api("/api/log?run=" + encodeURIComponent(runId))).lines;
     render();
-  } catch (e) { $("#liveTxt").textContent = "Server stopped" }
+    $("#offline").hidden = true;
+  } catch (e) { $("#liveTxt").textContent = "Not connected"; $("#offline").hidden = false }
   pollT = setTimeout(poll, S.running ? 1500 : 4000);
 }
 
