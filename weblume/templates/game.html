@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اسم اللعبة | العب دلوقتي من المتصفح</title>
+<meta name="description" content="لعبة خفيفة تتلعب من المتصفح على الموبايل والكمبيوتر">
+<meta property="og:title" content="اسم اللعبة">
+<meta property="og:description" content="العبها من المتصفح من غير تحميل">
+<meta name="theme-color" content="#0e0e12">
+<link rel="icon" href="logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;800&family=IBM+Plex+Sans+Arabic:wght@400;500&display=swap" rel="stylesheet">
+<!--WEBLUME:MOTION_CSS-->
+<style>
+/* A game site with a real playable game. Change colors only here; game colors read these variables too. */
+:root{--bg:#0e0e12;--surface:#17171d;--ink:#f4f1ea;--muted:#9a96a0;--accent:#ff4d2e;--accent-2:#ffd23f;--line:#2a2a33;
+  --display:"Alexandria",system-ui,sans-serif;--text:"IBM Plex Sans Arabic",system-ui,sans-serif}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;overflow-x:clip}
+body{background:var(--bg);color:var(--ink);font:1.05rem/1.75 var(--text)}
+a{color:inherit}
+h1,h2,h3{font-family:var(--display);line-height:1.05;margin:0 0 .4em}
+h1{font-size:clamp(2.6rem,9vw,7.5rem);letter-spacing:-.02em}
+h2{font-size:clamp(2rem,5vw,3.6rem)}
+section{padding:clamp(56px,9vw,120px) clamp(20px,5vw,72px)}
+.wrap{max-width:1180px;margin:0 auto}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 24px;border-radius:14px;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;border:0;cursor:pointer;font-size:1rem}
+.btn.ghost{background:none;color:var(--ink);border:1.5px solid var(--line)}
+:focus-visible{outline:3px solid var(--accent-2);outline-offset:3px}
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:14px clamp(20px,5vw,72px);background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px)}
+.nav img{height:32px;width:auto}
+.nav .sp{margin-inline-start:auto}
+/* the game */
+.play{display:grid;gap:18px}
+.screen{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:var(--surface);aspect-ratio:16/7;touch-action:manipulation;cursor:pointer}
+@media (max-width:700px){.screen{aspect-ratio:4/3}}
+.screen canvas{width:100%;height:100%;display:block}
+.hud{position:absolute;inset:14px 16px auto;display:flex;justify-content:space-between;font-family:var(--display);font-size:1.1rem;pointer-events:none}
+.over{position:absolute;inset:0;display:grid;place-content:center;text-align:center;gap:10px;background:color-mix(in srgb,var(--bg) 70%,transparent)}
+.over[hidden]{display:none}
+.keys{color:var(--muted);font-size:.92rem}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;counter-reset:s}
+.steps div{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px}
+.steps div::before{counter-increment:s;content:counter(s);display:block;font:800 2.6rem var(--display);color:var(--accent)}
+footer{padding:36px clamp(20px,5vw,72px);border-top:1px solid var(--line);color:var(--muted);font-size:.9rem;display:flex;gap:16px;flex-wrap:wrap}
+</style>
+</head>
+<body data-wa="">
+<header class="nav"><img src="logo.svg" alt="اسم اللعبة" width="150" height="32"><span class="sp"></span>
+  <a class="btn ghost" href="#how" style="min-height:40px" data-en="How to play">إزاي تلعب</a>
+  <button class="btn ghost" data-lang-toggle style="min-height:40px">EN</button></header>
+<main>
+  <section><div class="wrap play">
+    <h1 class="split">اقفز. اهرب. اكسر الرقم.</h1>
+    <p class="reveal keys" data-en="Tap the screen or press Space to jump. Every obstacle you pass is a point.">دوس على الشاشة أو Space عشان تنط. كل عقبة تعديها بنقطة.</p>
+    <div class="screen" id="screen" role="application" aria-label="اللعبة: دوس أو Space للقفز">
+      <canvas id="cv"></canvas>
+      <div class="hud"><span id="score">0</span><span id="best" data-en="Best 0">أعلى 0</span></div>
+      <div class="over" id="over"><h2 id="title" style="margin:0">جاهز؟</h2>
+        <button class="btn" id="go" data-en="Play">ابدأ</button><span class="keys" data-en="Space / tap to jump">Space أو دوسة للقفز</span></div>
+    </div>
+  </div></section>
+  <section id="how"><div class="wrap"><h2 class="reveal" data-en="How to play">إزاي تلعب</h2>
+    <div class="steps" data-stagger>
+      <div class="reveal"><h3 data-en="Jump">انط</h3><p data-en="Tap or press Space.">دوسة أو Space.</p></div>
+      <div class="reveal"><h3 data-en="Dodge">اهرب</h3><p data-en="The speed goes up as you go.">السرعة بتزيد كل شوية.</p></div>
+      <div class="reveal"><h3 data-en="Beat it">اكسر الرقم</h3><p data-en="Your best score stays on this device.">أعلى رقم ليك بيتحفظ على جهازك.</p></div>
+    </div></div></section>
+  <section id="contact"><div class="wrap"><h2 class="reveal" data-en="Want a game like this?">عايز لعبة زي دي؟</h2>
+    <a class="btn" href="#" data-wa-msg="أهلاً، عايز أعرف أكتر عن اللعبة" data-en="Message us">كلمنا</a></div></section>
+</main>
+<footer><span>© <span id="y"></span> اسم اللعبة</span><span>تصميم <a href="https://weblume-sa.github.io" target="_blank" rel="noopener noreferrer">Weblume</a></span></footer>
+<script>
+(function () { // a small runner: jump over blocks, speed grows, best score saved on the device
+  "use strict";
+  document.getElementById("y").textContent = new Date().getFullYear();
+  var cv = document.getElementById("cv"), g = cv.getContext("2d"), screen = document.getElementById("screen");
+  var over = document.getElementById("over"), title = document.getElementById("title"), sEl = document.getElementById("score"), bEl = document.getElementById("best");
+  var css = getComputedStyle(document.documentElement), col = function (v) { return css.getPropertyValue(v).trim(); };
+  var W, H, ground, p, blocks, speed, score, best = 0, running = false, last = 0, spawn = 0;
+  try { best = +localStorage.getItem("game-best") || 0; } catch (e) {}
+  function bestTxt() { bEl.textContent = (document.documentElement.lang === "en" ? "Best " : "أعلى ") + best; }
+  function size() { var r = screen.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
+    cv.width = r.width * d; cv.height = r.height * d; g.setTransform(d, 0, 0, d, 0, 0); W = r.width; H = r.height; ground = H * .82; }
+  function reset() { p = {x: W * .14, y: ground, vy: 0, s: Math.max(26, H * .09)}; blocks = []; speed = W * .45; score = 0; spawn = 1; sEl.textContent = 0; }
+  function jump() { if (!running) return start(); if (p.y >= ground - .5) p.vy = -H * 1.55; }
+  function start() { size(); reset(); running = true; over.hidden = true; last = performance.now(); requestAnimationFrame(tick); }
+  function end() { running = false; if (score > best) { best = score; try { localStorage.setItem("game-best", best); } catch (e) {} }
+    bestTxt(); title.textContent = (document.documentElement.lang === "en" ? "Score " : "النتيجة ") + score; over.hidden = false; }
+  function tick(now) {
+    if (!running) return;
+    var dt = Math.min(.05, (now - last) / 1000); last = now;
+    p.vy += H * 4.2 * dt; p.y = Math.min(ground, p.y + p.vy * dt); if (p.y >= ground) p.vy = 0;
+    speed += W * .02 * dt; spawn -= dt;
+    if (spawn <= 0) { var h = H * (.08 + Math.random() * .1); blocks.push({x: W + 20, w: H * (.06 + Math.random() * .05), h: h, passed: false}); spawn = .9 + Math.random() * 1.1; }
+    for (var i = blocks.length - 1; i >= 0; i--) { var b = blocks[i]; b.x -= speed * dt;
+      if (!b.passed && b.x + b.w < p.x) { b.passed = true; score++; sEl.textContent = score; }
+      if (b.x + b.w < -20) blocks.splice(i, 1);
+      if (p.x + p.s * .85 > b.x && p.x + p.s * .15 < b.x + b.w && p.y > ground - b.h) return draw(), end(); }
+    draw(); requestAnimationFrame(tick);
+  }
+  function draw() {
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = col("--line"); g.fillRect(0, ground, W, 2);
+    g.fillStyle = col("--accent-2"); blocks.forEach(function (b) { g.beginPath(); g.roundRect(b.x, ground - b.h, b.w, b.h, 6); g.fill(); });
+    g.fillStyle = col("--accent"); g.beginPath(); g.roundRect(p.x, p.y - p.s, p.s, p.s, p.s * .28); g.fill();
+    g.fillStyle = col("--bg"); g.fillRect(p.x + p.s * .62, p.y - p.s * .72, p.s * .12, p.s * .12); // the eye, looking ahead
+  }
+  document.getElementById("go").addEventListener("click", function (e) { e.stopPropagation(); start(); });
+  screen.addEventListener("pointerdown", jump);
+  addEventListener("keydown", function (e) { if (e.code === "Space" || e.code === "ArrowUp") { if (document.activeElement && document.activeElement.tagName === "BUTTON" && !running) return; e.preventDefault(); jump(); } });
+  addEventListener("resize", function () { if (!running) { size(); reset(); draw(); } });
+  document.addEventListener("visibilitychange", function () { if (document.hidden && running) end(); });
+  size(); reset(); draw(); bestTxt();
+})();
+</script>
+<!--WEBLUME:MOTION_JS-->
+</body>
+</html>

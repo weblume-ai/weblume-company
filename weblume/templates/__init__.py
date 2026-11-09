@@ -1,7 +1,8 @@
 """Ready site templates for Karim.
 
 cafe   = the Loopie design (a whole folder): Karim writes only the client's content as JSON, the code builds the site.
-clinic, shop = single pages Karim edits; the motion kit is injected after him.
+clinic, shop, game, fresh = single pages Karim edits (fresh: a blank page shaped by an inspiration direction);
+the motion kit is injected after him.
 """
 import json
 import re
@@ -9,12 +10,16 @@ import shutil
 import urllib.request
 from pathlib import Path
 
+from .. import logo
+
 DIR = Path(__file__).parent
 CSS_MARK, JS_MARK = "<!--WEBLUME:MOTION_CSS-->", "<!--WEBLUME:MOTION_JS-->"
 FOLDER = {"cafe"}  # templates that are a site folder filled from JSON
 KINDS = {  # template -> words that pick it (Arabic + English)
-    "cafe": ["café", "cafe", "coffee", "restaurant", "bakery", "food", "kitchen", "pizza", "burger", "كافيه", "كافية",
-             "قهوة", "مطعم", "مخبز", "حلويات", "أكل", "اكل", "كشري", "مشويات"],
+    "cafe": ["café", "cafe", "coffee", "كافيه", "كافية", "قهوة", "مقهى"],
+    "fresh": ["restaurant", "bakery", "food", "kitchen", "pizza", "burger", "portfolio", "agency", "event", "landing",
+              "مطعم", "مخبز", "حلويات", "أكل", "اكل", "كشري", "مشويات", "بورتفوليو", "أعمالي", "شركة", "ايفنت", "فرح"],
+    "game": ["game", "gaming", "لعبة", "ألعاب", "العاب"],
     "clinic": ["clinic", "doctor", "dental", "dentist", "salon", "spa", "gym", "lawyer", "school", "center", "service",
                "عيادة", "دكتور", "أسنان", "اسنان", "صالون", "جيم", "محامي", "مدرسة", "مركز", "خدمات"],
     "shop": ["shop", "store", "boutique", "brand", "clothes", "gift", "perfume", "متجر", "محل", "براند", "هدايا",
@@ -23,11 +28,11 @@ KINDS = {  # template -> words that pick it (Arabic + English)
 
 
 def pick(text: str) -> str:
-    """Which template fits the request; cafés and restaurants are the default (Weblume's main clients)."""
+    """Which template fits the request; anything we have no ready design for gets a fresh design ("fresh")."""
     t = text.lower()
     scores = {k: sum(w in t for w in words) for k, words in KINDS.items()}
     best = max(scores, key=scores.get)
-    return best if scores[best] else "cafe"
+    return best if scores[best] else "fresh"
 
 
 def load(kind: str) -> str:
@@ -81,9 +86,13 @@ def build_site(kind: str, data: dict, dest: Path) -> int:
         if not (dest / holder[key]).is_file():
             holder[key] = "assets/img/menu-coffee.webp" if key == "img" else "assets/img/mood-cup.webp"
             fixed += 1
-    if not data.get("logo"):  # no logo yet: drop the logo opening so the page doesn't ask for a missing image
+    if not data.get("logo"):  # no logo from the client yet: a clean type logo until he sends the real one
+        colors = data.get("colors") or {}
+        (dest / "assets" / "img" / "logo.svg").write_text(
+            logo.make(data.get("word") or data.get("name") or "Brand", colors.get("accent", "#141414"), colors.get("ink", "#141414")), encoding="utf-8")
         page = dest / "index.html"
-        page.write_text(re.sub(r'<div class="intro" id="intro".*?</div><i></i></div>\n?', "", page.read_text(encoding="utf-8"), count=1), encoding="utf-8")
+        page.write_text(page.read_text(encoding="utf-8").replace("assets/img/logo.webp", "assets/img/logo.svg"), encoding="utf-8")
+        data["logo"] = "assets/img/logo.svg"
     if not data.get("drinks"):  # the drinks scene reads the first drink on load; an empty list breaks the page
         data["drinks"] = [{"mood": "مستعجل", "name": "إسبريسو", "desc": "", "img": "assets/img/drink-esp.webp", "ratio": "800/550",
                            "s": .62, "bg": "#FFFFFF", "disc": (data.get("colors") or {}).get("accent", "#EBB81F"), "fg": "#141210"}]

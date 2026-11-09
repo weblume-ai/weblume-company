@@ -11,7 +11,7 @@ from pathlib import Path
 
 from crewai import Crew, Process, Task
 
-from . import config, knowledge, ops, publish as publisher, rules, security, templates, tester, video
+from . import config, inspiration, knowledge, logo, ops, publish as publisher, rules, security, templates, tester, video
 from .config import CURRENCY, MAX_RPM, OUTPUT_DIR, PROVIDER, RUNS_DIR, WEBSITE, get_llm, model_name
 from .team import ORDER, TEAM, make_agent
 
@@ -195,9 +195,16 @@ NO_FAKES = ("NEVER invent reviews, testimonials, ratings, years, customer counts
             "the request or spec gives.")
 
 
-def karim_brief(kind: str) -> str:
+NAME_AND_LOGO = ("If the request gives no business name, choose a short, memorable name that fits the business and the "
+                 "client's language and use it everywhere (never leave a placeholder name). If the client sent no logo, "
+                 "use logo.svg: the code makes a clean type logo from the name and the --accent color.")
+
+
+def karim_brief(kind: str, goal: str = "") -> str:
     """What Karim is told to produce for this template, starting with the owner's saved taste."""
-    return (knowledge.taste("site") + "\n\n" if knowledge.taste("site") else "") + _karim_brief(kind)
+    ideas = ("\n\nDESIGN IDEAS FOR THIS SITE (adapt them to this business and its real photos; never copy a site):\n"
+             + inspiration.brief(goal, kind)) if kind == "fresh" and goal else ""
+    return (knowledge.taste("site") + "\n\n" if knowledge.taste("site") else "") + _karim_brief(kind) + "\n\n" + NAME_AND_LOGO + ideas
 
 
 def _karim_brief(kind: str) -> str:
@@ -221,7 +228,8 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
     steps: list[tuple[Task, str, str]] = []
     run.kind = templates.pick(f"{goal} {client}")
     if "karim" in keys:  # the owner chooses the template
-        labels = {"cafe": "كافيه/مطعم (تصميم Loopie)", "clinic": "عيادة/خدمات", "shop": "متجر"}
+        labels = {"cafe": "كافيه (تصميم Loopie)", "fresh": "تصميم جديد مختلف (مكتبة الإلهام)", "clinic": "عيادة/خدمات",
+                  "shop": "متجر", "game": "موقع لعبة (فيه لعبة شغالة)"}
         ans = run.ask("karim", "هعمل الموقع على أي قالب؟ الأول هو اقتراحي.", [labels[run.kind], *[v for k, v in labels.items() if k != run.kind]])
         run.kind = next((k for k, v in labels.items() if v == ans["choice"]), run.kind)
         if ans["text"]:
@@ -254,7 +262,7 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
     if "karim" in keys:
         run.log("karim", f"Template: {run.kind}")
         add("build", "karim", ("website_draft" if "mostafa" in keys else "website") + ext,
-            f"Request:\n\"\"\"{goal}\"\"\"\n\n{karim_brief(run.kind)}",
+            f"Request:\n\"\"\"{goal}\"\"\"\n\n{karim_brief(run.kind, goal)}",
             "The client's site content." if ext == ".json" else "One complete HTML document.",
             [t.get("spec"), t.get("copy")])
     if "mostafa" in keys:
@@ -330,6 +338,12 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
 
 
 # ---------------------------------------------------------------- after each task
+def _site_name(html: str) -> str:
+    """The business name from the page title ("Name | tagline")."""
+    m = re.search(r"<title>\s*([^<|·—-]+)", html)
+    return m.group(1).strip() if m else ""
+
+
 def save_site(run: Run, key: str, file: str, raw: str, name: str) -> str:
     """Karim's output: a draft is kept in the run folder; the final one becomes the site in output/<client>/."""
     final = file.startswith("website.")
@@ -358,7 +372,16 @@ def save_site(run: Run, key: str, file: str, raw: str, name: str) -> str:
         if final:
             run.site_dir.mkdir(parents=True, exist_ok=True)
             (run.site_dir / "index.html").write_text(text, encoding="utf-8")
+            if "logo.svg" in text and not (run.site_dir / "logo.svg").exists():  # no client logo: a type logo from the name
+                color = lambda v, d: (re.search(rf"{v}\s*:\s*(#[0-9a-fA-F]{{3,8}})", text) or [None, d])[1]
+                (run.site_dir / "logo.svg").write_text(logo.make(_site_name(text), color("--accent", "#141414"), color("--ink", "#141414")), encoding="utf-8")
+                run.update(key, f"عملت لوجو مؤقت بالاسم «{_site_name(text)}». ابعتلي اللوجو الحقيقي لو موجود.")
     if final:
+        if not run.status["client"]:  # Karim named the business himself: tell the owner
+            name = (data.get("name") if run.kind in templates.FOLDER else _site_name(text)) or ""
+            if name:
+                run.status["client"] = name
+                run.update(key, f"مفيش اسم في الطلب، فاخترت «{name}». لو عايز اسم تاني قولي.")
         run.site_text = text
         site = run.site_dir / "index.html"
         run.status["site"] = str(site.relative_to(OUTPUT_DIR))
@@ -635,6 +658,19 @@ def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
             ops.handle(run, run.status["goal"])
             run.status["state"] = "done"
             return
+        if mode == "advice":  # the owner asked a question: Layla answers from the playbook, about anything
+            run.set_agent("layla", "working")
+            q = Task(description=f"The owner (Asser) asks you:\n\"\"\"{run.status['goal']}\"\"\"\n\nAnswer him in Egyptian "
+                                 "Arabic, short and practical: the answer first, then at most 5 numbered steps. Help with "
+                                 "anything (clients, prices, marketing, tech, business), not only websites. Use the playbook "
+                                 "and his rules below; if you don't know something, say so instead of guessing.\n\n"
+                                 f"PLAYBOOK:\n{knowledge.playbook()}\n\n{knowledge.taste()}",
+                     expected_output="A short answer in Egyptian Arabic.", agent=make_agent("layla", get_llm()), context=[])
+            Crew(agents=[q.agent], tasks=[q], verbose=False).kickoff()
+            run.say("layla", "you", q.output.raw.strip(), full=True)
+            run.set_agent("layla", "done", q.output.raw)
+            run.status["state"] = "done"
+            return
         config.on_switch = lambda msg: run.log("system", msg)
         llm = get_llm()
         goal, client, names = run.status["goal"], run.status["client"], run.status["names"]
@@ -754,6 +790,13 @@ def answer(run_id: str, qid: int, choice: str, text: str = ""):
     run.answer(int(qid), str(choice), str(text))
 
 
+def is_question(text: str) -> bool:
+    """A question or a 'what if' for Layla, as opposed to a change to the last website."""
+    t = text.strip()
+    return t.endswith(("?", "؟")) or bool(re.match(
+        r"(إزاي|ازاي|ليه|إيه|ايه|هل|أعمل إيه|اعمل ايه|لو (?!سمحت)|امتى|إمتى|فين|كام|ينفع|what|how|why|should|can|when)\b", t, re.I))
+
+
 def message(text: str) -> dict:
     """The owner writes in the chat. During a run it reaches the teammate he names (or the one working now) and is
     added to that teammate's next task. With no run going, it's a correction to the last website."""
@@ -765,6 +808,8 @@ def message(text: str) -> dict:
         if run:
             raise ValueError("فيه شغل شغال دلوقتي، ابعتها تاني لما يخلص.")
         return {"run": start(text, "ops", ["karim"])}
+    if not run and is_question(text):  # a question, not a correction: Layla answers it
+        return {"run": start(text, "advice", ["layla"])}
     if run:
         target = next((k for k, a in TEAM.items() if a["name"].lower() in text.lower() or a.get("ar", "~") in text), run.current)
         run.say("you", target, text)

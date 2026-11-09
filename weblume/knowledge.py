@@ -27,6 +27,11 @@ SKILLS = {  # who reads which playbook in knowledge/skills/ ("quality" is everyo
 }
 
 
+def playbook() -> str:
+    """What to do when… (clients, prices, tech problems, marketing): Layla answers the owner's questions from it."""
+    return (KNOW / "playbook.md").read_text(encoding="utf-8")
+
+
 def skills(key: str) -> str:
     """The teammate's skill playbooks, ready to append to his instructions ('' if he has none)."""
     texts = [(SKILL_DIR / f"{n}.md").read_text(encoding="utf-8") for n in SKILLS.get(key, [])]

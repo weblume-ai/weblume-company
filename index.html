@@ -414,7 +414,7 @@ function renderChat() {
   const p = $("#p-chat");
   if (!chatBuilt) {
     chatBuilt = true;
-    const box = h("textarea", {class: "in", id: "c-text", rows: 2, placeholder: "اكتب للفريق… (اذكر الاسم: «كريم غيّر اللون للأخضر»). من غير رن شغال = تعديل على آخر موقع"});
+    const box = h("textarea", {class: "in", id: "c-text", rows: 2, placeholder: "اسأل ليلى أي سؤال (أعمل إيه لو…؟) · عدّل آخر موقع («كريم غيّر اللون») · اعمل ريبو cafe-site · شغل git status"});
     const send = async () => {
       const text = box.value.trim(); if (!text) return;
       try { const r = await api("/api/message", {text}); box.value = ""; if (r.run) { runId = r.run; store.set("wl_run", runId) } poll() } catch (e) { alert(e.message) }

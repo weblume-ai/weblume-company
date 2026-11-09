@@ -69,7 +69,8 @@ except ValueError:
 # Templates: the right one is picked, and the motion kit always ends up in the page exactly once
 from weblume import templates  # noqa: E402
 assert templates.pick("موقع لكافيه نوار") == "cafe" and templates.pick("Build a site for a dental clinic") == "clinic"
-assert templates.pick("متجر عطور أونلاين") == "shop" and templates.pick("something else") == "cafe"
+assert templates.pick("متجر عطور أونلاين") == "shop" and templates.pick("something else") == "fresh"
+assert templates.pick("موقع لمطعم مشويات") == "fresh" and templates.pick("اعمل موقع لعبة") == "game"
 for kind in set(templates.KINDS) - templates.FOLDER:
     page = templates.load(kind)
     assert templates.CSS_MARK in page and templates.JS_MARK in page, kind
@@ -285,5 +286,21 @@ try:
     assert ("POST", "/repos/weblume-ai/noir-cafe/pages") in _calls
 finally:
     publish._token, publish._call, publish._git = _old
+
+# Questions go to Layla; corrections still go to Karim
+assert _co.is_question("أعمل إيه لو العميل قال السعر غالي؟") and _co.is_question("ازاي أربط دومين")
+assert not _co.is_question("لو سمحت خلي اللون أحمر") and not _co.is_question("كريم غير اللون للأخضر")
+assert "السعر غالي" in knowledge.playbook()
+
+# Inspiration: a direction for the business, no invented-numbers sections, real sites to learn from
+from weblume import inspiration, logo  # noqa: E402
+_b = inspiration.brief("اعمل موقع لمطعم مشويات", "fresh")
+assert "DESIGN DIRECTION" in _b and "REAL SITES" in _b and "(testimonial)" not in _b and "(stats)" not in _b
+assert inspiration.sector("اعمل موقع لعبة اونلاين") == "game" and inspiration.brief("x") == inspiration.brief("x")
+
+# Logo when the client has none: initials make sense in Arabic and English, the name is escaped
+assert logo.initials("مطعم الشيف") == "ش" and logo.initials("Pixel Run") == "PR"
+assert "<svg" in logo.make("A&B <x>", "#c8102e") and "A&amp;B &lt;x&gt;" in logo.make("A&B <x>", "#c8102e")
+assert _co._site_name("<title>Noir Café | قهوة مختصة</title>") == "Noir Café"
 
 print("All rule checks passed.")
