@@ -546,7 +546,7 @@ function makeWorld() {
   const cam = new THREE.PerspectiveCamera(30, 1, .5, 200);
   cam.position.set(19, 20, 26);
   const controls = THREE.OrbitControls ? new THREE.OrbitControls(cam, renderer.domElement) : null;
-  if (controls) { controls.enableDamping = true; controls.maxPolarAngle = 1.2; controls.minDistance = 18; controls.maxDistance = 75; controls.target.set(0, 0, 0) }
+  if (controls) { controls.enableDamping = true; controls.maxPolarAngle = 1.2; controls.minDistance = 7; controls.maxDistance = 75; controls.target.set(0, 0, 0) }
 
   scene.add(new THREE.HemisphereLight(0xfff4e6, 0x1a1210, .25));
   const sun = new THREE.DirectionalLight(0xfff0dd, 1.25); sun.position.set(14, 26, 12); sun.castShadow = true;
@@ -625,57 +625,64 @@ function makeWorld() {
   const people = {};
   function person(t, idx) {
     const g = new THREE.Group(), fem = FEMALE.has(t.key);
-    const shirt = M(COLORS[t.key] || "#888", {roughness: .85}), skin = M(SKIN[idx % SKIN.length], {roughness: .55});
+    const shirt = M(COLORS[t.key] || "#888", {roughness: .85}), skin = M(SKIN[idx % SKIN.length], {roughness: .5});
     const pants = M(fem ? "#1d1d22" : ["#23272e", "#3b3f46", "#2c2a26", "#1f2a3a"][idx % 4], {roughness: .9});
     const shoe = M(["#111", "#2b1d14", "#eee"][idx % 3], {roughness: .45}), hairCol = M(["#1b1310", "#2a1c14", "#141414", "#3a2618"][idx % 4], {roughness: .8});
     const joint = (x, y, z, parent) => { const j = new THREE.Group(); j.position.set(x, y, z); parent.add(j); return j };
-    const seg = (len, r1, r2, mat, parent) => { cyl(r1, r2, len, mat, 0, -len / 2, 0, parent, 14); mesh(new THREE.SphereGeometry(r2, 12, 8), mat, 0, -len, 0, parent) };
-    // legs: hip → thigh → knee → shin → shoe
+    const seg = (len, r1, r2, mat, parent) => { cyl(r1, r2, len, mat, 0, -len / 2, 0, parent, 16); mesh(new THREE.SphereGeometry(r2, 14, 10), mat, 0, -len, 0, parent) };
+    const lathe = (pts, mat, parent, y = 0) => mesh(new THREE.LatheGeometry(pts.map(([x, yy]) => new THREE.Vector2(x, yy)), 32), mat, 0, y, 0, parent);
+    // legs: tapered thigh → knee → calf → shoe with a rounded toe
     const leg = x => {
-      const hip = joint(x, .86, 0, g); seg(.42, .085, .07, pants, hip);
-      const knee = joint(0, -.42, 0, hip); seg(.4, .068, .052, pants, knee);
-      box(.12, .07, .26, shoe, 0, -.42, .05, knee); return [hip, knee];
+      const hip = joint(x, .86, 0, g); seg(.43, .09, .066, pants, hip);
+      const knee = joint(0, -.43, 0, hip); seg(.39, .066, .048, pants, knee);
+      box(.1, .06, .2, shoe, 0, -.42, .03, knee); mesh(new THREE.SphereGeometry(.052, 12, 8), shoe, 0, -.425, .13, knee).scale.set(1, .6, 1);
+      return [hip, knee];
     };
-    const [hipL, kneeL] = leg(-.1), [hipR, kneeR] = leg(.1);
-    // body: pelvis, a chest that is wider at the shoulders, collar, neck
+    const [hipL, kneeL] = leg(-.095), [hipR, kneeR] = leg(.095);
+    // body: hips in the trousers, a belt, then the shirt shaped like a real chest and waist
     const torso = joint(0, .86, 0, g);
-    cyl(.17, .16, .14, pants, 0, .02, 0, torso, 20).scale.set(1.15, 1, .8);
-    cyl(fem ? .2 : .23, fem ? .16 : .18, .5, shirt, 0, .32, 0, torso, 24).scale.set(1.12, 1, .72);
-    mesh(new THREE.SphereGeometry(.23, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), shirt, 0, .55, 0, torso).scale.set(fem ? 1.0 : 1.12, .32, .72);
-    cyl(.07, .075, .06, M("#f4f4f4", {roughness: .8}), 0, .6, 0, torso, 14);
-    cyl(.05, .055, .1, skin, 0, .66, 0, torso, 12);
-    // arms: shoulder → upper arm (sleeve) → elbow → forearm → hand
+    lathe([[0, -.06], [.16, -.06], [.175, 0], [.165, .1], [0, .1]], pants, torso).scale.set(1.15, 1, .78);
+    cyl(.168, .168, .03, M("#151515", {roughness: .4}), 0, .1, 0, torso, 28).scale.set(1.15, 1, .78);
+    lathe(fem ? [[0, .1], [.15, .1], [.135, .22], [.15, .34], [.17, .44], [.175, .5], [.15, .55], [.07, .59], [0, .59]]
+              : [[0, .1], [.16, .1], [.155, .22], [.17, .34], [.2, .45], [.205, .51], [.18, .56], [.08, .6], [0, .6]], shirt, torso).scale.set(1.12, 1, .66);
+    cyl(.055, .06, .05, M("#f2f2f2", {roughness: .8}), 0, .6, 0, torso, 16);
+    cyl(.045, .05, .1, skin, 0, .64, 0, torso, 14);
+    // arms: rounded shoulder → short sleeve → elbow → forearm → hand with a thumb
     const arm = x => {
-      const sh = joint(x, .53, 0, torso); seg(.3, .065, .055, shirt, sh);
-      const el = joint(0, -.3, 0, sh); seg(.26, .048, .04, skin, el);
-      mesh(new THREE.SphereGeometry(.05, 12, 8), skin, 0, -.3, .01, el).scale.set(.85, 1.1, .6); return [sh, el];
+      const sh = joint(x, .5, 0, torso);
+      mesh(new THREE.SphereGeometry(.072, 14, 10), shirt, 0, 0, 0, sh);
+      cyl(.068, .06, .17, shirt, 0, -.085, 0, sh, 16); cyl(.05, .046, .15, skin, 0, -.22, 0, sh, 14);
+      const el = joint(0, -.3, 0, sh); mesh(new THREE.SphereGeometry(.046, 12, 8), skin, 0, 0, 0, el); seg(.25, .044, .034, skin, el);
+      mesh(new THREE.BoxGeometry(.07, .085, .03), skin, 0, -.3, 0, el);
+      mesh(new THREE.SphereGeometry(.016, 8, 6), skin, (x < 0 ? 1 : -1) * .04, -.28, .015, el).scale.set(1, 2, 1);
+      return [sh, el];
     };
-    const [shL, elL] = arm(-.29), [shR, elR] = arm(.29);
-    // head: face, ears, nose, brows, eyes with whites, mouth, hair
-    const head = joint(0, .86, 0, torso);
-    mesh(new THREE.SphereGeometry(.15, 28, 20), skin, 0, 0, 0, head).scale.set(.92, 1.08, 1);
-    mesh(new THREE.SphereGeometry(.03, 10, 8), skin, -.14, 0, 0, head).scale.set(.5, 1, .8); mesh(new THREE.SphereGeometry(.03, 10, 8), skin, .14, 0, 0, head).scale.set(.5, 1, .8);
-    mesh(new THREE.SphereGeometry(.022, 10, 8), skin, 0, -.02, .15, head).scale.set(.9, 1, 1.3);
-    const white = M("#f5f5f5", {roughness: .3}), pupil = M("#1a1a1a", {roughness: .2}), brow = hairCol;
+    const [shL, elL] = arm(-.25), [shR, elR] = arm(.25);
+    // head (about 1/7 of the height): skull + jaw, ears, nose, brows, eyes, lips, hair
+    const head = joint(0, .8, 0, torso);
+    mesh(new THREE.SphereGeometry(.118, 32, 24), skin, 0, .01, 0, head).scale.set(.9, 1.08, 1);
+    mesh(new THREE.SphereGeometry(.09, 24, 16), skin, 0, -.05, .025, head).scale.set(.95, .8, 1); // jaw and chin
     for (const sx of [-1, 1]) {
-      mesh(new THREE.SphereGeometry(.024, 12, 8), white, sx * .05, .025, .128, head).scale.set(1.2, .8, .5);
-      mesh(new THREE.SphereGeometry(.013, 8, 6), pupil, sx * .05, .025, .14, head);
-      box(.05, .01, .01, brow, sx * .05, .065, .135, head).rotation.z = -sx * .12;
+      mesh(new THREE.SphereGeometry(.026, 10, 8), skin, sx * .108, 0, -.005, head).scale.set(.45, 1, .75);
+      mesh(new THREE.SphereGeometry(.018, 12, 8), M("#f5f5f5", {roughness: .3}), sx * .038, .022, .1, head).scale.set(1.25, .8, .55);
+      mesh(new THREE.SphereGeometry(.01, 8, 6), M("#1a1a1a", {roughness: .2}), sx * .038, .022, .108, head);
+      box(.04, .008, .01, hairCol, sx * .038, .052, .105, head).rotation.z = -sx * .12;
     }
-    box(.05, .008, .01, M("#8a4a3c", {roughness: .5}), 0, -.075, .135, head);
+    mesh(new THREE.ConeGeometry(.016, .04, 10), skin, 0, -.008, .118, head).rotation.x = Math.PI / 2;
+    box(.038, .007, .01, M("#9a5446", {roughness: .5}), 0, -.06, .1, head);
     const style = fem ? "long" : ["short", "side", "buzz", "short"][idx % 4];
-    if (style !== "buzz") mesh(new THREE.SphereGeometry(.158, 24, 14, 0, Math.PI * 2, 0, Math.PI * (style === "side" ? .55 : .5)), hairCol, 0, .03, -.01, head).scale.set(.98, 1.1, 1.06);
-    else mesh(new THREE.SphereGeometry(.152, 24, 14, 0, Math.PI * 2, 0, Math.PI * .45), hairCol, 0, .02, -.005, head).scale.set(.95, 1.08, 1.02);
-    if (style === "side") box(.2, .05, .12, hairCol, .02, .14, .05, head).rotation.z = -.15;
-    if (style === "long") { mesh(new THREE.CylinderGeometry(.15, .19, .42, 18, 1, true, Math.PI * .55, Math.PI * .9), hairCol, 0, -.15, -.01, head); }
-    if (!fem && idx % 3 === 1) mesh(new THREE.SphereGeometry(.13, 18, 10, 0, Math.PI * 2, Math.PI * .55, Math.PI * .45), hairCol, 0, -.01, .02, head).scale.set(1.05, 1.05, 1.1); // beard
-    const mark = new THREE.Mesh(new THREE.OctahedronGeometry(.13), new THREE.MeshBasicMaterial({color: 0xff3b47})); mark.position.y = 2.25; mark.visible = false; g.add(mark);
+    mesh(new THREE.SphereGeometry(style === "buzz" ? .121 : .127, 28, 16, 0, Math.PI * 2, 0, Math.PI * (style === "side" ? .55 : style === "buzz" ? .44 : .5)),
+         hairCol, 0, .025, -.008, head).scale.set(.95, 1.1, 1.06);
+    if (style === "side") box(.17, .04, .1, hairCol, .015, .115, .04, head).rotation.z = -.15;
+    if (style === "long") mesh(new THREE.CylinderGeometry(.12, .16, .36, 22, 1, true, Math.PI * .55, Math.PI * .9), hairCol, 0, -.12, -.01, head);
+    if (!fem && idx % 3 === 1) mesh(new THREE.SphereGeometry(.095, 20, 12, 0, Math.PI * 2, Math.PI * .5, Math.PI * .5), hairCol, 0, -.04, .03, head).scale.set(.98, .85, 1.02); // beard
+    const mark = new THREE.Mesh(new THREE.OctahedronGeometry(.13), new THREE.MeshBasicMaterial({color: 0xff3b47})); mark.position.y = 2.2; mark.visible = false; g.add(mark);
     const home = desks[t.key];
     g.position.copy(home ? home.stand : new THREE.Vector3(6, 0, 4.6)); scene.add(g);
     const tag = h("div", {class: "tag", onclick: () => select(t.key)}, t.name); labels.append(tag);
     const bubble = h("div", {class: "bubble", hidden: true}); labels.append(bubble);
     people[t.key] = {g, hipL, hipR, kneeL, kneeR, shL, shR, elL, elR, torso, head, mark, tag, bubble, home, path: [], wait: Math.random() * 2,
-                     state: "idle", seated: false, t, talk: null, idx, sit: 0, speed: 0, phase: 0};
+                     state: "idle", seated: false, t, talk: null, hear: null, idx, sit: 0, speed: 0, phase: 0};
   }
   function freeSpot() {
     const r = Math.random();
@@ -691,6 +698,7 @@ function makeWorld() {
   }
   function want(p) {
     if (p.talk) return p.talk.spot;
+    if (p.hear) return p.hear.spot; // listening: stand still (or up from the desk) and face the speaker
     if (!p.home) return null;
     if (p.state === "working") return p.home.seat;
     if (p.state === "waiting" || p.state === "error" || p.state === "asking") return p.home.stand;
@@ -702,7 +710,9 @@ function makeWorld() {
   function left(p) { let s = 0, a = p.g.position; for (const q of p.path) { s += a.distanceTo(q); a = q } return s }
   function step(p, dt, time) {
     const target = want(p);
-    if (target && (!p.dest || p.dest.distanceTo(target) > .05)) route(p, target);
+    if (target && (!p.dest || p.dest.distanceTo(target) > .05)) {
+      if (p.g.position.distanceTo(target) < .3) { p.dest = target.clone(); p.path = [] } else route(p, target); // already there: no detour
+    }
     if (!target && p.dest && p.home && (p.dest.equals(p.home.seat) || p.dest.equals(p.home.stand))) { p.dest = null; p.path = []; p.wait = .4 }
     const k = Math.min(1, dt * 7);
     if (p.path.length) { // walk: speed up, slow down before stopping, stride follows the distance so feet don't slide
@@ -738,7 +748,11 @@ function makeWorld() {
       p.torso.position.y = .86 + Math.sin(time * 1.8 + p.idx) * .007;
       p.torso.rotation.x = ease(p.torso.rotation.x, 0, k); p.torso.rotation.y = ease(p.torso.rotation.y, Math.sin(time * .5 + p.idx) * .05, k);
       p.shL.rotation.z = ease(p.shL.rotation.z, .05, k); p.shR.rotation.z = ease(p.shR.rotation.z, -.05, k);
-      if (p.talk) { // face who you're talking to, talk with the hands, nod
+      if (p.hear && !p.talk) { // listening: face the speaker, small nods, hands relaxed
+        const o = people[p.hear.from]; if (o) turn(p, Math.atan2(o.g.position.x - p.g.position.x, o.g.position.z - p.g.position.z), k);
+        p.shL.rotation.x = ease(p.shL.rotation.x, 0, k); p.shR.rotation.x = ease(p.shR.rotation.x, 0, k);
+        p.head.rotation.x = .05 + Math.max(0, Math.sin(time * 2.2)) * .08; p.head.rotation.y = 0;
+      } else if (p.talk) { // face who you're talking to, talk with the hands, nod
         const o = people[p.talk.to]; if (o) turn(p, Math.atan2(o.g.position.x - p.g.position.x, o.g.position.z - p.g.position.z), k);
         p.shR.rotation.x = ease(p.shR.rotation.x, -.6 + Math.sin(time * 5) * .3, k); p.shL.rotation.x = ease(p.shL.rotation.x, -.25 + Math.sin(time * 4 + 1) * .15, k);
         p.head.rotation.x = Math.sin(time * 3) * .06; p.head.rotation.y = 0;
@@ -752,7 +766,7 @@ function makeWorld() {
     p.g.position.y = -.34 * p.sit; // hips land on the seat
     p.mark.visible = (p.state === "waiting" || p.state === "asking") && !p.talk;
     p.mark.material.color.set(p.state === "asking" ? 0xffd27a : 0xff3b47);
-    if (p.mark.visible) { p.mark.rotation.y += dt * 3; p.mark.position.y = 2.25 + Math.sin(time * 4) * .06 }
+    if (p.mark.visible) { p.mark.rotation.y += dt * 3; p.mark.position.y = 2.2 + Math.sin(time * 4) * .06 }
     const m = screens[p.t.key];
     if (m) m.emissiveIntensity += ((p.state === "working" && p.seated ? .95 : .08) - m.emissiveIntensity) * Math.min(1, dt * 4);
   }
@@ -764,8 +778,15 @@ function makeWorld() {
     if (id !== seenRun || chat.length < seen) { seenRun = id; seen = chat.length; return } // don't replay an old run's chat
     for (const m of chat.slice(seen)) {
       const sp = people[m.from], to = people[m.to]; if (!sp) continue;
-      const spot = to && to !== sp ? to.g.position.clone().add(new THREE.Vector3(.9, 0, .9)) : sp.g.position.clone();
-      spot.y = 0; sp.talk = {to: m.to, spot, until: 0, giveUp: performance.now() + 20000, text: m.text}; // until starts when they arrive
+      let spot = sp.g.position.clone();
+      if (to && to !== sp) { // the listener stands up beside the desk (or stays where they are); the speaker comes face to face
+        const stand = to.home && (to.seated || (to.dest && to.dest.equals(to.home.seat))) ? to.home.stand.clone() : to.g.position.clone();
+        stand.y = 0; to.path = []; to.dest = null; to.hear = {from: m.from, spot: stand, giveUp: performance.now() + 30000};
+        const dir = sp.g.position.clone().sub(stand); dir.y = 0;
+        if (dir.lengthSq() < .01) dir.set(1, 0, 0);
+        spot = stand.clone().addScaledVector(dir.normalize(), 1.05);
+      }
+      spot.y = 0; sp.talk = {to: m.to, spot, until: 0, giveUp: performance.now() + 25000, text: m.text}; // until starts when they arrive
     }
     seen = chat.length;
   }
@@ -784,13 +805,17 @@ function makeWorld() {
   let last = performance.now(), on = true;
   function frame(now) {
     if (!on) return;
-    const dt = Math.min(.05, (now - last) / 1000), time = now / 1000; last = now;
+    const dt = Math.min(.2, (now - last) / 1000), time = now / 1000; last = now; // .2 cap: slow devices still walk at real speed
     listen();
     for (const [k, p] of Object.entries(people)) {
       const st = agentStatus(k);
       p.state = st === "done" ? "idle" : st;
       if (p.talk && !p.talk.until && !p.path.length && p.dest) p.talk.until = now + 6500; // arrived: say it for 6.5s
-      if (p.talk && ((p.talk.until && now > p.talk.until) || now > p.talk.giveUp)) { p.talk = null; p.dest = null; p.path = [] }
+      if (p.talk && ((p.talk.until && now > p.talk.until) || now > p.talk.giveUp)) {
+        const o = people[p.talk.to]; if (o && o.hear && o.hear.from === k) { o.hear = null; o.dest = null } // done: the listener goes back to work
+        p.talk = null; p.dest = null; p.path = [];
+      }
+      if (p.hear && now > p.hear.giveUp) { p.hear = null; p.dest = null }
       step(p, dt, time);
       p.tag.textContent = p.t.name + (st === "working" ? " · working" : st === "asking" ? " · asking you ⏸" : st === "waiting" ? " · waiting" : st === "done" ? " ✓" : st === "error" ? " ✕" : "");
       p.tag.className = "tag " + st + (selected === k ? " sel" : "");
@@ -807,6 +832,7 @@ function makeWorld() {
   }
   requestAnimationFrame(frame);
   return {
+    people, // for debugging in the console
     addPeople(team) { team.forEach((t, i) => { if (!people[t.key]) person(t, i) }) },
     setOn(v) { on = v; if (v) { last = performance.now(); resize(); requestAnimationFrame(frame) } },
   };
