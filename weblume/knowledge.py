@@ -9,6 +9,7 @@ from pathlib import Path
 from .config import ROOT
 
 KNOW = ROOT / "knowledge"
+TASTE = KNOW / "taste.md"
 FEEDBACK = KNOW / "feedback.md"
 APPROVED = KNOW / "examples" / "approved"
 BRAND = KNOW / "brand"
@@ -35,8 +36,10 @@ def add_feedback(kind: str, vote: str, comment: str, title: str, files: list[Pat
 
 
 def taste(kind: str = "", limit: int = 4000) -> str:
-    """The owner's saved feedback plus his approved examples, ready to paste into an agent's instructions."""
+    """The owner's taste file, his saved feedback and his approved examples, ready to paste into an agent's instructions."""
     parts = []
+    if TASTE.exists():  # written up front, so the team knows his taste before the first 👍/👎
+        parts.append(TASTE.read_text(encoding="utf-8"))
     if FEEDBACK.exists():
         text = FEEDBACK.read_text(encoding="utf-8")
         parts.append("THE OWNER'S TASTE (his own 👍/👎 notes, newest last; follow them):\n" + text[-limit:])

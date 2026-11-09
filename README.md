@@ -61,7 +61,7 @@ weblume-company/
 ├── requirements.txt
 ├── .env.example           Copy to .env (your settings and keys)
 ├── contacted.json         Businesses already contacted (Ziad never drafts for these)
-├── knowledge/             brand/ (Weblume logo), feedback.md and examples/approved/ (your taste, not uploaded)
+├── knowledge/             brand/ (logo), taste.md (your taste, written up front), feedback.md, examples/approved/ (not uploaded)
 ├── weblume/
 │   ├── config.py          Reads .env, builds the AI model (Gemini / Groq / Ollama)
 │   ├── team.py            The 8 agents: name, role, goal, backstory
