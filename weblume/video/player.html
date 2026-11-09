@@ -27,6 +27,9 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color
 .cap{margin-bottom:60px}
 .ring{width:300px;height:300px;border:12px solid var(--red);border-radius:50%;border-left-color:transparent;margin-bottom:60px}
 .url{font:800 54px/1 Inter,sans-serif;direction:ltr;margin-top:30px}
+.photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:center 40%}
+.pcap{position:absolute;left:70px;right:70px;bottom:230px;font:800 82px/1.25 Alexandria,sans-serif;text-align:center;
+  background:rgba(10,10,10,.82);padding:34px 40px;border-radius:28px;border-bottom:10px solid var(--red)}
 .url b{color:var(--red)}
 </style>
 </head>
@@ -53,6 +56,10 @@ window.ready = fetch("spec.json").then(r => r.json()).then(spec => {
       dev.append(cv); node.append(dev); if (sc.device === "laptop") node.append(el("div", "base"));
       item.parts.cv = cv; item.parts.dev = dev;
       item.parts.imgs = Array.from({length: sc.frames || 0}, (_, k) => { const im = new Image(); im.src = `/frames/${SCENES.length}/${String(k).padStart(4, "0")}.jpg`; return im });
+    } else if (sc.type === "image") { // an AI photo, full screen with a slow zoom
+      const im = el("img", "photo"); im.src = `/frames/img${SCENES.length}.jpg`; node.append(im); item.parts.photo = im;
+      if (sc.caption) { const c = el("div", "pcap"); item.parts.w = words(c, sc.caption); node.append(c) }
+      item.parts.imgs = [im];
     } else if (sc.type === "cta") {
       node.append(item.parts.ring = el("div", "ring"));
       const t = el("div", "mid"); item.parts.w = words(t, sc.text || "تواصل معانا من موقع Weblume"); node.append(t);
@@ -83,7 +90,8 @@ window.seek = t => {
     if (s.parts.ring) s.parts.ring.style.transform = `rotate(${local * 160}deg) scale(${.6 + .4 * ease(local / .7)})`;
     if (s.parts.url) s.parts.url.style.opacity = ease((local - .8) / .5);
     if (s.parts.dev) s.parts.dev.style.transform = `translateY(${(1 - ease(local / .7)) * 140}px)`;
-    if (s.parts.imgs && s.parts.imgs.length) { // the filmed scroll of the site, frame by frame
+    if (s.parts.photo) s.parts.photo.style.transform = `scale(${1.04 + .12 * p})`;
+    if (s.parts.imgs && s.parts.imgs.length && s.parts.cv) { // the filmed scroll of the site, frame by frame
       const im = s.parts.imgs[Math.min(s.parts.imgs.length - 1, Math.floor(p * s.parts.imgs.length))];
       s.parts.cv.getContext("2d").drawImage(im, 0, 0, s.parts.cv.width, s.parts.cv.height);
     }

@@ -4,6 +4,7 @@ inside phone / laptop mockups."""
 import functools
 import json
 import subprocess
+import urllib.request
 import tempfile
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -24,7 +25,7 @@ def clean_spec(spec: dict, sites: list[str]) -> dict:
     for sc in (spec.get("scenes") or [])[:10]:
         if not isinstance(sc, dict):
             continue
-        sc = {k: v for k, v in sc.items() if k in ("type", "text", "sub", "caption", "site", "device", "dur")}
+        sc = {k: v for k, v in sc.items() if k in ("type", "text", "sub", "caption", "site", "device", "dur", "prompt")}
         for k in ("text", "sub", "caption"):
             if isinstance(sc.get(k), str) and rules.remove_phone_numbers(sc[k])[1]:
                 sc[k] = "تواصل معانا من موقع Weblume"  # a line that carried a phone number is replaced whole
@@ -32,7 +33,9 @@ def clean_spec(spec: dict, sites: list[str]) -> dict:
             if not sites:
                 continue
             sc["site"] = sites[0]
-        if sc.get("type") not in ("hook", "text", "site", "cta"):
+        if sc.get("type") == "image" and not str(sc.get("prompt") or "").strip():
+            sc["type"] = "text"
+        if sc.get("type") not in ("hook", "text", "site", "cta", "image"):
             sc["type"] = "text"
         scenes.append(sc)
     scenes = [s for s in scenes if s["type"] != "cta"]
@@ -47,6 +50,22 @@ def clean_spec(spec: dict, sites: list[str]) -> dict:
 def built_sites() -> list[str]:
     out = ROOT / "output"
     return sorted(p.name for p in out.iterdir() if (p / "index.html").is_file() and p.name != "runs") if out.exists() else []
+
+
+def ai_image(prompt: str, out: Path) -> bool:
+    """A free AI photo from Pollinations (no key). Returns False if it didn't come back as an image."""
+    url = ("https://image.pollinations.ai/prompt/" + quote(prompt[:400]) +
+           f"?width=1080&height=1920&nologo=true&seed={abs(hash(prompt)) % 100000}")
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=120) as r:
+            data = r.read()
+            if not r.headers.get("Content-Type", "").startswith("image/") or len(data) < 5000:
+                return False
+    except Exception:
+        return False
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(data)
+    return True
 
 
 def capture_site(browser, url: str, out: Path, laptop: bool, dur: float) -> int:
@@ -112,6 +131,9 @@ def render(spec: dict, out_mp4: Path, progress=lambda f: None) -> Path:
                 base_url = f"http://127.0.0.1:{srv.server_address[1]}"
                 # 1) film each site scrolling, slowly enough for its photos and scroll scenes to load
                 for i, sc in enumerate(spec["scenes"]):
+                    if sc["type"] == "image":  # AI photo; if it fails the scene shows its caption as text
+                        if not ai_image(sc["prompt"], tmp / "frames" / f"img{i}.jpg"):
+                            sc.update(type="text", text=sc.get("caption") or "Weblume")
                     if sc["type"] == "site":
                         sc["frames"] = capture_site(browser, f"{base_url}/output/{quote(sc['site'])}/index.html",
                                                     tmp / "frames" / str(i), sc.get("device") == "laptop", float(sc.get("dur") or 3))

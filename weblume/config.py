@@ -21,7 +21,7 @@ MAX_RPM = int(os.getenv("MAX_REQUESTS_PER_MINUTE", "8"))  # Gemini free tier all
 
 DEFAULT_MODELS = {
     "gemini": "gemini-3.5-flash",  # 2.5-flash is closed to new accounts; 3.8 is often overloaded (Nov 2026)
-    "groq": "llama-3.3-70b-versatile",
+    "groq": "openai/gpt-oss-120b",  # llama-3.3-70b was removed from Groq (Nov 2026)
     "ollama": "qwen2.5:7b",
 }
 
@@ -76,6 +76,13 @@ def _cap_provider_wait():
     retry._retry_after_seconds = lambda e: (lambda s: None if s is None else min(s, 20.0))(original(e))
 
 
+def groq_llm(model: str):
+    from crewai import LLM
+    # Groq speaks the OpenAI API, so CrewAI's built-in OpenAI client works with Groq's address
+    return LLM(model=f"openai/{model}", base_url="https://api.groq.com/openai/v1",
+               api_key=os.getenv("GROQ_API_KEY", "").strip(), temperature=0.7)
+
+
 def get_llm():
     """Build the LLM for every agent. Change LLM_PROVIDER in .env to switch."""
     from crewai import LLM
@@ -89,13 +96,13 @@ def get_llm():
         backups = [m.strip() for m in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash,gemini-3.1-flash-lite")
                    .split(",") if m.strip() and m.strip() != model]
         llms = [LLM(model=f"gemini/{m}", api_key=key, temperature=0.7) for m in [model, *backups]]
+        if os.getenv("GROQ_API_KEY", "").strip():  # when every Gemini model is busy or out of quota, Groq takes over
+            llms.append(groq_llm(DEFAULT_MODELS["groq"]))
         return with_fallback(llms)
     if PROVIDER == "groq":
-        key = os.getenv("GROQ_API_KEY", "").strip()
-        if not key:
+        if not os.getenv("GROQ_API_KEY", "").strip():
             raise RuntimeError("GROQ_API_KEY is empty in .env. Get a free key at https://console.groq.com/keys")
-        # Groq speaks the OpenAI API, so CrewAI's built-in OpenAI client works with Groq's address
-        return LLM(model=f"openai/{model}", base_url="https://api.groq.com/openai/v1", api_key=key, temperature=0.7)
+        return groq_llm(model)
     if PROVIDER == "bytez":
         key = os.getenv("BYTEZ_API_KEY", "").strip()
         if not key or not model:

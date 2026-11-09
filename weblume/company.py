@@ -307,7 +307,9 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             "a vertical 9:16 Weblume video (black, red and white). Write it as scenes, 15–35 seconds in total. Scene types: "
             '"hook" (the first 2 seconds, max 7 words), "text" (one short line, optional "sub"), "site" (one of our websites '
             'scrolling inside a phone or laptop: "site" must be one of ' + json.dumps(sites, ensure_ascii=False) +
-            ', "device": "phone" or "laptop", optional "caption"). Each scene has "dur" in seconds (2–5). Egyptian Arabic. '
+            ', "device": "phone" or "laptop", optional "caption"), "image" (a free AI photo: "prompt" in English describing a '
+            'realistic photo with no text and no faces, plus a short Arabic "caption"). Each scene has "dur" in seconds '
+            '(2–5). Egyptian Arabic. Use at most 2 image scenes. '
             "The code adds the closing 'contact us through the Weblume website' scene. NEVER write a phone number.\n"
             'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}',
             "A JSON object with title and scenes.", [t.get("social")])

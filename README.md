@@ -155,11 +155,14 @@ Two ways to open it, both need `start.bat` running on your laptop (that's where 
 Free mode only: `weblume/video/player.html` draws each frame, your Chrome captures it (Playwright) and ffmpeg
 (`imageio-ffmpeg`, installed with the requirements) writes a 1080×1920 MP4 at 24 fps with no sound. Sites are
 filmed scrolling first, then shown inside the mockups. A 20-second video takes about a minute to render.
-Paid AI clips (Higgsfield / Runway / Kling) are not connected.
+Hassan can also add **AI photo scenes** (free, from Pollinations, no key): he writes what the photo shows
+and the code fetches it and shows it full screen with a slow zoom and a caption. If a photo fails, the scene
+becomes a text scene. Paid AI clips (Higgsfield / Runway / Kling) are not connected.
 
 ## When Gemini says "quota"
 The free tier allows about 20 requests per day per model, and a website run uses many. When a model is busy or
-out of quota the team switches to the next one; if all of them are out, the run stops with a clear message
+out of quota the team switches to the next one, and to Groq (`openai/gpt-oss-120b`) last if `GROQ_API_KEY` is
+set; if all of them are out, the run stops with a clear message
 (it resets in about a day). Switch `LLM_PROVIDER` to `groq` or `ollama` in `.env` to keep working. A model that
 doesn't answer within 2 minutes counts as busy (`LLM_CALL_TIMEOUT`).
 

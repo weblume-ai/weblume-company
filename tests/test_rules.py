@@ -213,4 +213,16 @@ assert config.with_fallback([a, b]).call("hi") == "from b"
 assert time.time() - t < 6, time.time() - t
 config.CALL_TIMEOUT = old_timeout
 
+# AI image scenes: kept with a prompt, turned into text without one; a failed download keeps the video going
+v = video.clean_spec({"scenes": [{"type": "image", "prompt": "espresso pouring", "caption": "قهوة"},
+                                 {"type": "image", "caption": "بدون وصف"}]}, [])
+assert v["scenes"][0]["type"] == "image" and v["scenes"][1]["type"] == "text"
+import urllib.request as _u  # noqa: E402
+_orig = _u.urlopen
+_u.urlopen = lambda *a, **k: (_ for _ in ()).throw(OSError("offline"))
+try:
+    assert video.ai_image("x", Path(tempfile.gettempdir()) / "wl_none.jpg") is False
+finally:
+    _u.urlopen = _orig
+
 print("All rule checks passed.")
