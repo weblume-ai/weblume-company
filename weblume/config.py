@@ -87,7 +87,7 @@ def groq_llm(model: str):
 def freellm_llm(model: str):
     """FreeLLM API (github.com/tashfeenahmed/freellmapi): a free router on this laptop that stacks many free tiers."""
     from crewai import LLM
-    return LLM(model=f"openai/{model}", base_url=os.getenv("FREELLM_URL", "http://localhost:3001/v1").strip(),
+    return LLM(model=f"openai/{model}", base_url=os.getenv("FREELLM_URL", "http://127.0.0.1:31415/v1").strip(),
                api_key=os.getenv("FREELLM_API_KEY", "").strip(), temperature=0.7)
 
 
