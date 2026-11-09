@@ -23,6 +23,7 @@ DEFAULT_MODELS = {
     "gemini": "gemini-3.5-flash",  # 2.5-flash is closed to new accounts; 3.8 is often overloaded (Nov 2026)
     "groq": "openai/gpt-oss-120b",  # llama-3.3-70b was removed from Groq (Nov 2026)
     "ollama": "qwen2.5:7b",
+    "freellm": "auto",  # FreeLLM API's router picks the best free model that still has quota
 }
 
 
@@ -83,6 +84,13 @@ def groq_llm(model: str):
                api_key=os.getenv("GROQ_API_KEY", "").strip(), temperature=0.7)
 
 
+def freellm_llm(model: str):
+    """FreeLLM API (github.com/tashfeenahmed/freellmapi): a free router on this laptop that stacks many free tiers."""
+    from crewai import LLM
+    return LLM(model=f"openai/{model}", base_url=os.getenv("FREELLM_URL", "http://localhost:3001/v1").strip(),
+               api_key=os.getenv("FREELLM_API_KEY", "").strip(), temperature=0.7)
+
+
 def get_llm():
     """Build the LLM for every agent. Change LLM_PROVIDER in .env to switch."""
     from crewai import LLM
@@ -98,6 +106,8 @@ def get_llm():
         llms = [LLM(model=f"gemini/{m}", api_key=key, temperature=0.7) for m in [model, *backups]]
         if os.getenv("GROQ_API_KEY", "").strip():  # when every Gemini model is busy or out of quota, Groq takes over
             llms.append(groq_llm(DEFAULT_MODELS["groq"]))
+        if os.getenv("FREELLM_API_KEY", "").strip():  # then the FreeLLM API router on this laptop
+            llms.append(freellm_llm(DEFAULT_MODELS["freellm"]))
         return with_fallback(llms)
     if PROVIDER == "groq":
         if not os.getenv("GROQ_API_KEY", "").strip():
@@ -109,7 +119,11 @@ def get_llm():
             raise RuntimeError("Bytez needs BYTEZ_API_KEY and LLM_MODEL (a model id from bytez.com) in .env.")
         # Bytez speaks the OpenAI API at its own address
         return LLM(model=f"openai/{model}", base_url="https://api.bytez.com/models/v2/openai/v1", api_key=key, temperature=0.7)
+    if PROVIDER == "freellm":
+        if not os.getenv("FREELLM_API_KEY", "").strip():
+            raise RuntimeError("FreeLLM API needs FREELLM_API_KEY in .env (the unified key from its Keys page).")
+        return freellm_llm(model)
     if PROVIDER == "ollama":
         url = os.getenv("OLLAMA_URL", "http://localhost:11434").strip()
         return LLM(model=f"ollama/{model}", base_url=url, api_key="ollama", temperature=0.7)
-    raise RuntimeError(f"LLM_PROVIDER must be gemini, groq, bytez or ollama (got '{PROVIDER}').")
+    raise RuntimeError(f"LLM_PROVIDER must be gemini, groq, freellm, bytez or ollama (got '{PROVIDER}').")
