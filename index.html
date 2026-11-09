@@ -302,7 +302,7 @@ function renderWork() {
               already ? "✔ Contacted" : "✔ Mark as contacted")));
       })) : null,
     r.site ? h("div", {}, h("h3", {}, "🌐 The website"), h("a", {class: "btn", href: siteUrl(r.site), target: "_blank", rel: "noopener",
-      style: "display:inline-block;text-decoration:none"}, "Open the website"), feedbackBox(r, "site")) : null,
+      style: "display:inline-block;text-decoration:none"}, "Open the website"), publishBox(r), feedbackBox(r, "site")) : null,
     r.video ? h("div", {}, h("h3", {}, "🎬 Hassan's video"), h("video", {class: "vid", controls: true, preload: "metadata",
       src: SRV + "/api/file?view=1&path=" + encodeURIComponent(r.video)}),
       h("div", {class: "row small"}, h("a", {href: SRV + "/api/file?path=" + encodeURIComponent(r.video)}, "Download MP4")), feedbackBox(r, "video")) : null,
@@ -320,6 +320,18 @@ function renderWork() {
   );
 }
 const norm = s => String(s || "").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/[^\p{L}\p{N}]+/gu, ""); // like Python's \w: keeps Arabic letters
+function publishBox(r) { // nothing goes online until the owner confirms here
+  if (r.published) return h("div", {class: "fb small"}, "🚀 Live: ", h("a", {href: r.published, target: "_blank", rel: "noopener noreferrer"}, r.published));
+  const guess = (r.site.split(/[\\/]/).slice(-2)[0] || "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+  const btn = h("button", {class: "ghost", onclick: async () => {
+    const name = prompt("Publish this website on GitHub Pages?\nIt will be public at weblume-ai.github.io/<name>/\n\nRepo name (English letters, numbers, dashes):", guess || "client-site");
+    if (!name) return;
+    btn.disabled = true; btn.textContent = "Publishing…";
+    try { const res = await api("/api/publish", {run: r.id, name}); alert("Published! Live in about a minute:\n" + res.url); poll() }
+    catch (e) { alert(e.message); btn.disabled = false; btn.textContent = "🚀 Publish on GitHub" }
+  }}, "🚀 Publish on GitHub");
+  return h("div", {class: "row", style: "margin-top:8px"}, btn);
+}
 let logLines = [];
 const fbDraft = {};
 function feedbackBox(r, kind) { // the owner's 👍/👎 teaches the team his taste

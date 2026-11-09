@@ -240,4 +240,23 @@ for _k, _names in knowledge.SKILLS.items():
         assert not re.search(r"\+?\d[\d ]{8,}", (knowledge.SKILL_DIR / f"{_n}.md").read_text(encoding="utf-8")), _n
 assert knowledge.skills("layla") == ""
 
+# Publish: safe repo names; the flow creates the repo, pushes and turns Pages on (GitHub and git faked here)
+from weblume import publish  # noqa: E402
+assert publish.repo_name("Noir Café 2!") == "noir-caf-2" and publish.repo_name("كافيه") == ""
+_calls = []
+_old = publish._token, publish._call, publish._git
+publish._token = lambda: "t"
+publish._call = lambda m, p, t, b=None: (_calls.append((m, p)) or
+                                         {("GET", "/user"): (200, {"login": "me"})}.get((m, p), (404, {}) if m == "GET" else (201, {})))
+publish._git = lambda *a, cwd: (_calls.append(("git", a[0])), (Path(a[4]).mkdir() if a[0] == "clone" else None),
+                                "M x" if a[0] == "status" else "")[-1]
+try:
+    _site = Path(tempfile.mkdtemp())
+    (_site / "index.html").write_text("<h1>hi</h1>", encoding="utf-8")
+    assert publish.to_github(_site, "Noir Cafe", "weblume-ai") == "https://weblume-ai.github.io/noir-cafe/"
+    assert ("POST", "/orgs/weblume-ai/repos") in _calls and ("git", "push") in _calls
+    assert ("POST", "/repos/weblume-ai/noir-cafe/pages") in _calls
+finally:
+    publish._token, publish._call, publish._git = _old
+
 print("All rule checks passed.")

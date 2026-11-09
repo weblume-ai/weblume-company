@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import subprocess
 import threading
 import time
 import traceback
@@ -10,7 +11,7 @@ from pathlib import Path
 
 from crewai import Crew, Process, Task
 
-from . import config, knowledge, rules, security, templates, tester, video
+from . import config, knowledge, publish as publisher, rules, security, templates, tester, video
 from .config import CURRENCY, MAX_RPM, OUTPUT_DIR, PROVIDER, RUNS_DIR, WEBSITE, get_llm, model_name
 from .team import ORDER, TEAM, make_agent
 
@@ -784,3 +785,27 @@ def feedback(run_id: str, kind: str, vote: str, comment: str = "") -> dict:
         st["feedback"] = fb
         (RUNS_DIR / run_id / "status.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
     return fb
+
+
+def publish(run_id: str, name: str) -> str:
+    """The owner pressed Publish and confirmed: put the run's website on GitHub Pages. Returns the live URL."""
+    st = load_status(run_id)
+    if not st or not st.get("site"):
+        raise ValueError("This run has no website to publish.")
+    site_dir = (OUTPUT_DIR / st["site"]).parent
+    blockers = [p for p in security.scan_site(site_dir) if p.startswith("HIGH")]
+    if blockers:
+        raise ValueError("Not published: " + "; ".join(blockers))
+    try:
+        url = publisher.to_github(site_dir, name)
+    except (OSError, subprocess.SubprocessError) as e:  # no internet, git missing or too slow
+        raise RuntimeError(f"Publishing failed: {e}") from e
+    run = _active["run"]
+    if run and run.status["id"] == run_id:
+        run.status["published"] = url
+        run.log("layla", f"Published on GitHub Pages: {url} (live in about a minute).")
+        run.save()
+    else:
+        st["published"] = url
+        (RUNS_DIR / run_id / "status.json").write_text(json.dumps(st, ensure_ascii=False, indent=1), encoding="utf-8")
+    return url

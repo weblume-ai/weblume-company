@@ -134,6 +134,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/feedback":  # 👍/👎 on a website or video
                 return self.send(200, {"feedback": company.feedback(str(body.get("run", "")), str(body.get("kind", "")),
                                                                     str(body.get("vote", "")), str(body.get("comment", "")))})
+            if self.path == "/api/publish":  # the owner confirmed publishing a site to GitHub Pages
+                return self.send(200, {"url": company.publish(str(body.get("run", "")), str(body.get("name", "")))})
             if self.path == "/api/contacted":
                 biz = str(body.get("business", "")).strip()
                 if not biz:
