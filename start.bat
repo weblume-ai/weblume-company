@@ -15,6 +15,11 @@ if not exist ".env" (
   pause
   exit /b
 )
+rem FreeLLM API (free model router) starts with the company if it's installed and not already running
+set "FREELLM=%USERPROFILE%\FreeLLMAPI\app\FreeLLMAPI.exe"
+if exist "%FREELLM%" (
+  tasklist /FI "IMAGENAME eq FreeLLMAPI.exe" | find /I "FreeLLMAPI.exe" >nul || start "" "%FREELLM%"
+)
 echo.
 echo   Weblume AI Company is starting... the dashboard opens in your browser.
 echo   Keep this window open. Close it to stop.
