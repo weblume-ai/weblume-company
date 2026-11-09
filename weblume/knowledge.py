@@ -13,6 +13,25 @@ TASTE = KNOW / "taste.md"
 FEEDBACK = KNOW / "feedback.md"
 APPROVED = KNOW / "examples" / "approved"
 BRAND = KNOW / "brand"
+SKILL_DIR = KNOW / "skills"
+SKILLS = {  # who reads which playbook in knowledge/skills/
+    "karim": ["design", "site-functionality", "copywriting", "quality-gate", "security"],
+    "mostafa": ["design", "quality-gate", "security"],
+    "tarek": ["quality-gate", "security"],
+    "youssef": ["copywriting"],
+    "omar": ["client-proposal"],
+    "ziad": ["client-messages"],
+    "adam": ["social-content"],
+    "hassan": ["social-content", "image-prompts"],
+}
+
+
+def skills(key: str) -> str:
+    """The teammate's skill playbooks, ready to append to his instructions ('' if he has none)."""
+    texts = [(SKILL_DIR / f"{n}.md").read_text(encoding="utf-8") for n in SKILLS.get(key, [])]
+    if not texts:
+        return ""
+    return "\n\nYOUR SKILLS (the owner's taste file wins if they disagree):\n\n" + "\n\n".join(texts)
 
 
 def add_feedback(kind: str, vote: str, comment: str, title: str, files: list[Path]) -> Path | None:

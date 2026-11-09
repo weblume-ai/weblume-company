@@ -10,7 +10,7 @@ from pathlib import Path
 
 from crewai import Crew, Process, Task
 
-from . import config, knowledge, rules, templates, tester, video
+from . import config, knowledge, rules, security, templates, tester, video
 from .config import CURRENCY, MAX_RPM, OUTPUT_DIR, PROVIDER, RUNS_DIR, WEBSITE, get_llm, model_name
 from .team import ORDER, TEAM, make_agent
 
@@ -353,6 +353,8 @@ def save_site(run: Run, key: str, file: str, raw: str, name: str) -> str:
         run.log(key, f"Website saved to output/{run.site_dir.relative_to(OUTPUT_DIR).as_posix()}/")
         for claim in templates.claims_to_check(text):
             run.log(key, f"CHECK before sending: {claim}.")
+        for problem in security.scan_site(run.site_dir):
+            run.log(key, f"SECURITY: {problem}.")
         run.save()
     return text
 
@@ -545,7 +547,8 @@ def test_site(run: Run, agents: dict, keys: list[str]):
             shots = tester.shoot(run.site_dir, run.dir / "shots", f"r{rnd}")
             for s in shots:
                 run.add_file(s)
-            result = tester.judge(shots, brief, tester.TEMPLATE_NOTES.get(run.kind, "") + "\n" + knowledge.taste("site", 1500))
+            result = tester.judge(shots, brief, tester.TEMPLATE_NOTES.get(run.kind, "") + "\n" + knowledge.taste("site", 1500)
+                                  + knowledge.skills("tarek"))
         except Exception as e:  # no Chrome / no Gemini key / busy: say so instead of pretending it was tested
             run.log("tarek", f"Couldn't test: {e}")
             run.say("tarek", "layla", f"مقدرتش أجرب الموقع: {e}")

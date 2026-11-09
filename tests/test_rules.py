@@ -225,4 +225,19 @@ try:
 finally:
     _u.urlopen = _orig
 
+# Security scan: new-tab links get rel=noopener, secrets / http / unknown scripts are reported, trusted CDNs pass
+import re  # noqa: E402
+from weblume import knowledge, security  # noqa: E402
+fixed, found = security.check('<a target="_blank" href="https://x.com">x</a>'
+                              '<script src="https://cdn.jsdelivr.net/npm/a@1.0.0/a.js"></script>')
+assert 'rel="noopener noreferrer"' in fixed and found == []
+_, found = security.check('<img src="http://x.com/a.png"><script src="https://evil.io/a.js"></script>gsk_' + "a" * 30)
+assert len(found) == 3 and found[0].startswith("HIGH")
+# Skills: every listed playbook exists, and none carries a phone number
+for _k, _names in knowledge.SKILLS.items():
+    assert "YOUR SKILLS" in knowledge.skills(_k)
+    for _n in _names:
+        assert not re.search(r"\+?\d[\d ]{8,}", (knowledge.SKILL_DIR / f"{_n}.md").read_text(encoding="utf-8")), _n
+assert knowledge.skills("layla") == ""
+
 print("All rule checks passed.")

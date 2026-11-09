@@ -1,6 +1,7 @@
 """The nine Weblume employees: who they are and what each one is asked to do."""
 from crewai import Agent
 
+from . import knowledge
 from .config import CURRENCY, WEBSITE
 
 BRAND = ("Weblume is a web design & development studio. Tagline: \"Websites that make an impact\". "
@@ -80,5 +81,5 @@ def label(key: str) -> str:
 
 def make_agent(key: str, llm) -> Agent:
     a = TEAM[key]
-    return Agent(role=f"{a['name']}, {a['role']} at Weblume", goal=a["goal"], backstory=a["backstory"],
+    return Agent(role=f"{a['name']}, {a['role']} at Weblume", goal=a["goal"], backstory=a["backstory"] + knowledge.skills(key),
                  llm=llm, allow_delegation=False, verbose=False, max_iter=5)

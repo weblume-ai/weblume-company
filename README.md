@@ -176,3 +176,10 @@ doesn't answer within 2 minutes counts as busy (`LLM_CALL_TIMEOUT`).
 | Website file looks cut off | Use Gemini for websites; small local models stop early |
 
 Not included: sending messages (you send them yourself), real Google Maps search (paste the names you find).
+
+## Skills and security
+- `knowledge/skills/*.md` are short playbooks (design, copy, quality gate, security, proposals, client messages,
+  social posts, image prompts). Each teammate reads his own (`SKILLS` in `weblume/knowledge.py`).
+- `knowledge/taste.md` (local only) holds the owner's taste, his portfolio and what he likes; it wins over skills.
+- Every finished site is scanned by `weblume/security.py`: new-tab links get `rel="noopener noreferrer"`; keys,
+  `http://` files and scripts from unknown hosts are reported in the run log as `SECURITY:`.
