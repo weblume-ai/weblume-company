@@ -11,13 +11,22 @@ from pathlib import Path
 
 from crewai import Crew, Process, Task
 
-from . import config, knowledge, publish as publisher, rules, security, templates, tester, video
+from . import config, knowledge, ops, publish as publisher, rules, security, templates, tester, video
 from .config import CURRENCY, MAX_RPM, OUTPUT_DIR, PROVIDER, RUNS_DIR, WEBSITE, get_llm, model_name
 from .team import ORDER, TEAM, make_agent
 
 _lock = threading.Lock()
 _active: dict = {"thread": None, "run": None}
 TEST_ROUNDS = 2  # Tarek tests, Karim fixes what he found, Tarek tests once more
+
+
+def short(text: str, n: int = 170) -> str:
+    """One chat line: whitespace collapsed, cut at the last sentence end before n characters."""
+    t = " ".join(text.split())
+    if len(t) <= n:
+        return t
+    cut = max(t.rfind(s, 0, n) for s in (". ", "، ", "؛ ", "! ", "؟ ", " → "))
+    return (t[:cut + 1] if cut > n // 2 else t[:n].rsplit(" ", 1)[0]) + " …"
 
 
 # ---------------------------------------------------------------- run record
@@ -56,8 +65,11 @@ class Run:
         with open(self.dir / "run.log", "a", encoding="utf-8") as f:
             f.write(line)
 
-    def say(self, frm: str, to: str, text: str):
-        """One teammate talks to another: shown as a chat line and a speech bubble in the 3D office."""
+    def say(self, frm: str, to: str, text: str, full: bool = False):
+        """One teammate talks to another: shown as a chat line and a speech bubble in the 3D office.
+        Teammates keep it short (details are in the files); the owner's words, questions and results stay whole."""
+        if not full and frm != "you":
+            text = short(text)
         self.status["chat"].append({"t": datetime.now().isoformat(timespec="seconds"), "from": frm, "to": to, "text": text})
         self.log(frm, f"→ {TEAM.get(to, {}).get('name', to)}: {text}")
         self.save()
@@ -73,7 +85,7 @@ class Run:
             prev = self.status["agents"][key]["status"]
             self.status["ask"] = {"id": qid, "agent": key, "question": question, "options": options}
             self.status["agents"][key]["status"] = "asking"
-            self.say(key, "you", question)
+            self.say(key, "you", question, full=True)
             while qid not in self.answers:
                 self.cond.wait(timeout=1)
             ans = self.answers.pop(qid)
@@ -619,6 +631,10 @@ def _revise(run: Run, agents: dict, base: dict):
 
 def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
     try:
+        if mode == "ops":  # a laptop/GitHub action from the chat: no AI needed, the owner approves each step
+            ops.handle(run, run.status["goal"])
+            run.status["state"] = "done"
+            return
         config.on_switch = lambda msg: run.log("system", msg)
         llm = get_llm()
         goal, client, names = run.status["goal"], run.status["client"], run.status["names"]
@@ -659,9 +675,10 @@ def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
             summary = Task(
                 description=f"The owner asked:\n\"\"\"{run.status['goal']}\"\"\"\n\nYour team's work "
                             f"(long outputs are cut):\n{outputs}\n\nFiles saved: {', '.join(run.status['files'][:40])}\n\n"
-                            "Write the final summary for the owner: what was done, by whom, the files, anything "
-                            "that needs his decision (e.g. price, already-contacted businesses), next steps.",
-                expected_output="A short Markdown summary.", agent=agents["layla"], context=[])
+                            "Write the final summary for the owner in Egyptian Arabic, at most 6 short bullet lines: "
+                            "what was done and by whom, the main file or link, anything that needs his decision "
+                            "(e.g. price, already-contacted businesses), and the one next step. No filler.",
+                expected_output="At most 6 short Markdown bullets.", agent=agents["layla"], context=[])
             run.set_agent("layla", "working")
             run.current = "layla"
             run.status["tasks"].append({"title": "Layla: final summary", "agent": "layla", "file": "summary.md", "done": False})
@@ -744,6 +761,10 @@ def message(text: str) -> dict:
     if not text:
         raise ValueError("Write a message first.")
     run = active()
+    if ops.intent(text):  # "اعمل ريبو …" / "شغّل git status" → done on the laptop after the owner approves
+        if run:
+            raise ValueError("فيه شغل شغال دلوقتي، ابعتها تاني لما يخلص.")
+        return {"run": start(text, "ops", ["karim"])}
     if run:
         target = next((k for k, a in TEAM.items() if a["name"].lower() in text.lower() or a.get("ar", "~") in text), run.current)
         run.say("you", target, text)

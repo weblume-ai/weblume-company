@@ -646,12 +646,24 @@ function makeWorld() {
     lathe(fem ? [[0, .1], [.15, .1], [.135, .22], [.15, .34], [.17, .44], [.175, .5], [.15, .55], [.07, .59], [0, .59]]
               : [[0, .1], [.16, .1], [.155, .22], [.17, .34], [.2, .45], [.205, .51], [.18, .56], [.08, .6], [0, .6]], shirt, torso).scale.set(1.12, 1, .66);
     cyl(.055, .06, .05, M("#f2f2f2", {roughness: .8}), 0, .6, 0, torso, 16);
+    // what each person wears on top: an open blazer, a hoodie, or just the shirt; everyone has a Weblume badge
+    const outfit = {layla: "blazer", omar: "blazer", karim: "hoodie", adam: "hoodie"}[t.key] || "shirt";
+    const jacket = M(t.key === "layla" ? "#1c1c1f" : "#26303d", {roughness: .8, side: THREE.DoubleSide}), sleeve = outfit === "blazer" ? jacket : shirt;
+    if (outfit === "blazer") { // open at the front so the shirt shows
+      mesh(new THREE.CylinderGeometry(fem ? .185 : .215, fem ? .165 : .185, .48, 28, 1, true, .42, Math.PI * 2 - .84), jacket, 0, .34, 0, torso).scale.set(1.14, 1, .72);
+      for (const sx of [-1, 1]) box(.05, .2, .012, jacket, sx * .07, .47, .14, torso).rotation.z = sx * .35; // lapels
+    }
+    if (outfit === "hoodie") {
+      mesh(new THREE.SphereGeometry(.13, 18, 12, 0, Math.PI * 2, 0, Math.PI * .6), shirt, 0, .6, -.08, torso).scale.set(1.2, .7, .8); // hood resting on the back
+      for (const sx of [-1, 1]) cyl(.006, .006, .14, M("#eee"), sx * .04, .48, .145, torso, 6); // strings
+    }
+    box(.05, .07, .008, M("#ffffff", {roughness: .4}), .09, .4, .155, torso); box(.05, .015, .009, M("#e50914"), .09, .425, .156, torso); // badge
     cyl(.045, .05, .1, skin, 0, .64, 0, torso, 14);
     // arms: rounded shoulder → short sleeve → elbow → forearm → hand with a thumb
     const arm = x => {
       const sh = joint(x, .5, 0, torso);
-      mesh(new THREE.SphereGeometry(.072, 14, 10), shirt, 0, 0, 0, sh);
-      cyl(.068, .06, .17, shirt, 0, -.085, 0, sh, 16); cyl(.05, .046, .15, skin, 0, -.22, 0, sh, 14);
+      mesh(new THREE.SphereGeometry(.072, 14, 10), sleeve, 0, 0, 0, sh);
+      cyl(.068, .06, .17, sleeve, 0, -.085, 0, sh, 16); cyl(.05, .046, .15, skin, 0, -.22, 0, sh, 14);
       const el = joint(0, -.3, 0, sh); mesh(new THREE.SphereGeometry(.046, 12, 8), skin, 0, 0, 0, el); seg(.25, .044, .034, skin, el);
       mesh(new THREE.BoxGeometry(.07, .085, .03), skin, 0, -.3, 0, el);
       mesh(new THREE.SphereGeometry(.016, 8, 6), skin, (x < 0 ? 1 : -1) * .04, -.28, .015, el).scale.set(1, 2, 1);
@@ -670,6 +682,11 @@ function makeWorld() {
     }
     mesh(new THREE.ConeGeometry(.016, .04, 10), skin, 0, -.008, .118, head).rotation.x = Math.PI / 2;
     box(.038, .007, .01, M("#9a5446", {roughness: .5}), 0, -.06, .1, head);
+    if (t.key === "mostafa" || t.key === "tarek") { // glasses
+      const frame = M("#111", {roughness: .3, metalness: .4});
+      for (const sx of [-1, 1]) mesh(new THREE.TorusGeometry(.024, .004, 6, 18), frame, sx * .04, .022, .118, head);
+      box(.026, .004, .004, frame, 0, .028, .12, head);
+    }
     const style = fem ? "long" : ["short", "side", "buzz", "short"][idx % 4];
     mesh(new THREE.SphereGeometry(style === "buzz" ? .121 : .127, 28, 16, 0, Math.PI * 2, 0, Math.PI * (style === "side" ? .55 : style === "buzz" ? .44 : .5)),
          hairCol, 0, .025, -.008, head).scale.set(.95, 1.1, 1.06);

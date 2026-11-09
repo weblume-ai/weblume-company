@@ -14,15 +14,16 @@ FEEDBACK = KNOW / "feedback.md"
 APPROVED = KNOW / "examples" / "approved"
 BRAND = KNOW / "brand"
 SKILL_DIR = KNOW / "skills"
-SKILLS = {  # who reads which playbook in knowledge/skills/
-    "karim": ["design", "site-functionality", "copywriting", "quality-gate", "security"],
-    "mostafa": ["design", "quality-gate", "security"],
-    "tarek": ["quality-gate", "security"],
-    "youssef": ["copywriting"],
-    "omar": ["client-proposal"],
-    "ziad": ["client-messages"],
-    "adam": ["social-content"],
-    "hassan": ["social-content", "image-prompts"],
+SKILLS = {  # who reads which playbook in knowledge/skills/ ("quality" is everyone's)
+    "layla": ["quality"],
+    "karim": ["quality", "design", "site-functionality", "copywriting", "quality-gate", "security"],
+    "mostafa": ["quality", "design", "quality-gate", "security"],
+    "tarek": ["quality", "quality-gate", "security"],
+    "youssef": ["quality", "copywriting"],
+    "omar": ["quality", "client-proposal"],
+    "ziad": ["quality", "client-messages"],
+    "adam": ["quality", "social-content"],
+    "hassan": ["quality", "social-content", "image-prompts"],
 }
 
 

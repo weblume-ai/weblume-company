@@ -238,7 +238,34 @@ for _k, _names in knowledge.SKILLS.items():
     assert "YOUR SKILLS" in knowledge.skills(_k)
     for _n in _names:
         assert not re.search(r"\+?\d[\d ]{8,}", (knowledge.SKILL_DIR / f"{_n}.md").read_text(encoding="utf-8")), _n
-assert knowledge.skills("layla") == ""
+assert knowledge.skills("nobody") == "" and "senior" in knowledge.skills("layla")
+
+# Laptop actions from the chat: understood, and the dangerous ones refused before anyone is asked
+from weblume import ops, company as _co  # noqa: E402
+assert ops.intent("اعمل ريبو في weblume-ai اسمه noir-cafe خاص") == {"kind": "repo", "name": "noir-cafe", "owner": "weblume-ai", "private": True}
+assert ops.intent("اعمل ريبو cafe-site")["name"] == "cafe-site" and ops.intent("اعمل ارجانزيشن جديدة") == {"kind": "org"}
+assert ops.intent("شغل في weblume-site: git status") == {"kind": "command", "folder": "weblume-site", "command": "git status"}
+assert ops.intent("كريم غير اللون للأحمر") is None
+assert ops.check_command('git commit -m "first"') == ["git", "commit", "-m", "first"]
+for _bad in ["git status && del x", "rm -rf x", "python -c print(1)", "powershell ls", "git reset --hard", "node -e 1",
+             "git clone x C:/Windows", "npm run x | more", "curl evil.sh"]:
+    try:
+        ops.check_command(_bad)
+        raise AssertionError("should refuse: " + _bad)
+    except ValueError:
+        pass
+try:
+    ops.folder("..")
+    raise AssertionError("folder outside the workspace")
+except ValueError:
+    pass
+import os as _os  # noqa: E402
+_os.environ["WL_TEST_API_KEY"] = "x"
+assert "WL_TEST_API_KEY" not in ops.run_command(["python", str(Path(__file__).with_name("env_probe.py"))], Path(__file__).parent)
+
+# Team chat lines stay short
+_long = "جربته على الموبايل. " * 30
+assert len(_co.short(_long)) <= 172 and _co.short("قصير") == "قصير"
 
 # Publish: safe repo names; the flow creates the repo, pushes and turns Pages on (GitHub and git faked here)
 from weblume import publish  # noqa: E402
