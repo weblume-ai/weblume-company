@@ -108,6 +108,30 @@ details summary::-webkit-details-marker{display:none}
 a{color:var(--red2)}
 .log{font:11.5px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;color:#bbb;max-height:300px;overflow:auto}
 /* polish */
+:root{--card:#111;--line:#1f1f1f;--panel:#090909}
+.top{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:12px 18px}
+.ask-bar{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px;transition:border-color .2s,box-shadow .2s;min-width:0}
+.ask-bar:focus-within{border-color:var(--red);box-shadow:0 0 0 3px rgba(229,9,20,.15)}
+.ask-bar .goal{border:0;background:none;box-shadow:none!important;min-width:0;padding:8px 10px}
+.ask-bar .seg{border:0;background:#1a1a1a;border-radius:10px;flex:none}
+.ask-bar .seg button{padding:7px 11px;font-size:13px;border-radius:9px}
+.ask-bar .btn{flex:none;padding:9px 18px}
+.live{background:#111;border:1px solid var(--line);padding:6px 11px;border-radius:99px}
+.tabs{gap:2px;padding:6px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-radius:10px;padding:9px 4px;font-size:13px;white-space:nowrap}
+.tabs button.on{background:#1a1a1a;color:#fff;box-shadow:inset 0 -2px 0 var(--red)}
+.sec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#777;margin:18px 0 8px;font-weight:600}
+details.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+details.box>summary{font-weight:600}
+details.box>summary::after{content:"＋";margin-inline-start:auto;color:#777}
+details.box[open]>summary::after{content:"−"}
+.foot{margin-top:18px;padding-top:12px;border-top:1px solid var(--line)}
+body.chat-big .stage{display:none}
+body.chat-big .main{grid-template-columns:1fr}
+body.chat-big .side{border-left:0}
+body.chat-big .pane{width:100%;max-width:920px;margin:0 auto}
+body.chat-big .cm{font-size:15px}
+body.chat-only .ask-bar{display:none}
 .top{gap:12px;padding:10px 16px;background:rgba(5,5,5,.94);backdrop-filter:blur(8px)}
 .goal{border-radius:12px;padding:10px 14px;transition:border-color .2s,box-shadow .2s}
 .goal:focus{box-shadow:0 0 0 3px rgba(229,9,20,.18)}
@@ -134,6 +158,10 @@ body.chat-only .main{grid-template-columns:1fr}
 body.chat-only .side{border-left:0;width:100%;max-width:820px;margin:0 auto}
 body.chat-only .cm{font-size:15px}
 @media (max-width:900px){
+  .top{grid-template-columns:1fr auto auto}
+  .ask-bar{grid-column:1/-1;order:5;flex-wrap:wrap}
+  .ask-bar .goal{flex:1 1 100%;order:-1}
+  .tabs button{font-size:12px}
   .app{height:auto;min-height:100vh}
   .main{grid-template-columns:1fr}
   .stage{height:52vh}
@@ -146,12 +174,14 @@ body.chat-only .cm{font-size:15px}
 <div class="app">
   <header class="top">
     <div class="logo">Web<b>lume</b><span>Company</span></div>
-    <div class="seg" id="mode">
-      <button data-m="whole" class="on">Whole company</button>
-      <button data-m="focused">Focused team</button>
+    <div class="ask-bar">
+      <div class="seg" id="mode">
+        <button data-m="whole" class="on">Whole company</button>
+        <button data-m="focused">Focused team</button>
+      </div>
+      <input class="goal" id="goal" placeholder="What should the company do? e.g. Build a website for Noir café in Mansoura…" autocomplete="off">
+      <button class="btn" id="start">Start goal</button>
     </div>
-    <input class="goal" id="goal" placeholder="What should the company do? e.g. Build a website for Noir café in Mansoura…" autocomplete="off">
-    <button class="btn" id="start">Start goal</button>
     <div class="live" id="live"><span class="dot"></span><span id="liveTxt">Idle</span></div>
     <button class="ghost" id="hide3d" title="Turn the 3D office off on slow devices">Hide 3D</button>
   </header>
@@ -169,7 +199,7 @@ body.chat-only .cm{font-size:15px}
     </section>
     <aside class="side">
       <nav class="tabs" id="tabs">
-        <button data-t="home" class="on">Home</button><button data-t="work">Work</button><button data-t="progress">Progress</button><button data-t="team">Team</button><button data-t="chat">Chat <span class="dot-ask" id="askdot" hidden></span></button>
+        <button data-t="home" class="on">🏠 Home</button><button data-t="work">🛠️ Work</button><button data-t="progress">📈 Progress</button><button data-t="team">👥 Team</button><button data-t="chat">💬 Chat <span class="dot-ask" id="askdot" hidden></span></button>
       </nav>
       <div class="card err" id="offline" hidden style="margin:12px 14px 0"><b>Not connected to your laptop.</b><div class="small">Double-click <b>start.bat</b> on your laptop and keep it open. If Chrome asks about <b>local network access</b>, choose <b>Allow</b>. The team runs on your laptop; this page only shows it.</div></div>
       <div class="pane on" id="p-home"></div>
@@ -258,27 +288,29 @@ let homeBuilt = false;
 function buildHome() { // the form is built once, so what you type is never replaced by the live refresh
   homeBuilt = true;
   fill($("#p-home"),
-    h("div", {id: "h-status"}),
-    h("label", {for: "client"}, "Client name (for websites, optional)"), h("input", {class: "in", id: "client"}),
-    h("label", {for: "names"}, "Business names for Ziad, one per line (optional)"), h("textarea", {class: "in", id: "names", rows: 3}),
-    h("div", {class: "mute small", style: "margin-top:4px"}, "Names already in contacted.json are skipped and flagged for you."),
-    h("label", {for: "runs"}, "Past runs"),
-    h("select", {class: "in", id: "runs", onchange: e => { runId = e.target.value || null; store.set("wl_run", runId); poll() }}),
-    h("h3", {id: "h-ctitle", style: "margin-top:16px"}),
+    h("div", {class: "sec"}, "Current run"), h("div", {id: "h-status"}),
+    h("div", {class: "sec"}, "Past runs"),
+    h("select", {class: "in", id: "runs", "aria-label": "Past runs", onchange: e => { runId = e.target.value || null; store.set("wl_run", runId); poll() }}),
+    h("div", {class: "sec"}, "Before you start"),
+    h("details", {class: "box"}, h("summary", {}, "🧾 Client details (optional)"),
+      h("label", {for: "client"}, "Client name (for websites)"), h("input", {class: "in", id: "client"}),
+      h("label", {for: "names"}, "Business names for Ziad, one per line"), h("textarea", {class: "in", id: "names", rows: 3}),
+      h("div", {class: "mute small", style: "margin-top:4px"}, "Names already in contacted.json are skipped and flagged for you.")),
+    h("details", {class: "box"}, h("summary", {id: "h-ctitle"}),
     h("div", {class: "row"}, h("input", {class: "in", id: "addc", "aria-label": "Business you contacted", placeholder: "Add a business you contacted", style: "flex:1"}),
       h("button", {class: "ghost", onclick: async () => {
         const v = $("#addc").value.trim(); if (!v) return;
         const r = await api("/api/contacted", {business: v}).catch(e => ({error: e.message}));
         $("#addc").value = ""; if (r.added === false) alert("Already in the list"); poll();
       }}, "Add")),
-    h("div", {id: "h-clist", class: "small mute", style: "margin-top:8px"}));
+    h("div", {id: "h-clist", class: "small mute", style: "margin-top:8px;max-height:260px;overflow:auto"})),
+    h("div", {id: "h-model", class: "foot small mute"}));
 }
 function renderHome() {
   if (!homeBuilt) buildHome();
   const {pct, done, tasks} = progress(), r = S.run;
+  fill($("#h-model"), "🤖 AI model: ", h("b", {style: "color:#ddd"}, S.llm || "…"), " · change it in .env, then restart start.bat");
   fill($("#h-status"),
-    h("div", {class: "card"}, h("div", {class: "mute small"}, "AI model"), h("b", {}, S.llm || "…"),
-      h("div", {class: "mute small"}, "Change it in the .env file, then restart start.bat.")),
     r ? h("div", {class: "card" + (r.state === "error" ? " err" : "")},
       h("div", {class: "mute small"}, `${r.mode === "whole" ? "Whole company" : "Focused team"} · ${r.started.replace("T", " ")}`),
       h("b", {}, r.goal),
@@ -388,8 +420,8 @@ function renderChat() {
       try { const r = await api("/api/message", {text}); box.value = ""; if (r.run) { runId = r.run; store.set("wl_run", runId) } poll() } catch (e) { alert(e.message) }
     };
     box.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send() } });
-    const head = h("div", {class: "paneHead"}, h("h3", {}, "💬 Chat"), CHAT_ONLY ? null : h("button", {class: "ghost small",
-      onclick: () => open(location.pathname + "?view=chat", "weblume-chat", "width=520,height=780")}, "⤢ افتح الشات لوحده"));
+    const head = h("div", {class: "paneHead"}, h("h3", {}, "💬 Chat"), CHAT_ONLY ? null : h("button", {class: "ghost small", id: "c-big",
+      onclick: () => setBig(!document.body.classList.contains("chat-big"))}, "⤢ كبّر الشات"));
     fill(p, head, h("div", {id: "c-ask"}), h("div", {id: "c-list"}), h("div", {class: "composer"}, box, h("button", {class: "btn", onclick: send}, "Send")));
   }
   const r = S.run, ask = r && r.ask;
@@ -471,6 +503,12 @@ const ZONES = [ // two rows of five rooms; free people hang out in the lounge an
   ["layla", "Management", -12, -4.6], ["omar", "Client Analysis", -6, -4.6], ["youssef", "Copywriting", 0, -4.6], ["karim", "Engineering", 6, -4.6], ["mostafa", "Code Review", 12, -4.6],
   ["tarek", "QA Testing", -12, 4.6], ["ziad", "Sales & Leads", -6, 4.6], ["adam", "Social Media", 0, 4.6], ["lounge", "Lounge", 6, 4.6], ["hassan", "Video Studio", 12, 4.6]];
 let world = null;
+function setBig(v) { // the chat (and the whole panel) takes the full page; the 3D office pauses meanwhile
+  document.body.classList.toggle("chat-big", v); store.set("wl_big", v);
+  const b = $("#c-big"); if (b) b.textContent = v ? "⤡ صغّر" : "⤢ كبّر الشات";
+  if (world) world.setOn(!v && !hide3d);
+}
+addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("chat-big")) setBig(false) });
 const CHAT_ONLY = new URLSearchParams(location.search).get("view") === "chat"; // the chat opened in its own window
 
 function canvasTex(w, hh, draw) {
@@ -550,8 +588,8 @@ function makeWorld() {
   }
   function chair(parent, x, z) {
     const c = new THREE.Group(); c.position.set(x, 0, z); parent.add(c);
-    box(.62, .1, .58, "#202020", 0, .5, 0, c); box(.6, .7, .08, "#202020", 0, .9, .28, c);
-    cyl(.035, .035, .42, metal, 0, .27, 0, c); cyl(.32, .32, .04, metal, 0, .05, 0, c, 5);
+    box(.62, .1, .58, "#202020", 0, .45, 0, c); box(.6, .7, .08, "#202020", 0, .85, .28, c);
+    cyl(.035, .035, .37, metal, 0, .24, 0, c); cyl(.32, .32, .04, metal, 0, .05, 0, c, 5);
     return c;
   }
   ZONES.forEach(([k, , x, z]) => {
@@ -586,30 +624,58 @@ function makeWorld() {
   const SKIN = ["#e3b48f", "#c98f68", "#d9a27a", "#b97c55", "#e8c09d", "#a86f4a", "#d6a07c", "#c48b62"];
   const people = {};
   function person(t, idx) {
-    const g = new THREE.Group(), shirt = M(COLORS[t.key] || "#888", {roughness: .8}), skin = M(SKIN[idx % SKIN.length], {roughness: .6});
-    const pants = M(FEMALE.has(t.key) ? "#1d1d22" : ["#23272e", "#3b3f46", "#2c2a26"][idx % 3], {roughness: .85}), shoe = M("#111", {roughness: .5});
-    const limb = (len, r, mat, x, y, parent) => { const p = new THREE.Group(); p.position.set(x, y, 0); parent.add(p); cyl(r, r * .9, len, mat, 0, -len / 2, 0, p, 12); return p };
-    const hipL = limb(.62, .085, pants, -.1, .68, g), hipR = limb(.62, .085, pants, .1, .68, g);
-    box(.13, .07, .24, shoe, 0, -.64, .05, hipL); box(.13, .07, .24, shoe, 0, -.64, .05, hipR);
-    const torso = new THREE.Group(); torso.position.y = .68; g.add(torso);
-    cyl(.2, .23, .58, shirt, 0, .3, 0, torso, 20);
-    mesh(new THREE.SphereGeometry(.2, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), shirt, 0, .58, 0, torso).scale.set(1.12, .45, .85);
-    const shL = limb(.5, .06, shirt, -.27, .55, torso), shR = limb(.5, .06, shirt, .27, .55, torso);
-    mesh(new THREE.SphereGeometry(.06, 10, 8), skin, 0, -.53, 0, shL); mesh(new THREE.SphereGeometry(.06, 10, 8), skin, 0, -.53, 0, shR);
-    cyl(.06, .07, .1, skin, 0, .66, 0, torso, 10);
-    const head = new THREE.Group(); head.position.y = .9; torso.add(head);
-    mesh(new THREE.SphereGeometry(.17, 24, 18), skin, 0, 0, 0, head).scale.set(1, 1.1, 1.02);
-    const eye = M("#1a1a1a", {roughness: .3});
-    mesh(new THREE.SphereGeometry(.022, 8, 6), eye, -.06, .02, .155, head); mesh(new THREE.SphereGeometry(.022, 8, 6), eye, .06, .02, .155, head);
-    const hairCol = M(["#1b1310", "#2a1c14", "#141414", "#3a2618"][idx % 4], {roughness: .75});
-    mesh(new THREE.SphereGeometry(.18, 24, 14, 0, Math.PI * 2, 0, Math.PI * .52), hairCol, 0, .02, -.01, head).scale.set(1.04, 1.12, 1.08);
-    if (FEMALE.has(t.key)) mesh(new THREE.CylinderGeometry(.17, .21, .5, 16, 1, false, Math.PI * .5, Math.PI), hairCol, 0, -.2, -.02, head);
-    const mark = new THREE.Mesh(new THREE.OctahedronGeometry(.13), new THREE.MeshBasicMaterial({color: 0xff3b47})); mark.position.y = 2.15; mark.visible = false; g.add(mark);
+    const g = new THREE.Group(), fem = FEMALE.has(t.key);
+    const shirt = M(COLORS[t.key] || "#888", {roughness: .85}), skin = M(SKIN[idx % SKIN.length], {roughness: .55});
+    const pants = M(fem ? "#1d1d22" : ["#23272e", "#3b3f46", "#2c2a26", "#1f2a3a"][idx % 4], {roughness: .9});
+    const shoe = M(["#111", "#2b1d14", "#eee"][idx % 3], {roughness: .45}), hairCol = M(["#1b1310", "#2a1c14", "#141414", "#3a2618"][idx % 4], {roughness: .8});
+    const joint = (x, y, z, parent) => { const j = new THREE.Group(); j.position.set(x, y, z); parent.add(j); return j };
+    const seg = (len, r1, r2, mat, parent) => { cyl(r1, r2, len, mat, 0, -len / 2, 0, parent, 14); mesh(new THREE.SphereGeometry(r2, 12, 8), mat, 0, -len, 0, parent) };
+    // legs: hip → thigh → knee → shin → shoe
+    const leg = x => {
+      const hip = joint(x, .86, 0, g); seg(.42, .085, .07, pants, hip);
+      const knee = joint(0, -.42, 0, hip); seg(.4, .068, .052, pants, knee);
+      box(.12, .07, .26, shoe, 0, -.42, .05, knee); return [hip, knee];
+    };
+    const [hipL, kneeL] = leg(-.1), [hipR, kneeR] = leg(.1);
+    // body: pelvis, a chest that is wider at the shoulders, collar, neck
+    const torso = joint(0, .86, 0, g);
+    cyl(.17, .16, .14, pants, 0, .02, 0, torso, 20).scale.set(1.15, 1, .8);
+    cyl(fem ? .2 : .23, fem ? .16 : .18, .5, shirt, 0, .32, 0, torso, 24).scale.set(1.12, 1, .72);
+    mesh(new THREE.SphereGeometry(.23, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), shirt, 0, .55, 0, torso).scale.set(fem ? 1.0 : 1.12, .32, .72);
+    cyl(.07, .075, .06, M("#f4f4f4", {roughness: .8}), 0, .6, 0, torso, 14);
+    cyl(.05, .055, .1, skin, 0, .66, 0, torso, 12);
+    // arms: shoulder → upper arm (sleeve) → elbow → forearm → hand
+    const arm = x => {
+      const sh = joint(x, .53, 0, torso); seg(.3, .065, .055, shirt, sh);
+      const el = joint(0, -.3, 0, sh); seg(.26, .048, .04, skin, el);
+      mesh(new THREE.SphereGeometry(.05, 12, 8), skin, 0, -.3, .01, el).scale.set(.85, 1.1, .6); return [sh, el];
+    };
+    const [shL, elL] = arm(-.29), [shR, elR] = arm(.29);
+    // head: face, ears, nose, brows, eyes with whites, mouth, hair
+    const head = joint(0, .86, 0, torso);
+    mesh(new THREE.SphereGeometry(.15, 28, 20), skin, 0, 0, 0, head).scale.set(.92, 1.08, 1);
+    mesh(new THREE.SphereGeometry(.03, 10, 8), skin, -.14, 0, 0, head).scale.set(.5, 1, .8); mesh(new THREE.SphereGeometry(.03, 10, 8), skin, .14, 0, 0, head).scale.set(.5, 1, .8);
+    mesh(new THREE.SphereGeometry(.022, 10, 8), skin, 0, -.02, .15, head).scale.set(.9, 1, 1.3);
+    const white = M("#f5f5f5", {roughness: .3}), pupil = M("#1a1a1a", {roughness: .2}), brow = hairCol;
+    for (const sx of [-1, 1]) {
+      mesh(new THREE.SphereGeometry(.024, 12, 8), white, sx * .05, .025, .128, head).scale.set(1.2, .8, .5);
+      mesh(new THREE.SphereGeometry(.013, 8, 6), pupil, sx * .05, .025, .14, head);
+      box(.05, .01, .01, brow, sx * .05, .065, .135, head).rotation.z = -sx * .12;
+    }
+    box(.05, .008, .01, M("#8a4a3c", {roughness: .5}), 0, -.075, .135, head);
+    const style = fem ? "long" : ["short", "side", "buzz", "short"][idx % 4];
+    if (style !== "buzz") mesh(new THREE.SphereGeometry(.158, 24, 14, 0, Math.PI * 2, 0, Math.PI * (style === "side" ? .55 : .5)), hairCol, 0, .03, -.01, head).scale.set(.98, 1.1, 1.06);
+    else mesh(new THREE.SphereGeometry(.152, 24, 14, 0, Math.PI * 2, 0, Math.PI * .45), hairCol, 0, .02, -.005, head).scale.set(.95, 1.08, 1.02);
+    if (style === "side") box(.2, .05, .12, hairCol, .02, .14, .05, head).rotation.z = -.15;
+    if (style === "long") { mesh(new THREE.CylinderGeometry(.15, .19, .42, 18, 1, true, Math.PI * .55, Math.PI * .9), hairCol, 0, -.15, -.01, head); }
+    if (!fem && idx % 3 === 1) mesh(new THREE.SphereGeometry(.13, 18, 10, 0, Math.PI * 2, Math.PI * .55, Math.PI * .45), hairCol, 0, -.01, .02, head).scale.set(1.05, 1.05, 1.1); // beard
+    const mark = new THREE.Mesh(new THREE.OctahedronGeometry(.13), new THREE.MeshBasicMaterial({color: 0xff3b47})); mark.position.y = 2.25; mark.visible = false; g.add(mark);
     const home = desks[t.key];
     g.position.copy(home ? home.stand : new THREE.Vector3(6, 0, 4.6)); scene.add(g);
     const tag = h("div", {class: "tag", onclick: () => select(t.key)}, t.name); labels.append(tag);
     const bubble = h("div", {class: "bubble", hidden: true}); labels.append(bubble);
-    people[t.key] = {g, hipL, hipR, shL, shR, torso, head, mark, tag, bubble, home, path: [], wait: Math.random() * 2, state: "idle", seated: false, t, talk: null, idx, sit: 0, speed: 0, phase: 0};
+    people[t.key] = {g, hipL, hipR, kneeL, kneeR, shL, shR, elL, elR, torso, head, mark, tag, bubble, home, path: [], wait: Math.random() * 2,
+                     state: "idle", seated: false, t, talk: null, idx, sit: 0, speed: 0, phase: 0};
   }
   function freeSpot() {
     const r = Math.random();
@@ -650,21 +716,26 @@ function makeWorld() {
       p.hipL.rotation.x = s * .55 * a; p.hipR.rotation.x = -s * .55 * a;
       p.shL.rotation.x = -s * .42 * a; p.shR.rotation.x = s * .42 * a;
       p.shL.rotation.z = .06; p.shR.rotation.z = -.06;
-      p.torso.position.y = .68 + Math.abs(Math.cos(p.phase)) * .035 * a; // highest when the legs pass each other
+      p.torso.position.y = .86 + Math.abs(Math.cos(p.phase)) * .03 * a; // highest when the legs pass each other
+      p.kneeL.rotation.x = Math.max(0, Math.sin(p.phase + 1.2)) * .9 * a + .05; p.kneeR.rotation.x = Math.max(0, -Math.sin(p.phase + 1.2)) * .9 * a + .05;
+      p.elL.rotation.x = -.25 - Math.max(0, -s) * .35 * a; p.elR.rotation.x = -.25 - Math.max(0, s) * .35 * a;
       p.torso.rotation.y = s * .09 * a; p.torso.rotation.x = .06 * a; p.head.rotation.y = -s * .07 * a; p.head.rotation.x = 0;
     } else if (target && p.home && target === p.home.seat) { // sit down smoothly and type
       p.speed = 0; p.seated = true; p.sit = ease(p.sit, 1, Math.min(1, dt * 4));
       turn(p, p.home.face, k);
-      p.hipL.rotation.x = p.hipR.rotation.x = -1.45 * p.sit;
+      p.hipL.rotation.x = p.hipR.rotation.x = -1.5 * p.sit; p.kneeL.rotation.x = p.kneeR.rotation.x = 1.55 * p.sit;
+      p.elL.rotation.x = ease(p.elL.rotation.x, -.55, k); p.elR.rotation.x = ease(p.elR.rotation.x, -.55, k);
       p.shL.rotation.x = ease(p.shL.rotation.x, -1.1 + Math.sin(time * 14 + p.idx) * .07, k);
       p.shR.rotation.x = ease(p.shR.rotation.x, -1.1 + Math.cos(time * 13 + p.idx) * .07, k);
       p.shL.rotation.z = p.shR.rotation.z = 0;
-      p.torso.position.y = .68; p.torso.rotation.x = ease(p.torso.rotation.x, .1, k); p.torso.rotation.y = 0;
+      p.torso.position.y = .86; p.torso.rotation.x = ease(p.torso.rotation.x, .1, k); p.torso.rotation.y = 0;
       p.head.rotation.x = .12 + Math.sin(time * .9 + p.idx) * .04; p.head.rotation.y = Math.sin(time * .4 + p.idx) * .12; // reading the screen
     } else { // stand: breathe, shift weight, look around
       p.speed = 0; p.seated = false; p.sit = ease(p.sit, 0, Math.min(1, dt * 4));
-      p.hipL.rotation.x = ease(p.hipL.rotation.x, -1.45 * p.sit, k); p.hipR.rotation.x = ease(p.hipR.rotation.x, -1.45 * p.sit, k);
-      p.torso.position.y = .68 + Math.sin(time * 1.8 + p.idx) * .007;
+      p.hipL.rotation.x = ease(p.hipL.rotation.x, -1.5 * p.sit, k); p.hipR.rotation.x = ease(p.hipR.rotation.x, -1.5 * p.sit, k);
+      p.kneeL.rotation.x = ease(p.kneeL.rotation.x, 1.55 * p.sit, k); p.kneeR.rotation.x = ease(p.kneeR.rotation.x, 1.55 * p.sit, k);
+      p.elL.rotation.x = ease(p.elL.rotation.x, p.talk ? -.7 : -.12, k); p.elR.rotation.x = ease(p.elR.rotation.x, p.talk ? -.9 : -.12, k);
+      p.torso.position.y = .86 + Math.sin(time * 1.8 + p.idx) * .007;
       p.torso.rotation.x = ease(p.torso.rotation.x, 0, k); p.torso.rotation.y = ease(p.torso.rotation.y, Math.sin(time * .5 + p.idx) * .05, k);
       p.shL.rotation.z = ease(p.shL.rotation.z, .05, k); p.shR.rotation.z = ease(p.shR.rotation.z, -.05, k);
       if (p.talk) { // face who you're talking to, talk with the hands, nod
@@ -678,10 +749,10 @@ function makeWorld() {
         else if ((p.wait -= dt) <= 0) { route(p, freeSpot()); p.dest = null; p.wait = 2 + Math.random() * 4 }
       }
     }
-    p.g.position.y = -.17 * p.sit;
+    p.g.position.y = -.34 * p.sit; // hips land on the seat
     p.mark.visible = (p.state === "waiting" || p.state === "asking") && !p.talk;
     p.mark.material.color.set(p.state === "asking" ? 0xffd27a : 0xff3b47);
-    if (p.mark.visible) { p.mark.rotation.y += dt * 3; p.mark.position.y = 2.15 + Math.sin(time * 4) * .06 }
+    if (p.mark.visible) { p.mark.rotation.y += dt * 3; p.mark.position.y = 2.25 + Math.sin(time * 4) * .06 }
     const m = screens[p.t.key];
     if (m) m.emissiveIntensity += ((p.state === "working" && p.seated ? .95 : .08) - m.emissiveIntensity) * Math.min(1, dt * 4);
   }
@@ -750,7 +821,7 @@ function apply3d() {
 }
 $("#hide3d").addEventListener("click", () => { hide3d = !hide3d; store.set("wl_hide3d", hide3d); apply3d() });
 if (CHAT_ONLY) { document.body.classList.add("chat-only"); document.title = "Weblume Chat"; showTab("chat") }
-else { try { world = makeWorld() } catch (e) { console.error(e); $("#stage").classList.add("off") } apply3d() }
+else { try { world = makeWorld() } catch (e) { console.error(e); $("#stage").classList.add("off") } apply3d(); if (store.get("wl_big", false)) { showTab("chat"); setBig(true) } }
 poll();
 </script>
 </body>
