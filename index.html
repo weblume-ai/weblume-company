@@ -544,9 +544,9 @@ function makeWorld() {
   scene.background = new THREE.Color(0x0b0b0c); scene.fog = new THREE.Fog(0x0b0b0c, 60, 110);
   if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new THREE.RoomEnvironment(), .04).texture }
   const cam = new THREE.PerspectiveCamera(30, 1, .5, 200);
-  cam.position.set(19, 20, 26);
+  cam.position.set(32, 31, 40);
   const controls = THREE.OrbitControls ? new THREE.OrbitControls(cam, renderer.domElement) : null;
-  if (controls) { controls.enableDamping = true; controls.maxPolarAngle = 1.2; controls.minDistance = 7; controls.maxDistance = 75; controls.target.set(0, 0, 0) }
+  if (controls) { controls.enableDamping = true; controls.maxPolarAngle = 1.2; controls.minDistance = 7; controls.maxDistance = 75; controls.target.set(6, 0, 0) }
 
   scene.add(new THREE.HemisphereLight(0xfff4e6, 0x1a1210, .25));
   const sun = new THREE.DirectionalLight(0xfff0dd, 1.25); sun.position.set(14, 26, 12); sun.castShadow = true;
@@ -559,13 +559,13 @@ function makeWorld() {
   const cyl = (rt, rb, hh, mat, x, y, z, parent, seg = 20) => mesh(new THREE.CylinderGeometry(rt, rb, hh, seg), typeof mat === "string" ? M(mat) : mat, x, y, z, parent);
 
   // building: wood floor, light walls with tall windows on the back and left
-  const W = 31, D = 20, wood = woodTex(); wood.wrapS = wood.wrapT = THREE.RepeatWrapping; wood.repeat.set(6, 4);
-  box(W, .4, D, M("#ffffff", {map: wood, roughness: .55}), 0, -.2, 0);
-  box(W + 1, .3, D + 1, "#141414", 0, -.55, 0);
+  const W = 43, D = 20, X0 = 6, wood = woodTex(); wood.wrapS = wood.wrapT = THREE.RepeatWrapping; wood.repeat.set(8, 4); // floor runs x -15.5 … 27.5
+  box(W, .4, D, M("#ffffff", {map: wood, roughness: .55}), X0, -.2, 0);
+  box(W + 1, .3, D + 1, "#141414", X0, -.55, 0);
   const wallMat = M("#d8d2c8", {roughness: .9}), glass = M("#bcd7ff", {transparent: true, opacity: .25, roughness: .05, metalness: .2, emissive: 0x6b8fb8, emissiveIntensity: .35});
-  box(W, 3.4, .25, wallMat, 0, 1.7, -D / 2); box(.25, 3.4, D, wallMat, -W / 2, 1.7, 0);
-  for (let x = -13; x <= 13; x += 4.4) mesh(new THREE.PlaneGeometry(3.4, 2.2), glass, x, 1.9, -D / 2 + .14);
-  for (let z = -7; z <= 7; z += 4.6) { const p = mesh(new THREE.PlaneGeometry(3.4, 2.2), glass, -W / 2 + .14, 1.9, z); p.rotation.y = Math.PI / 2 }
+  box(W, 3.4, .25, wallMat, X0, 1.7, -D / 2); box(.25, 3.4, D, wallMat, X0 - W / 2, 1.7, 0);
+  for (let x = -13; x <= 25; x += 4.4) if (Math.abs(x - 1.3) > 2.6) mesh(new THREE.PlaneGeometry(3.4, 2.2), glass, x, 1.9, -D / 2 + .14); // a gap behind the sign
+  for (let z = -7; z <= 7; z += 4.6) { const p = mesh(new THREE.PlaneGeometry(3.4, 2.2), glass, X0 - W / 2 + .14, 1.9, z); p.rotation.y = Math.PI / 2 }
   const sign = mesh(new THREE.PlaneGeometry(4.6, 1.15), new THREE.MeshBasicMaterial({map: signTex(), transparent: true}), 0, 4.1, -D / 2 + .2); sign.castShadow = false;
   const ring = new THREE.Mesh(new THREE.TorusGeometry(.62, .05, 12, 80), new THREE.MeshBasicMaterial({color: 0xff2030}));
   ring.position.set(-2.9, 4.1, -D / 2 + .3); scene.add(ring);
@@ -617,7 +617,36 @@ function makeWorld() {
     desks[k] = {seat: toWorld(0, .75), stand: toWorld(1.35, 1.1), face: d.rotation.y + Math.PI};
   });
 
+
+  // ---- the new wing: meeting room (back) and kitchen (front), plus shelves, a whiteboard and more plants
+  const wood2 = M("#8a6a4c", {roughness: .45}), white = M("#f4f1ea", {roughness: .6});
+  for (const z of [-4.6, 4.6]) box(.06, 1.1, 4.4, part, 15, .55, z); // glass wall to the wing
+  const meet = {x: 20, z: -4.6};
+  box(9, .03, 5.2, M("#20262b", {roughness: 1}), 21, .02, -4.9).castShadow = false;
+  box(4.2, .07, 1.4, wood2, meet.x, .76, meet.z); for (const [a, b] of [[-1.9, -.55], [1.9, -.55], [-1.9, .55], [1.9, .55]]) box(.06, .74, .06, metal, meet.x + a, .37, meet.z + b);
+  for (const dx of [-1.4, 0, 1.4]) { chair(scene, meet.x + dx, meet.z - 1.15); chair(scene, meet.x + dx, meet.z + 1.15).rotation.y = Math.PI }
+  box(3.2, 1.8, .08, dark, meet.x, 1.75, -D / 2 + .2); // big screen on the wall
+  const tv = mesh(new THREE.PlaneGeometry(3, 1.6), new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0xffffff, emissiveMap: signTex(), emissiveIntensity: .5}), meet.x, 1.75, -D / 2 + .25); tv.castShadow = false;
+  // kitchen: counter with a coffee machine, a fridge, a high table with stools, a water cooler
+  const kit = {x: 21, z: 6.2};
+  box(5.4, .9, .7, white, kit.x, .45, kit.z + 2.8); box(5.5, .06, .75, M("#2b2b2b", {roughness: .3}), kit.x, .92, kit.z + 2.8);
+  box(.45, .5, .4, dark, kit.x - 1.6, 1.2, kit.z + 2.85); cyl(.06, .05, .1, white, kit.x - 1.6, 1.0, kit.z + 2.6);
+  box(.9, 2, .75, M("#cfd3d6", {metalness: .4, roughness: .3}), kit.x + 3.2, 1, kit.z + 2.7);
+  cyl(.5, .5, .05, wood2, kit.x - .5, 1.05, kit.z); cyl(.05, .05, 1.05, metal, kit.x - .5, .52, kit.z);
+  for (const a of [0, 2.1, 4.2]) cyl(.2, .2, .05, dark, kit.x - .5 + Math.cos(a) * .8, .75, kit.z + Math.sin(a) * .8);
+  cyl(.2, .2, 1, white, kit.x + 2.2, .5, kit.z - 1.2); cyl(.17, .17, .45, M("#9fd0ff", {transparent: true, opacity: .6}), kit.x + 2.2, 1.22, kit.z - 1.2);
+  box(9, .03, 5.4, M("#3b302a", {roughness: 1}), 21, .02, 5.2).castShadow = false;
+  // shelves with books on the left wall, a whiteboard in management, plants around the wing
+  const bookCols = ["#c8102e", "#2f4f6f", "#e9c46a", "#3c6e8f", "#7a1f2b", "#f4f1ea"];
+  for (const z of [-7.5, 7.5]) {
+    box(.4, 2, 1.8, wood2, -15.1, 1, z);
+    for (let s = 0; s < 3; s++) for (let b = 0; b < 7; b++) box(.25, .32, .16, M(bookCols[(b + s) % 6]), -15.05, .45 + s * .6, z - .75 + b * .24);
+  }
+  box(2.4, 1.2, .05, white, -12, 1.6, -D / 2 + .2); box(2.5, 1.3, .03, dark, -12, 1.6, -D / 2 + .17);
+  for (const [px, pz, s] of [[15.6, -1.5, 1.2], [15.6, 1.5, 1], [26.6, -8.8, 1.4], [26.6, 1, 1.2], [-14.6, 0, 1.3]]) plant(px, pz, s);
+
   // HTML labels that follow the camera
+  ZONES.push(["meeting", "Meeting Room", 20, -4.6], ["kitchen", "Kitchen", 21, 4.6]); // labels only
   const zoneTags = ZONES.map(([, name, x, z]) => { const el = h("div", {class: "zone"}, name); labels.append(el); return {el, p: new THREE.Vector3(x, .05, z + (z < 0 ? 2.5 : 2.6))} });
 
   // people: rounded bodies, arms and legs that move, a face, hair (long for Layla)
@@ -703,9 +732,10 @@ function makeWorld() {
   }
   function freeSpot() {
     const r = Math.random();
+    if (r < .2) return new THREE.Vector3(20.5 + (Math.random() - .5) * 3, 0, 4.4 + Math.random() * 1.2); // kitchen, coffee
     if (r < .35) return new THREE.Vector3(6 + (Math.random() - .5) * 2.6, 0, 4.8 + Math.random() * 1.4); // lounge
     if (r < .6) return new THREE.Vector3(6 + (Math.random() - .5) * 3.4, 0, 2.2); // by the lounge
-    return new THREE.Vector3((Math.random() - .5) * 26, 0, (Math.random() - .5) * 1.4); // corridor
+    return new THREE.Vector3(-13 + Math.random() * 37, 0, (Math.random() - .5) * 1.4); // corridor, into the new wing
   }
   const SIDE = 1.6;
   function route(p, to) { // around desks: step aside, walk the corridor, come in from the side lane
@@ -811,6 +841,12 @@ function makeWorld() {
   const SMALL_TALK = ["عامل إيه النهارده؟", "حد عايز قهوة؟ ☕", "شفت التصميم الجديد؟ حلو جداً", "يلا بريك خمس دقايق",
     "الموقع الأخير طلع جامد 👌", "عندك فكرة للبوست الجاي؟", "الماتش امبارح كان نار ⚽", "فاكر العميل بتاع امبارح؟ رد علينا",
     "محتاج رأيك في لون ده", "خلصت اللي عليك؟", "الجو حلو النهارده", "تعالى نجرب الفكرة دي بكره"];
+  const REPLIES = {"عامل إيه النهارده؟": "الحمد لله تمام، وإنت؟", "حد عايز قهوة؟ ☕": "أيوه واحدة مظبوط 🙏", "يلا بريك خمس دقايق": "يلا بينا ☕",
+    "شفت التصميم الجديد؟ حلو جداً": "شفته، الألوان جامدة", "الموقع الأخير طلع جامد 👌": "تسلم، تعبنا فيه", "عندك فكرة للبوست الجاي؟": "عندي فكرة قبل وبعد، هوريك",
+    "الماتش امبارح كان نار ⚽": "ماتكلمنيش فيه 😅", "فاكر العميل بتاع امبارح؟ رد علينا": "بجد؟ حلو، نبعتله التصميم", "محتاج رأيك في لون ده": "خليه أغمق شوية",
+    "خلصت اللي عليك؟": "قربت، فاضل حاجة صغيرة", "الجو حلو النهارده": "فعلاً، نطلع نشتغل برا 😄", "تعالى نجرب الفكرة دي بكره": "ماشي، أول حاجة الصبح"};
+  const ACKS = ["تمام 👍", "ماشي، عليا", "حاضر، ثواني", "تسلم، هبص عليها", "تمام، هبدأ دلوقتي"];
+  const replyTo = text => REPLIES[text] || ACKS[Math.floor(Math.random() * ACKS.length)];
   let nextChat = performance.now() + 8000;
   function chatter(now) {
     if (now < nextChat) return;
@@ -827,7 +863,7 @@ function makeWorld() {
   }
   addEventListener("resize", resize); resize();
 
-  const tmp = new THREE.Vector3(), center = new THREE.Vector3(0, 0, 0);
+  const tmp = new THREE.Vector3(), center = new THREE.Vector3(6, 0, 0);
   function place(el, pos, yOff) {
     tmp.copy(pos); tmp.y += yOff; tmp.project(cam);
     el.style.left = ((tmp.x + 1) / 2 * stage.clientWidth) + "px"; el.style.top = ((1 - tmp.y) / 2 * stage.clientHeight) + "px";
@@ -842,8 +878,12 @@ function makeWorld() {
       p.state = st === "done" ? "idle" : st;
       if (p.talk && !p.talk.until && !p.path.length && p.dest) p.talk.until = now + 6500; // arrived: say it for 6.5s
       if (p.talk && ((p.talk.until && now > p.talk.until) || now > p.talk.giveUp)) {
-        const o = people[p.talk.to]; if (o && o.hear && o.hear.from === k) { o.hear = null; o.dest = null } // done: the listener goes back to work
+        const o = people[p.talk.to], said = p.talk; if (o && o.hear && o.hear.from === k) { o.hear = null; o.dest = null } // done: the listener goes back to work
         p.talk = null; p.dest = null; p.path = [];
+        if (o && o !== p && said.until && !said.reply && !o.talk) { // the other one answers back, face to face
+          o.talk = {to: k, spot: o.g.position.clone(), until: 0, giveUp: now + 9000, text: replyTo(said.text), reply: true};
+          p.hear = {from: o.t.key, spot: p.g.position.clone(), giveUp: now + 12000};
+        }
       }
       if (p.hear && now > p.hear.giveUp) { p.hear = null; p.dest = null }
       step(p, dt, time);

@@ -97,7 +97,10 @@ def extract_json(text: str):
         start = text.find(opener)
         end = text.rfind(closer)
         if start != -1 and end > start:
-            for candidate in (text[start:end + 1], _escape_inner_quotes(text[start:end + 1])):
+            raw = text[start:end + 1]
+            # models copy data.js and write a JS object: unquoted keys and trailing commas
+            loose = re.sub(r",\s*([}\]])", r"\1", re.sub(r'([{,]\s*)([A-Za-z_]\w*|\d+)\s*:', r'\1"\2":', raw))
+            for candidate in (raw, _escape_inner_quotes(raw), loose, _escape_inner_quotes(loose)):
                 try:
                     return json.loads(candidate)
                 except json.JSONDecodeError:

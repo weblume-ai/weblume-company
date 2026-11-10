@@ -323,4 +323,11 @@ for _w in ["يلا انا عايز موقع مطعم احترافي", "اعمل 
     assert _co.wants_new_site(_w), _w
 assert not _co.wants_new_site("ازاي أربط دومين؟")
 
+# Karim sometimes answers with a JS object (like data.js): it still builds
+assert rules.extract_json('window.CAFE = {name: "قهوة", menu: [{name: "x", price: "", }], url: "https://a.b/c"};') ==     {"name": "قهوة", "menu": [{"name": "x", "price": ""}], "url": "https://a.b/c"}
+
+# Research: public pages only, never the laptop or the home network
+from weblume import research  # noqa: E402
+assert not research._public("http://127.0.0.1:8501") and not research._public("http://192.168.1.1") and not research._public("file:///c:/x")
+
 print("All rule checks passed.")
