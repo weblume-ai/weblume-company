@@ -17,6 +17,7 @@ from .team import ORDER, TEAM, make_agent
 
 _lock = threading.Lock()
 _active: dict = {"thread": None, "run": None}
+JOB = {"karim": "code", "mostafa": "code", "layla": "fast"}  # with LLM_PROVIDER=auto; everyone else writes ("write")
 TEST_ROUNDS = 2  # Tarek tests, Karim fixes what he found, Tarek tests once more
 
 
@@ -672,9 +673,8 @@ def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
             run.status["state"] = "done"
             return
         config.on_switch = lambda msg: run.log("system", msg)
-        llm = get_llm()
         goal, client, names = run.status["goal"], run.status["client"], run.status["names"]
-        agents = {k: make_agent(k, llm) for k in ["layla", *ORDER]}
+        agents = {k: make_agent(k, get_llm(JOB.get(k, "write"))) for k in ["layla", *ORDER]}
         if mode == "whole":
             run.log("layla", f"Planning with {run.status['llm']}")
             run.set_agent("layla", "working")

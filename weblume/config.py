@@ -24,6 +24,7 @@ DEFAULT_MODELS = {
     "groq": "openai/gpt-oss-120b",  # llama-3.3-70b was removed from Groq (Nov 2026)
     "ollama": "qwen2.5:7b",
     "freellm": "auto",  # FreeLLM API's router picks the best free model that still has quota
+    "auto": "best model per job",  # see JOBS
 }
 
 
@@ -34,7 +35,8 @@ def model_name() -> str:
 on_switch = print  # company.py points this at the run log while a run is going
 CALL_TIMEOUT = int(os.getenv("LLM_CALL_TIMEOUT", "120"))  # Gemini's client has no timeout; a stuck call froze runs
 _calls = ThreadPoolExecutor(max_workers=4, thread_name_prefix="llm")
-_BUSY = ("503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "overloaded", "high demand", "rate limit")
+_BUSY = ("503", "429", "413", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "overloaded", "high demand", "rate limit",
+         "too large", "context length", "Connection")  # 413/too large: Groq's per-minute token cap; Connection: FreeLLM closed
 
 
 def with_fallback(llms):
@@ -91,11 +93,33 @@ def freellm_llm(model: str):
                api_key=os.getenv("FREELLM_API_KEY", "").strip(), temperature=0.7)
 
 
-def get_llm():
-    """Build the LLM for every agent. Change LLM_PROVIDER in .env to switch."""
+JOBS = {  # LLM_PROVIDER=auto: the free models that do each kind of work best, best first; a provider without a key is skipped
+    "code": ["freellm:auto:smart", "gemini:gemini-3.5-flash", "gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", "gemini:gemini-3.1-flash-lite"],
+    "write": ["gemini:gemini-3.5-flash", "freellm:auto:smart", "gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b", "gemini:gemini-3.1-flash-lite"],
+    "fast": ["groq:openai/gpt-oss-120b", "gemini:gemini-3.1-flash-lite", "freellm:auto:fast", "gemini:gemini-3.5-flash"],
+}
+_KEYS = {"gemini": "GEMINI_API_KEY", "groq": "GROQ_API_KEY", "freellm": "FREELLM_API_KEY"}
+
+
+def best_llm(job: str):
+    """The best free models for this job, chained: when one is busy or out of quota, the next takes over."""
+    from crewai import LLM
+    make = {"gemini": lambda m: LLM(model=f"gemini/{m}", api_key=os.getenv("GEMINI_API_KEY", "").strip(), temperature=0.7),
+            "groq": groq_llm, "freellm": freellm_llm}
+    llms = [make[p](m) for p, m in (s.split(":", 1) for s in JOBS.get(job, JOBS["write"])) if os.getenv(_KEYS[p], "").strip()]
+    if not llms:
+        raise RuntimeError("No AI key in .env: add at least GEMINI_API_KEY or GROQ_API_KEY, then restart start.bat.")
+    return with_fallback(llms)
+
+
+def get_llm(job: str = "write"):
+    """Build the LLM for an agent. job (code / write / fast) only matters with LLM_PROVIDER=auto.
+    Change LLM_PROVIDER in .env to switch."""
     from crewai import LLM
 
     _cap_provider_wait()
+    if PROVIDER == "auto":
+        return best_llm(job)
     model = model_name()
     if PROVIDER == "gemini":
         key = os.getenv("GEMINI_API_KEY", "").strip()
@@ -126,4 +150,4 @@ def get_llm():
     if PROVIDER == "ollama":
         url = os.getenv("OLLAMA_URL", "http://localhost:11434").strip()
         return LLM(model=f"ollama/{model}", base_url=url, api_key="ollama", temperature=0.7)
-    raise RuntimeError(f"LLM_PROVIDER must be gemini, groq, freellm, bytez or ollama (got '{PROVIDER}').")
+    raise RuntimeError(f"LLM_PROVIDER must be auto, gemini, groq, freellm, bytez or ollama (got '{PROVIDER}').")

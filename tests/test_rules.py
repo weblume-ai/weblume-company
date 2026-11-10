@@ -308,4 +308,8 @@ assert _co.wants_new_site("اعمل موقع لمتعم") and _co.wants_new_site
 assert not _co.wants_new_site("كريم غير اللون للأخضر") and _co.EDIT.search("كريم غير اللون للأخضر")
 assert not _co.EDIT.search("تمام شكرا يا جماعة") and _co.EDIT.match("عدل علي موقع الكافيه وخليه احلا")
 
+# auto: each job gets its own chain; a provider without a key is skipped
+from weblume import config as _cfg  # noqa: E402
+assert set(_cfg.JOBS) == {"code", "write", "fast"} and all(s.split(":")[0] in _cfg._KEYS for v in _cfg.JOBS.values() for s in v)
+
 print("All rule checks passed.")
