@@ -303,4 +303,9 @@ assert logo.initials("مطعم الشيف") == "ش" and logo.initials("Pixel Run
 assert "<svg" in logo.make("A&B <x>", "#c8102e") and "A&amp;B &lt;x&gt;" in logo.make("A&B <x>", "#c8102e")
 assert _co._site_name("<title>Noir Café | قهوة مختصة</title>") == "Noir Café"
 
+# Chat routing: a new site is a new job, only a clear change edits the last site, anything else is for Layla
+assert _co.wants_new_site("اعمل موقع لمتعم") and _co.wants_new_site("اعملي موقع لمطعم السفرة")
+assert not _co.wants_new_site("كريم غير اللون للأخضر") and _co.EDIT.search("كريم غير اللون للأخضر")
+assert not _co.EDIT.search("تمام شكرا يا جماعة") and _co.EDIT.match("عدل علي موقع الكافيه وخليه احلا")
+
 print("All rule checks passed.")

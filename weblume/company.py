@@ -48,9 +48,14 @@ class Run:
         self.current = "layla"
         self.kind, self.site_dir, self.site_text = "", None, ""
         self.steps, self.inbox, self.answers, self.cond = [], [], {}, threading.Condition()
+        self.lock = threading.RLock()  # Layla may answer the owner while the team works: one writer at a time
         self.save()
 
     def save(self):
+        with self.lock:
+            self._save()
+
+    def _save(self):
         tmp = self.dir / "status.tmp"
         tmp.write_text(json.dumps(self.status, ensure_ascii=False, indent=1), encoding="utf-8")
         for _ in range(20):  # the dashboard may be reading the file this instant (Windows locks it)
@@ -70,9 +75,10 @@ class Run:
         Teammates keep it short (details are in the files); the owner's words, questions and results stay whole."""
         if not full and frm != "you":
             text = short(text)
-        self.status["chat"].append({"t": datetime.now().isoformat(timespec="seconds"), "from": frm, "to": to, "text": text})
-        self.log(frm, f"→ {TEAM.get(to, {}).get('name', to)}: {text}")
-        self.save()
+        with self.lock:
+            self.status["chat"].append({"t": datetime.now().isoformat(timespec="seconds"), "from": frm, "to": to, "text": text})
+            self.log(frm, f"→ {TEAM.get(to, {}).get('name', to)}: {text}")
+            self.save()
 
     def update(self, key: str, text: str):
         """A teammate tells the owner what they're doing, finished, or doing next."""
@@ -660,15 +666,9 @@ def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
             return
         if mode == "advice":  # the owner asked a question: Layla answers from the playbook, about anything
             run.set_agent("layla", "working")
-            q = Task(description=f"The owner (Asser) asks you:\n\"\"\"{run.status['goal']}\"\"\"\n\nAnswer him in Egyptian "
-                                 "Arabic, short and practical: the answer first, then at most 5 numbered steps. Help with "
-                                 "anything (clients, prices, marketing, tech, business), not only websites. Use the playbook "
-                                 "and his rules below; if you don't know something, say so instead of guessing.\n\n"
-                                 f"PLAYBOOK:\n{knowledge.playbook()}\n\n{knowledge.taste()}",
-                     expected_output="A short answer in Egyptian Arabic.", agent=make_agent("layla", get_llm()), context=[])
-            Crew(agents=[q.agent], tasks=[q], verbose=False).kickoff()
-            run.say("layla", "you", q.output.raw.strip(), full=True)
-            run.set_agent("layla", "done", q.output.raw)
+            ans = advise(run.status["goal"])
+            run.say("layla", "you", ans, full=True)
+            run.set_agent("layla", "done", ans)
             run.status["state"] = "done"
             return
         config.on_switch = lambda msg: run.log("system", msg)
@@ -797,9 +797,36 @@ def is_question(text: str) -> bool:
         r"(إزاي|ازاي|ليه|إيه|ايه|هل|أعمل إيه|اعمل ايه|لو (?!سمحت)|امتى|إمتى|فين|كام|ينفع|what|how|why|should|can|when)\b", t, re.I))
 
 
+def advise(text: str) -> str:
+    """Layla's short answer to the owner, from the playbook and his rules. About anything, not only websites."""
+    q = Task(description=f"The owner (Asser) writes to you:\n\"\"\"{text}\"\"\"\n\nAnswer him in Egyptian Arabic, short "
+                         "and practical: the answer first, then at most 5 numbered steps if steps help. Help with anything "
+                         "(clients, prices, marketing, tech, business), not only websites. Use the playbook and his rules "
+                         "below; if you don't know something, say so instead of guessing.\n\n"
+                         f"PLAYBOOK:\n{knowledge.playbook()}\n\n{knowledge.taste()}",
+             expected_output="A short answer in Egyptian Arabic.", agent=make_agent("layla", get_llm()), context=[])
+    Crew(agents=[q.agent], tasks=[q], verbose=False).kickoff()
+    return q.output.raw.strip()
+
+
+EDIT = re.compile(r"عد[ّ]?ل|غي[ّ]?ر|صل[ّ]?ح|ضيف|زو[ّ]?د|شيل|امسح|خل[ّ]?ي|بد[ّ]?ل|كب[ّ]?ر|صغ[ّ]?ر|\b(change|fix|edit|add|remove|replace)\b", re.I)
+
+
+def wants_new_site(text: str) -> bool:
+    return wants_website(text) or bool(re.match(r"\s*(اعمل|اعملي|ابني|ابنيلي|صمم|صمملي)\s*(لي\s*)?(موقع|ويب|صفحة|سايت)", text))
+
+
+def _answer_during_run(run: "Run", text: str):
+    try:
+        run.say("layla", "you", advise(text), full=True)
+    except Exception as e:  # her answer failing must never touch the team's work
+        run.log("system", f"Layla couldn't answer during the run: {e}")
+
+
 def message(text: str) -> dict:
-    """The owner writes in the chat. During a run it reaches the teammate he names (or the one working now) and is
-    added to that teammate's next task. With no run going, it's a correction to the last website."""
+    """The owner writes in the chat. A laptop action → ops; a new site → a new job; a clear change ("عدل/غير/ضيف…")
+    → the teammate he names (during a run) or Karim on the last site; anything else → Layla answers, and the work
+    going on is never stopped or changed by it."""
     text = text.strip()
     if not text:
         raise ValueError("Write a message first.")
@@ -808,8 +835,16 @@ def message(text: str) -> dict:
         if run:
             raise ValueError("فيه شغل شغال دلوقتي، ابعتها تاني لما يخلص.")
         return {"run": start(text, "ops", ["karim"])}
-    if not run and is_question(text):  # a question, not a correction: Layla answers it
-        return {"run": start(text, "advice", ["layla"])}
+    if wants_new_site(text) and not EDIT.match(text.strip()):  # "اعمل موقع لمطعم" is a new job, not an edit of the last site
+        if run:
+            raise ValueError("فيه شغل شغال دلوقتي، ابعت طلب الموقع الجديد لما يخلص.")
+        return {"run": start(text, "whole")}
+    if is_question(text) or not EDIT.search(text):  # a question or a chat: Layla answers, the work keeps going
+        if not run:
+            return {"run": start(text, "advice", ["layla"])}
+        run.say("you", "layla", text)
+        threading.Thread(target=_answer_during_run, args=(run, text), daemon=True).start()
+        return {"run": run.status["id"], "to": "layla"}
     if run:
         target = next((k for k, a in TEAM.items() if a["name"].lower() in text.lower() or a.get("ar", "~") in text), run.current)
         run.say("you", target, text)
@@ -822,7 +857,8 @@ def message(text: str) -> dict:
     last = next((st for st in (load_status(r) for r in list_runs()) if st and st.get("site")), None)
     if not last:
         raise ValueError("No website to correct yet. Type a new goal at the top.")
-    goal = f"{last['goal']}\n\nCORRECTION FROM THE OWNER: {text}"
+    first = last["goal"].split("\n\nCORRECTION FROM THE OWNER:")[0]  # the original request, not every older correction
+    goal = f"{first}\n\nCORRECTION FROM THE OWNER: {text}"
     return {"run": start(goal, "revise", ["karim", "tarek"], last.get("client", ""), [], base=last)}
 
 

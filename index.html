@@ -436,7 +436,7 @@ function renderChat() {
       note, h("div", {class: "row"}, h("button", {class: "ghost", onclick: () => reply("")}, "ابعت ردي المكتوب"))));
   }
   const list = $("#c-list"), atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
-  const msgs = (r && r.chat) || [];
+  const msgs = ((r && r.chat) || []).filter(m => m.from === "you" || m.to === "you"); // team-to-team talk lives in the 3D office
   if (list.dataset.n !== String(msgs.length) + (r && r.id)) {
     list.dataset.n = String(msgs.length) + (r && r.id);
     fill(list, msgs.length ? null : h("div", {class: "mute small"}, "Messages from the team show here. Write below to talk to them."),
@@ -790,22 +790,35 @@ function makeWorld() {
 
   // conversations: a new chat line makes the speaker walk over and say it in a bubble
   let seen = -1, seenRun = null;
+  function talkTo(sp, toKey, text) { // the listener stands up beside the desk (or stays put); the speaker comes face to face
+    const to = people[toKey]; let spot = sp.g.position.clone();
+    if (to && to !== sp) {
+      const stand = to.home && (to.seated || (to.dest && to.dest.equals(to.home.seat))) ? to.home.stand.clone() : to.g.position.clone();
+      stand.y = 0; to.path = []; to.dest = null; to.hear = {from: sp.t.key, spot: stand, giveUp: performance.now() + 30000};
+      const dir = sp.g.position.clone().sub(stand); dir.y = 0;
+      if (dir.lengthSq() < .01) dir.set(1, 0, 0);
+      spot = stand.clone().addScaledVector(dir.normalize(), 1.05);
+    }
+    spot.y = 0; sp.talk = {to: toKey, spot, until: 0, giveUp: performance.now() + 25000, text}; // until starts when they arrive
+  }
   function listen() {
     const chat = (S.run && S.run.chat) || [], id = S.run && S.run.id;
     if (id !== seenRun || chat.length < seen) { seenRun = id; seen = chat.length; return } // don't replay an old run's chat
-    for (const m of chat.slice(seen)) {
-      const sp = people[m.from], to = people[m.to]; if (!sp) continue;
-      let spot = sp.g.position.clone();
-      if (to && to !== sp) { // the listener stands up beside the desk (or stays where they are); the speaker comes face to face
-        const stand = to.home && (to.seated || (to.dest && to.dest.equals(to.home.seat))) ? to.home.stand.clone() : to.g.position.clone();
-        stand.y = 0; to.path = []; to.dest = null; to.hear = {from: m.from, spot: stand, giveUp: performance.now() + 30000};
-        const dir = sp.g.position.clone().sub(stand); dir.y = 0;
-        if (dir.lengthSq() < .01) dir.set(1, 0, 0);
-        spot = stand.clone().addScaledVector(dir.normalize(), 1.05);
-      }
-      spot.y = 0; sp.talk = {to: m.to, spot, until: 0, giveUp: performance.now() + 25000, text: m.text}; // until starts when they arrive
-    }
+    for (const m of chat.slice(seen)) if (people[m.from]) talkTo(people[m.from], m.to, m.text);
     seen = chat.length;
+  }
+  // free time: now and then two teammates with nothing to do have a quick chat (only in the office, not in the Chat tab)
+  const SMALL_TALK = ["عامل إيه النهارده؟", "حد عايز قهوة؟ ☕", "شفت التصميم الجديد؟ حلو جداً", "يلا بريك خمس دقايق",
+    "الموقع الأخير طلع جامد 👌", "عندك فكرة للبوست الجاي؟", "الماتش امبارح كان نار ⚽", "فاكر العميل بتاع امبارح؟ رد علينا",
+    "محتاج رأيك في لون ده", "خلصت اللي عليك؟", "الجو حلو النهارده", "تعالى نجرب الفكرة دي بكره"];
+  let nextChat = performance.now() + 8000;
+  function chatter(now) {
+    if (now < nextChat) return;
+    nextChat = now + 14000 + Math.random() * 16000;
+    const free = Object.values(people).filter(p => p.state === "idle" && !p.talk && !p.hear && !p.seated);
+    if (free.length < 2) return;
+    const a = free.splice(Math.floor(Math.random() * free.length), 1)[0], b = free[Math.floor(Math.random() * free.length)];
+    talkTo(a, b.t.key, SMALL_TALK[Math.floor(Math.random() * SMALL_TALK.length)]);
   }
 
   function resize() {
@@ -823,7 +836,7 @@ function makeWorld() {
   function frame(now) {
     if (!on) return;
     const dt = Math.min(.2, (now - last) / 1000), time = now / 1000; last = now; // .2 cap: slow devices still walk at real speed
-    listen();
+    listen(); chatter(now);
     for (const [k, p] of Object.entries(people)) {
       const st = agentStatus(k);
       p.state = st === "done" ? "idle" : st;
