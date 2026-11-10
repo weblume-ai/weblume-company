@@ -123,7 +123,7 @@ def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
 
 
 GROQ_VISION = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
-LOCAL_VISION = os.getenv("LOCAL_VISION_MODEL", "gemma3:12b")
+LOCAL_VISION = os.getenv("LOCAL_VISION_MODEL", os.getenv("FACTORY_MODEL", "weblume-factory"))  # same model the factory uses: one 8 GB model in memory, not two
 
 
 def _local_vision(shots: list[Path], prompt: str) -> str:

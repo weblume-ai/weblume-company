@@ -52,7 +52,9 @@ def _key(name: str) -> str:
 
 
 VAGUE = {"warm", "delicious", "making", "process", "close", "closeup", "beautiful", "fresh", "tasty", "cozy", "modern", "luxury",
-         "with", "over", "into", "from", "that", "this", "very", "best", "food", "photo", "shot", "view", "style", "inside", "people"}
+         "with", "over", "into", "from", "that", "this", "very", "best", "food", "photo", "shot", "view", "style", "inside", "people",
+         # places say where, not what: "egyptian cafe" must not bring the pyramids
+         "egypt", "egyptian", "cairo", "saudi", "arabia", "arabic", "arab", "riyadh", "jeddah", "middle", "east", "eastern", "traditional", "local"}
 
 
 def _words(text: str) -> set:
@@ -94,7 +96,8 @@ def _find_photo(query: str, n: int = 0) -> tuple[str, str]:
     try:  # Openverse: no key needed; only licenses that allow commercial use
         # their license filter times out (504), so filter here: no "nc" (non-commercial) licenses, no "nd" (no edits: we crop)
         found = _get_json("https://api.openverse.org/v1/images/?" + q({"q": query[:100], "page_size": 20}))["results"]
-        r = [x for x in found if not {"nc", "nd"} & set(str(x.get("license", "")).split("-")) and (x.get("width") or 0) >= 1000][n]
+        r = [x for x in found if not {"nc", "nd"} & set(str(x.get("license", "")).split("-")) and (x.get("width") or 0) >= 1000
+             and _relevant(" ".join([x.get("title") or ""] + [t.get("name", "") for t in x.get("tags") or []]), query)][n]
         lic = f"{r['license'].upper()} {r.get('license_version') or ''}".strip()
         return r["url"], f"'{r.get('title') or 'photo'}' by {r.get('creator') or 'unknown'}, {lic}, via Openverse ({r.get('foreign_landing_url') or r['url']})"
     except Exception:
