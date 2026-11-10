@@ -319,6 +319,7 @@ def swap(data: dict):
              "menu-rows": "" if has_items >= 4 else "menu-cols", "menu-tiles": "" if has_items >= 4 else "menu-cols",
              "menu-sticky-photo": "" if photo or m.get("about") else "menu-cols",
              "menu-flip": "" if has_items >= 4 else "menu-cols", "menu-rail": "" if has_items >= 4 else "menu-cols",
+             "hero-stage": "" if has_items >= 3 or len(data.get("showcase") or []) >= 3 else ("hero-split" if photo else "hero-waterline"),
              "hero-ring": "" if has_items >= 3 or len(data.get("showcase") or []) >= 3 else ("hero-split" if photo else "hero-waterline"), "menu-polaroid": "" if has_items >= 4 else "menu-cols",
              "hero-arch": "" if photo else "hero-waterline", "hero-words": "" if photo else "hero-waterline",
              "hero-layers": "" if photo and len(m.get("gallery") or []) >= 2 else ("hero-split" if photo else "hero-waterline")}

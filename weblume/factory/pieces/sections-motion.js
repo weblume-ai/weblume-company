@@ -215,4 +215,59 @@
       })();
     }
   };
+  /* hero-stage — after a figurine-carousel design idea Asser shared: the whole page takes the colour of the dish in front,
+     a giant word stands behind, the front dish is huge, its neighbours small and soft on either side, the rest further back. */
+  P["hero-stage"] = {
+    css: ".hst{position:relative;height:calc(100svh - var(--nav));min-height:560px;overflow:hidden;background:var(--tone);color:var(--tink);transition:background-color .65s cubic-bezier(.4,0,.2,1),color .65s}" +
+      ".hst:after{content:'';position:absolute;inset:0;z-index:50;pointer-events:none;opacity:.4;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E\")}" +
+      ".hst h1{position:absolute;inset-inline:0;top:14%;z-index:2;margin:0;text-align:center;font:900 clamp(80px,24vw,360px)/1 var(--display);white-space:nowrap;letter-spacing:-.02em;pointer-events:none;user-select:none}" +
+      ".hst .it{position:absolute;aspect-ratio:.6/1;transform:translateX(-50%);transition:transform .65s cubic-bezier(.4,0,.2,1),filter .65s cubic-bezier(.4,0,.2,1),opacity .65s cubic-bezier(.4,0,.2,1),left .65s cubic-bezier(.4,0,.2,1),height .65s cubic-bezier(.4,0,.2,1),bottom .65s cubic-bezier(.4,0,.2,1);will-change:transform,filter,opacity}" +
+      ".hst .it img{width:100%;height:100%;object-fit:contain;object-position:bottom center;display:block;filter:drop-shadow(0 24px 30px #0004)}" +
+      ".hst .it:not(.cut){aspect-ratio:1}.hst .it:not(.cut) img{object-fit:cover;border-radius:50%;box-shadow:0 30px 50px #0004;filter:none}" +
+      ".hst .c{left:50%;height:62%;bottom:0;z-index:20;transform:translateX(-50%) scale(1.25)}" +
+      ".hst .l,.hst .r{height:26%;bottom:12%;z-index:10;filter:blur(2px);opacity:.85;cursor:pointer}.hst .l{left:30%}.hst .r{left:70%}[dir=rtl] .hst .l{left:70%}[dir=rtl] .hst .r{left:30%}" +
+      ".hst .b{left:50%;height:20%;bottom:12%;z-index:5;filter:blur(4px)}.hst .x{left:50%;height:20%;bottom:12%;z-index:1;opacity:0}" +
+      ".hst .say{position:absolute;bottom:clamp(20px,6vh,80px);inset-inline-start:var(--gut);z-index:60;max-width:330px}" +
+      ".hst .say b{display:block;font:800 clamp(18px,1.8vw,24px)/1.2 var(--display);margin-bottom:10px}.hst .say p{font-size:var(--small);line-height:1.6;opacity:.85;margin:0 0 18px}" +
+      ".hst .say button{width:56px;height:56px;border-radius:50%;border:2px solid currentColor;background:none;color:inherit;font-size:24px;cursor:pointer;margin-inline-end:10px;transition:transform .15s,background-color .15s}" +
+      ".hst .say button:hover{transform:scale(1.08);background:#ffffff1f}[dir=rtl] .hst .say button{rotate:180deg}" +
+      ".hst .go{position:absolute;bottom:clamp(20px,6vh,80px);inset-inline-end:var(--gut);z-index:60;display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;font:900 clamp(20px,4vw,56px)/1 var(--display);letter-spacing:-.02em}" +
+      "@media (min-width:640px){.hst .c{height:88%;transform:translateX(-50%) scale(1.5)}}" +
+      "@media (max-width:639px){.hst .c{bottom:22%}.hst .l,.hst .r{height:16%;bottom:32%}.hst .l{left:18%}.hst .r{left:82%}[dir=rtl] .hst .l{left:82%}[dir=rtl] .hst .r{left:18%}.hst .b{height:13%;bottom:32%}.hst .say p{display:none}.hst .say button{width:48px;height:48px}.hst .go{bottom:34px}}" +
+      ".hst .c:not(.cut){height:min(36%,82vw);bottom:24%;transform:translateX(-50%)}@media (min-width:640px){.hst .c:not(.cut){height:52%;bottom:12%;transform:translateX(-50%) scale(1.2)}}" +
+      "@media (prefers-reduced-motion:reduce){.hst,.hst .it{transition:none}}",
+    render: function (S, t) {
+      var list = items(S).slice(0, 6), en = t.lang === "en";
+      if (list.length < 3) return "";
+      var c0 = stageTone(list[0], 0);
+      return '<section class="hst" id="top" aria-roledescription="carousel" aria-label="' + E(S.name) + '" style="--tone:' + E(c0[0]) + ";--tink:" + E(c0[1]) + '">' +
+        "<h1>" + E(S.word || S.name) + "</h1>" + list.map(function (it, i) {
+          var c = stageTone(it, i);
+          return '<div class="it' + (it.cut ? " cut" : "") + '" data-tone="' + E(c[0]) + '" data-ink="' + E(c[1]) + '"><img src="' + E(it.img) + '" alt="' + E(it.name) + '" draggable="false"></div>';
+        }).join("") + '<div class="say" aria-live="polite"><b></b><p></p><button type="button" class="prev" aria-label="previous">←</button><button type="button" class="next" aria-label="next">→</button></div>' +
+        '<a class="go" target="_blank" rel="noopener noreferrer"><span>' + E(t.order) + '</span><span aria-hidden="true">' + (en ? "→" : "←") + "</span></a></section>";
+    },
+    init: function (S, t) {
+      var sec = document.querySelector(".hst"); if (!sec) return;
+      var list = items(S).slice(0, 6), its = sec.querySelectorAll(".it"), N = list.length, at = 0, busy = false, say = sec.querySelector(".say");
+      function place() {
+        [].forEach.call(its, function (el, i) {
+          var d = (i - at + N) % N;
+          el.className = "it" + (list[i].cut ? " cut" : "") + " " + (d === 0 ? "c" : d === 1 ? "r" : d === N - 1 ? "l" : d === 2 ? "b" : "x");
+          el.setAttribute("aria-hidden", d ? "true" : "false");
+        });
+        sec.style.setProperty("--tone", its[at].dataset.tone); sec.style.setProperty("--tink", its[at].dataset.ink);
+        say.querySelector("b").textContent = list[at].name; say.querySelector("p").textContent = list[at].desc || S.lede || "";
+        sec.querySelector(".go").href = order(t, list[at]);
+      }
+      function go(d) { if (busy) return; busy = true; at = (at + d + N) % N; place(); setTimeout(function () { busy = false; }, SITEKIT.reduce ? 0 : 650); }
+      sec.querySelector(".next").addEventListener("click", function () { go(1); });
+      sec.querySelector(".prev").addEventListener("click", function () { go(-1); });
+      [].forEach.call(its, function (el, i) { el.addEventListener("click", function () { var d = (i - at + N) % N; if (d === 1) go(1); else if (d === N - 1) go(-1); }); });
+      list.forEach(function (it) { new Image().src = it.img; });
+      place();
+    }
+  };
+  // the dish's own colour from the showcase, else the brand's accent and surface in turn
+  var stageTone = function (it, i) { return [it.tone || (i % 2 ? "var(--surface)" : "var(--accent)"), it.ink || (i % 2 ? "var(--paper)" : "var(--on-accent)")]; };
 })(window.PIECES = window.PIECES || {});

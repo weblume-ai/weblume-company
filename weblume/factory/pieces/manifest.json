@@ -640,5 +640,27 @@
   "from": "Weblume code after the design idea of motionsites.ai 'Freight Scroll Hero' (idea only, no prompt text or assets)",
   "thumb": "thumbs/features-scrub.webp",
   "tested": "360/768/1280 OK"
+ },
+ "hero-stage": {
+  "file": "sections-motion.js",
+  "type": "hero",
+  "fits": [
+   "sweets",
+   "cafe",
+   "bakery",
+   "shop",
+   "restaurant"
+  ],
+  "style": [
+   "playful",
+   "bold",
+   "modern"
+  ],
+  "needs": [
+   "3+ dish photos (cut-outs from showcase look best)"
+  ],
+  "from": "Weblume code after a figurine-carousel design idea Asser shared (idea only, no prompt text or assets)",
+  "thumb": "thumbs/hero-stage.webp",
+  "tested": "360/768/1280 OK"
  }
 }
