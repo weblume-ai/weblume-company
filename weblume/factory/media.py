@@ -51,6 +51,27 @@ def _key(name: str) -> str:
     return os.getenv(name, "").strip()
 
 
+VAGUE = {"warm", "delicious", "making", "process", "close", "closeup", "beautiful", "fresh", "tasty", "cozy", "modern", "luxury",
+         "with", "over", "into", "from", "that", "this", "very", "best", "food", "photo", "shot", "view", "style", "inside", "people"}
+
+
+def _words(text: str) -> set:
+    import re
+    return {w for w in re.findall(r"[a-z]+", text.lower()) if len(w) > 2 and w not in VAGUE}
+
+
+def _relevant(tags: str, query: str) -> bool:
+    """A stock search engine fills a long query with anything (a scrapyard for "nutella"): a hit counts only when its
+    own tags share a real word with the query."""
+    return bool(_words(tags) & _words(query))
+
+
+def _queries(query: str) -> list[str]:
+    """The model's query, then its first three real words: long queries find less and worse."""
+    short = " ".join([w for w in query.lower().split() if w in _words(query)][:3])
+    return list(dict.fromkeys(q for q in (query[:100], short) if q))
+
+
 def _find_photo(query: str, n: int = 0) -> tuple[str, str]:
     """(image url, credit line) from the first source that has one, or ('', '')."""
     q = urllib.parse.urlencode
@@ -62,9 +83,12 @@ def _find_photo(query: str, n: int = 0) -> tuple[str, str]:
             pass
     if _key("PIXABAY_API_KEY"):
         try:
-            h = _get_json("https://pixabay.com/api/?" + q({"key": _key("PIXABAY_API_KEY"), "q": query[:100], "image_type": "photo",
-                                                          "orientation": "horizontal", "safesearch": "true", "per_page": max(3, n + 1)}))["hits"][n]
-            return h["largeImageURL"], f"photo by {h['user']} on Pixabay ({h['pageURL']})"
+            for qq in _queries(query):
+                hits = [h for h in _get_json("https://pixabay.com/api/?" + q({"key": _key("PIXABAY_API_KEY"), "q": qq, "image_type": "photo",
+                                                                            "orientation": "horizontal", "safesearch": "true", "per_page": 20}))["hits"]
+                        if _relevant(h.get("tags", ""), query)]
+                if len(hits) > n:
+                    return hits[n]["largeImageURL"], f"photo by {hits[n]['user']} on Pixabay ({hits[n]['pageURL']})"
         except Exception:
             pass
     try:  # Openverse: no key needed; only licenses that allow commercial use
@@ -108,11 +132,12 @@ def _find_video(query: str) -> tuple[str, str]:
             pass
     if _key("PIXABAY_API_KEY"):
         try:
-            for h in _get_json("https://pixabay.com/api/videos/?" + q({"key": _key("PIXABAY_API_KEY"), "q": query[:100],
-                                                                       "safesearch": "true", "per_page": 5}))["hits"]:
-                f = h["videos"].get("medium") or h["videos"].get("large")
-                if f and f.get("url") and (f.get("width") or 0) >= 1280 and h.get("duration", 0) >= 5:
-                    return f["url"], f"video by {h['user']} on Pixabay ({h['pageURL']})"
+            for qq in _queries(query):
+                for h in _get_json("https://pixabay.com/api/videos/?" + q({"key": _key("PIXABAY_API_KEY"), "q": qq,
+                                                                           "safesearch": "true", "per_page": 20}))["hits"]:
+                    f = h["videos"].get("medium") or h["videos"].get("large")
+                    if f and f.get("url") and (f.get("width") or 0) >= 1280 and h.get("duration", 0) >= 5 and _relevant(h.get("tags", ""), query):
+                        return f["url"], f"video by {h['user']} on Pixabay ({h['pageURL']})"
         except Exception:
             pass
     return "", ""
@@ -154,9 +179,9 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
     own_rel = [_rel(_webp(p, dest / "assets" / "own" / f"{i + 1:02d}.webp"), dest) for i, p in enumerate(own)]
     if own_rel:
         log(f"   {len(own_rel)} صورة من العميل")
-    m.update(footage(q.get("video", ""), dest, credits, log))
     kind = str(data.get("kind") or "")
     topic = lambda query: query if not query or kind in query.lower() else f"{query} {kind}"  # "interior" alone finds any interior
+    m.update(footage(topic(q.get("video", "")), dest, credits, log))
     pick = lambda i, query, name: own_rel[i] if i < len(own_rel) else photo(topic(query), dest / "assets" / "img" / f"{name}.webp", dest, credits)
     # the place's own footage beats a stock photo found by keywords: its still frame is the hero photo
     m["heroImg"] = own_rel[0] if own_rel else m.get("poster") or pick(0, q.get("hero", ""), "hero")

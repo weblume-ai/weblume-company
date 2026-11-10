@@ -47,7 +47,7 @@ class Run:
             "ask": None, "video": "", "feedback": {},
         }
         self.current = "layla"
-        self.kind, self.site_dir, self.site_text = "", None, ""
+        self.kind, self.site_dir, self.site_text, self.factory = "", None, "", False
         self.steps, self.inbox, self.answers, self.cond = [], [], {}, threading.Condition()
         self.lock = threading.RLock()  # Layla may answer the owner while the team works: one writer at a time
         self.save()
@@ -232,19 +232,49 @@ def _karim_brief(kind: str) -> str:
             f"{templates.load(kind)}\n\nOutput ONLY the full edited HTML document from <!DOCTYPE html> to </html>.")
 
 
+def _factory_site(run: "Run", goal: str, client: str):
+    """The site factory builds the website: pieces + data from the local model + real media + browser review, then
+    Tarek scores it and the API art director edits it until it passes."""
+    from . import factory
+    run.current = "karim"
+    run.set_agent("karim", "working")
+    run.update("karim", "ببني الموقع في مصنع المواقع: قطع جاهزة + الموديل المحلي + فيديو وصور حقيقية…")
+    res = factory.build(f"{goal} {client}".strip(), log=lambda m: run.log("karim", m.strip()))
+    run.site_dir = Path(res["folder"])
+    site = run.site_dir / "index.html"
+    run.status["site"] = str(site.relative_to(OUTPUT_DIR))
+    run.add_file(site)
+    run.site_text = (run.site_dir / "data.js").read_text(encoding="utf-8")
+    run.factory = True
+    test = res.get("test")
+    if test:
+        run.status["test"] = test
+        run.set_agent("tarek", "done", tester.report(test))
+        run.say("tarek", "karim", f"جربته على الكمبيوتر والموبايل: {test['score']:g}/10" + (" ✓" if test["verdict"] == "PASS" else ""))
+    run.set_agent("karim", "done", f"Pieces: {', '.join(res['pieces'])}\nPreview: {res['preview']}\nZip: {res['zip']}")
+    if res["review"]:
+        run.update("karim", "راجع قبل ما العميل يشوفه:\n" + "\n".join(f"• {r}" for r in res["review"]))
+    run.save()
+
+
 def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agents: dict, run: Run) -> list[tuple]:
     """Tasks for the chosen agents, always in company order. Each entry: (Task, agent key, output file)."""
     t: dict[str, Task] = {}
     steps: list[tuple[Task, str, str]] = []
     run.kind = templates.pick(f"{goal} {client}")
     if "karim" in keys:  # the owner chooses the template
-        labels = {"cafe": "كافيه (تصميم Loopie)", "fresh": "تصميم جديد مختلف (مكتبة الإلهام)", "clinic": "عيادة/خدمات",
-                  "shop": "متجر", "game": "موقع لعبة (فيه لعبة شغالة)"}
+        labels = {"factory": "مصنع المواقع ⭐ (قطع Loopie + فيديو + مدير فني)", "cafe": "كافيه (تصميم Loopie)",
+                  "fresh": "تصميم جديد مختلف (مكتبة الإلهام)", "clinic": "عيادة/خدمات", "shop": "متجر", "game": "موقع لعبة (فيه لعبة شغالة)"}
+        if run.kind != "game":  # the factory gives the best result for any business site
+            run.kind = "factory"
         ans = run.ask("karim", "هعمل الموقع على أي قالب؟ الأول هو اقتراحي.", [labels[run.kind], *[v for k, v in labels.items() if k != run.kind]])
         run.kind = next((k for k, v in labels.items() if v == ans["choice"]), run.kind)
         if ans["text"]:
             goal += f"\nThe owner's note on the design: {ans['text']}"
-    run.site_dir = OUTPUT_DIR / rules.slug(client or goal[:30])
+    if run.kind == "factory":  # built now by the factory (local model + pieces + API art director); no Karim/Mostafa tasks
+        _factory_site(run, goal, client)
+        keys = [k for k in keys if k not in ("karim", "mostafa")]
+    run.site_dir = run.site_dir or OUTPUT_DIR / rules.slug(client or goal[:30])
     ext = ".json" if run.kind in templates.FOLDER else ".html"
 
     def add(name, key, file, description, expected, context):
@@ -639,10 +669,30 @@ def test_site(run: Run, agents: dict, keys: list[str]):
         run.say("karim", "tarek", "صلحت اللي قلت عليه، جرب تاني يا طارق")
 
 
+def _revise_factory(run: "Run", base: dict):
+    """The owner's change to a factory site: the API art director edits its data, the browser re-checks it."""
+    from . import factory
+    note = run.status["goal"].split("CORRECTION FROM THE OWNER:", 1)[-1].strip()
+    run.say("you", "karim", note)
+    row = _task_row(run, "karim", "apply your correction")
+    run.update("karim", "تمام، بعدّل دلوقتي")
+    run.set_agent("karim", "working")
+    out = factory.polish(run.site_dir, f"The owner asks: {note}", log=lambda m: run.log("karim", m.strip()))
+    run.status["site"] = base["site"]
+    run.add_file(run.site_dir / "index.html")
+    row["done"] = True
+    msg = "عدّلت اللي طلبته ✓" + (f" (لقيت {len(out['issues'])} ملاحظة في المراجعة)" if out["issues"] else "")
+    run.set_agent("karim", "done", msg)
+    run.update("karim", msg)
+    run.status["state"] = "done"
+
+
 def _revise(run: Run, agents: dict, base: dict):
     """The owner's correction to the last site: Karim applies it, Tarek tests again."""
     site = OUTPUT_DIR / base["site"]
     run.site_dir = site.parent
+    if (run.site_dir / "data.js").is_file() and "window.SITE" in (run.site_dir / "data.js").read_text(encoding="utf-8")[:40]:
+        return _revise_factory(run, base)
     data_js = run.site_dir / "data.js"
     if data_js.is_file():
         run.kind, js = "cafe", data_js.read_text(encoding="utf-8")
@@ -711,7 +761,7 @@ def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
         steps = build_tasks(crew_keys, goal, client, names, agents, run) if crew_keys else []
         if steps:
             _kickoff(run, steps, first_index=1)
-        if "tarek" in keys:
+        if "tarek" in keys and not run.factory:  # the factory already had Tarek score it
             if run.site_text:
                 test_site(run, agents, keys)
             else:

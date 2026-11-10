@@ -56,7 +56,8 @@ SCHEMA = """{
  "tagline": "6 words max", "heroLines": ["2 or 3 short lines, the headline"], "lede": "one sentence under the headline",
  "about": "two sentences: who it's for and why choose it", "together": "a short warm line above the about text",
  "invite": "one short line inviting people to come", "caps": ["3 or 4 one-word scene captions for the hero footage, optional"],
- "colors": {"ink": "#dark page color", "paper": "#light color", "accent": "#brand color", "muted": "#soft text color", "surface": "#card color", "onAccent": "#text on accent"},
+ "colors": {"ink": "#page background: deep (espresso, forest, navy, charcoal) or light (cream, sand, white)", "paper": "#text color, the opposite of ink",
+            "accent": "#one brand color (never gold or yellow-gold on a dark page)", "muted": "#soft text color", "surface": "#card color", "onAccent": "#text on accent"},
  "fonts": {"display": "an Arabic Google Font for headings (Alexandria, Lalezar, El Messiri, Reem Kufi Fun, Cairo)", "text": "IBM Plex Sans Arabic or Tajawal"},
  "menu": [{"cat": "category", "items": [{"name": "item", "desc": "ingredients · separated · by dots", "price": "number or empty", "photo": "English photo search words for this exact item"}]}],
  "media_query": {"video": "English search words for a short video of this place's craft (e.g. 'meat grilling on charcoal close up')",
@@ -145,14 +146,41 @@ def _contrast(a: str, b: str) -> float:
     return (x + .05) / (y + .05)
 
 
+def _rgb(hexc: str) -> tuple:
+    h = str(hexc).lstrip("#")
+    h = "".join(ch * 2 for ch in h) if len(h) == 3 else h[:6]
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def _shade(hexc: str, f: float) -> str:
+    """Lighter (f > 1) or darker (f < 1) version of a color."""
+    return "#" + "".join(f"{max(0, min(255, round(v * f + (12 if f > 1 else 0)))):02x}" for v in _rgb(hexc))
+
+
+def _gold(hexc: str) -> bool:
+    import colorsys
+    try:
+        h, l, s = colorsys.rgb_to_hls(*(v / 255 for v in _rgb(hexc)))
+    except ValueError:
+        return False
+    return 30 / 360 <= h <= 52 / 360 and s > .35 and .35 < l < .8
+
+
 def palette(c: dict) -> dict:
     """The pieces are built for a dark page with light text: keep the model's mood, fix what would be unreadable."""
     c = {k: v for k, v in (c or {}).items() if isinstance(v, str) and _lum(v) >= 0}
-    ink = c.get("ink") if 0 <= _lum(c.get("ink", "")) < .06 else "#141210"
-    paper = c.get("paper") if _lum(c.get("paper", "")) > .8 else "#ffffff"
-    accent = c.get("accent") if _contrast(c.get("accent", "#000"), ink) >= 3 else "#e8a33d"
-    surface = c.get("surface") if 0 <= _lum(c.get("surface", "")) < .1 and _contrast(paper, c.get("surface", "#fff")) >= 7 else "#221e1b"
-    muted = c.get("muted") if _contrast(c.get("muted", ink), ink) >= 4.5 else "#b9b1a7"
+    if _lum(c.get("ink", "")) > .7 and 0 <= _lum(c.get("paper", "#fff")) < .06:  # a light page with dark text: kept, pieces swap roles
+        ink, paper = c["ink"], c["paper"]
+        surface = c.get("surface") if _lum(c.get("surface", "")) > .55 and _contrast(paper, c.get("surface", "#000")) >= 7 else _shade(ink, .93)
+    else:
+        ink = c.get("ink") if 0 <= _lum(c.get("ink", "")) < .06 else "#141210"
+        paper = c.get("paper") if _lum(c.get("paper", "")) > .8 else "#ffffff"
+        surface = c.get("surface") if 0 <= _lum(c.get("surface", "")) < .1 and _contrast(paper, c.get("surface", "#fff")) >= 7 else _shade(ink, 1.6)
+    accent = c.get("accent", "")
+    if _lum(ink) < .06 and _gold(accent):  # the owner's taste: never gold on dark
+        accent = "#c8553d"
+    accent = accent if _contrast(accent or "#000", ink) >= 3 else ("#c8553d" if _lum(ink) < .5 else "#a3361f")
+    muted = c.get("muted") if _contrast(c.get("muted", ink), ink) >= 4.5 else ("#b9b1a7" if _lum(ink) < .5 else "#5f574d")
     return {"ink": ink, "paper": paper, "accent": accent, "surface": surface, "muted": muted,
             "onAccent": "#141210" if _contrast(accent, "#141210") >= _contrast(accent, "#ffffff") else "#ffffff"}
 
@@ -240,7 +268,50 @@ def _attr(s: str) -> str:
 
 
 # ------------------------------------------------------------------ the whole line
-def build(request: str, client_photos: Path | None = None, ask=None, log=print) -> dict:
+def load(dest: Path) -> dict:
+    return json.loads((dest / "data.js").read_text(encoding="utf-8").split("=", 1)[1].strip().rstrip(";"))
+
+
+def polish(dest: Path, instruction: str, ask=None, log=print) -> dict:
+    """The API art director edits the site through its data only (texts, menu, colors, fonts, which pieces and their
+    order): the pieces' code is never touched, so an edit can't break the page. Rebuilds and re-checks it."""
+    from . import media, review
+    data = load(dest)
+    keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits") if k in data}
+    nl = "\n"
+    pieces = nl.join(f"- {k}: {v['type']}, style {','.join(v['style'])}, needs {','.join(v['needs']) or '-'}" for k, v in MANIFEST.items())
+    shown = {k: v for k, v in data.items() if k not in ("media", "review")}
+    prompt = (f"You are the art director of Weblume, a web studio. This is the content file of a client's website:{nl}"
+              f"{json.dumps(shown, ensure_ascii=False)}{nl}{nl}WHAT TO CHANGE:{nl}{instruction}{nl}{nl}Rewrite the file to fix all of it. "
+              "You may change texts, the menu, colors, fonts and which pieces are used and their order. Keep the same dialect and "
+              "currency, keep every true fact, never invent reviews, ratings or phone numbers. Copy must sound like a premium "
+              f"local brand: short, warm, specific.{nl}{nl}PIECES:{nl}{pieces}{nl}{nl}Answer with the whole JSON object only, same shape.")
+    new = rules.extract_json((ask or _ask_cloud)(prompt))
+    if weak(new):
+        raise RuntimeError(f"The art director's edit was unusable: {weak(new)}")
+    new.update(keep)
+    new["media"] = keep_media
+    new = normalize(new, f"{data.get('name', '')} {keep.get('whatsapp', '')}", keep.get("country", ""))
+    new["review"] = data.get("review", [])
+    media.swap(new)
+    assemble(new, dest)
+    issues, shots = review.check(dest)
+    log("   التعديل اتطبق واتراجع في المتصفح")
+    return {"data": new, "issues": issues, "shots": shots}
+
+
+def judge(shots: list[str], request: str) -> dict:
+    """Tarek looks at the screenshots (vision model): a score and the most important problems."""
+    from .. import tester
+    notes = ("This site is assembled from Weblume's tested pieces: judge the design, copy, photos and colors, not the code. "
+             "The hero plays footage with the scroll, so a frame may look blurred mid-motion; pinned sections are caught mid-animation (a clip still small, a row mid-slide); the Google map iframe often shows grey in automated screenshots but loads for visitors. None of these are problems.")
+    return tester.judge([Path(s) for s in shots if "desktop" in s or "phone" in s][:8], request, notes)
+
+
+ROUNDS = 2
+
+
+def build(request: str, client_photos: Path | None = None, ask=None, log=print, polisher=None) -> dict:
     from . import media, review
     log("1/5 الموديل بيكتب محتوى الموقع…")
     data = plan(request, ask)
@@ -257,8 +328,26 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print) 
         media.drop_broken(data, issues)
         assemble(data, dest)
         issues, shots = review.check(dest)
+    verdict = None
+    for rnd in range(1, ROUNDS + 1):  # the API art director: Tarek scores it, the stronger model edits until it passes
+        try:
+            verdict = judge(shots, request)
+        except Exception as e:
+            log(f"   طارق مقدرش يشوف الموقع: {e}")
+            break
+        log(f"   طارق: {verdict['score']:g}/10")
+        if verdict["verdict"] == "PASS":
+            break
+        fixes = "\n".join(f"- {p.get('where', '')}: {p.get('problem', '')} -> {p.get('fix', '')}" for p in verdict.get("problems") or [])
+        log(f"   المدير الفني بيعدّل (جولة {rnd})…")
+        try:
+            out = polish(dest, f"Tarek (QA, {verdict['score']:g}/10) found:\n{fixes}", ask=polisher, log=log)
+            data, issues, shots = out["data"], out["issues"], out["shots"]
+        except Exception as e:
+            log(f"   التعديل مانفعش: {e}")
+            break
     save_example(request, data, dest)
     zipped = shutil.make_archive(str(dest), "zip", dest)
     log("5/5 جاهز.")
-    return {"name": data["name"], "folder": str(dest), "zip": zipped, "pieces": data["pieces"], "shots": shots,
+    return {"name": data["name"], "folder": str(dest), "zip": zipped, "pieces": data["pieces"], "shots": shots, "test": verdict,
             "issues": issues, "review": data["review"], "preview": f"http://127.0.0.1:8501/site/factory/{dest.name}/"}

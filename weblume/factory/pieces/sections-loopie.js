@@ -57,7 +57,7 @@
       function tick() {
         var p = K.progress(sec), g = K.clamp(p / .7), s = .3 + .7 * g * g * (3 - 2 * g);
         box.style.transform = "translate(-50%,-50%) scale(" + s + ")"; box.style.borderRadius = (1 - g) * 999 + "px";
-        inv.style.opacity = p > .72 ? 1 : 0;
+        inv.style.opacity = 1; // the invite reads from the start; only the clip grows
         if (vid) { var r = sec.getBoundingClientRect(), on = r.top < innerHeight && r.bottom > 0; if (on && vid.paused && !K.reduce) vid.play().catch(function () {}); if (!on && !vid.paused) vid.pause(); }
       }
       addEventListener("scroll", function () { requestAnimationFrame(tick); }, {passive: true}); tick();

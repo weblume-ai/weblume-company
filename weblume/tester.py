@@ -102,12 +102,13 @@ def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
     ask = lambda m: client.models.generate_content(model=m, contents=parts,
                                                   config=types.GenerateContentConfig(response_mime_type="application/json")).text
     jobs = [(m, lambda m=m: ask(m)) for m in models]
+    jobs.append((LOCAL_VISION, lambda: _local_vision(shots, parts[-1])))  # gemma3 on the laptop sees images: no quota
     if os.getenv("GROQ_API_KEY", "").strip():  # when every Gemini model is out of quota, a Groq vision model looks instead
         jobs.append((GROQ_VISION, lambda: _groq_vision(shots, parts[-1])))
     for m, job in jobs:
         try:
             # the SDK waits as long as Gemini says ("retry in 20h" on a used-up quota): give each model 90 s, then move on
-            data = rules.extract_json(_calls.submit(job).result(timeout=90))
+            data = rules.extract_json(_calls.submit(job).result(timeout=360 if m == LOCAL_VISION else 90))  # the laptop is slower, never out of quota
             if isinstance(data, dict) and "score" in data:
                 data["score"] = float(data["score"])
                 data["verdict"] = "PASS" if data["score"] >= PASS_SCORE else "FIX"
@@ -122,6 +123,31 @@ def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
 
 
 GROQ_VISION = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+LOCAL_VISION = os.getenv("LOCAL_VISION_MODEL", "gemma3:12b")
+
+
+def _local_vision(shots: list[Path], prompt: str) -> str:
+    """The same question to a vision model in Ollama on this laptop: 4 screenshots, shrunk to 768 px JPEGs to keep it quick."""
+    import base64
+    import io
+    import json as _json
+    import urllib.request
+    from PIL import Image
+
+    def small(p):
+        with Image.open(p) as im:
+            im = im.convert("RGB")
+            im.thumbnail((768, 768))
+            buf = io.BytesIO()
+            im.save(buf, "JPEG", quality=80)
+        return base64.b64encode(buf.getvalue()).decode()
+
+    body = {"model": LOCAL_VISION, "stream": False, "format": "json", "options": {"num_ctx": 8192},
+            "messages": [{"role": "user", "content": prompt, "images": [small(p) for p in shots[:4]]}]}
+    req = urllib.request.Request(os.getenv("OLLAMA_URL", "http://localhost:11434").rstrip("/") + "/api/chat",
+                                 data=_json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=350) as r:
+        return _json.loads(r.read())["message"]["content"]
 
 
 def _groq_vision(shots: list[Path], prompt: str) -> str:
