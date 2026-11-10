@@ -347,7 +347,7 @@ from weblume.factory import media as _fm  # noqa: E402
 _s = {"pieces": ["nav", "hero-frames", "menu-tiles", "gallery-sheet", "invite-video", "visit"], "media": {}, "menu": []}
 _fm.swap(_s)
 assert _s["pieces"] == ["nav", "hero-waterline", "menu-cols", "visit"], _s["pieces"]
-assert len(_fac.MANIFEST) == 21 and all((_fac.PIECES / v["file"]).is_file() for v in _fac.MANIFEST.values())
+assert len(_fac.MANIFEST) == 30 and all((_fac.PIECES / v["file"]).is_file() for v in _fac.MANIFEST.values())
 
 # Stock media must match the search: a scrapyard is not "nutella"
 assert not _fm._relevant("scrap, metal, recycling", "warm nutella waffle dessert making process") and _fm._relevant("chocolate, dessert", "nutella dessert")

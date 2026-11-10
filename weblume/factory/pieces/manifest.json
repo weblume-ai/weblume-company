@@ -384,5 +384,176 @@
   "from": "Weblume (order in 3 steps)",
   "thumb": "thumbs/steps-order.webp",
   "tested": "360/768/1280 OK"
+ },
+ "hero-arch": {
+  "file": "sections-skills.js",
+  "type": "hero",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "salon",
+   "hotel"
+  ],
+  "style": [
+   "heritage",
+   "luxury",
+   "simple"
+  ],
+  "needs": [
+   "media.heroImg"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): arched window",
+  "thumb": "thumbs/hero-arch.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-words": {
+  "file": "sections-skills.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "modern",
+   "playful",
+   "bold"
+  ],
+  "needs": [
+   "media.heroImg or gallery"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): text appearing word by word (Blur Text)",
+  "thumb": "thumbs/hero-words.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-layers": {
+  "file": "sections-skills.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "luxury",
+   "cinematic"
+  ],
+  "needs": [
+   "media.heroImg",
+   "media.gallery (2+)"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): parallax layers",
+  "thumb": "thumbs/hero-layers.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "about-badge": {
+  "file": "sections-skills.js",
+  "type": "about",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "playful",
+   "heritage",
+   "modern"
+  ],
+  "needs": [
+   "about"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): circular text badge (Circular Text)",
+  "thumb": "thumbs/about-badge.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "gallery-stack": {
+  "file": "sections-skills.js",
+  "type": "gallery",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "cinematic",
+   "modern"
+  ],
+  "needs": [
+   "media.gallery (3+)"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): stacked cards on scroll (Scroll Stack)",
+  "thumb": "thumbs/gallery-stack.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-flip": {
+  "file": "sections-skills.js",
+  "type": "menu",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "shop"
+  ],
+  "style": [
+   "playful",
+   "modern"
+  ],
+  "needs": [
+   "menu[].items[].img"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): flip cards",
+  "thumb": "thumbs/menu-flip.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-polaroid": {
+  "file": "sections-skills.js",
+  "type": "menu",
+  "fits": [
+   "cafe",
+   "sweets",
+   "bakery",
+   "restaurant"
+  ],
+  "style": [
+   "playful",
+   "heritage"
+  ],
+  "needs": [
+   "menu[].items[].img"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): polaroid photos",
+  "thumb": "thumbs/menu-polaroid.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "features-bento": {
+  "file": "sections-skills.js",
+  "type": "features",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "modern",
+   "bold",
+   "simple"
+  ],
+  "needs": [
+   "features (2+ real facts)"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): bento grid",
+  "thumb": "thumbs/features-bento.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "cta-blur": {
+  "file": "sections-skills.js",
+  "type": "cta",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "invite"
+  ],
+  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): words coming out of the blur",
+  "thumb": "thumbs/cta-blur.webp",
+  "tested": "360/768/1280 OK"
  }
 }

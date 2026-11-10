@@ -29,7 +29,7 @@
   };
   P["hero-card-room"] = { // "card over a dim room": the place, darkened, with an invitation card in the middle
     css: ".hcr{position:relative;min-height:calc(100svh - var(--nav));display:grid;place-items:center;padding:6vh var(--gut);overflow:hidden;background:var(--surface)}" +
-      ".hcr>img{position:absolute;inset:0;filter:brightness(.6)}.hcr .card{position:relative;background:var(--paper);color:var(--ink);border-radius:28px;padding:clamp(28px,4vw,56px);max-width:560px;text-align:center}" +
+      ".hcr>img{position:absolute;inset:0;filter:brightness(.6)}.hcr .card{position:relative;background:var(--paper);color:var(--ink);border-radius:var(--r-card);padding:clamp(28px,4vw,56px);max-width:560px;text-align:center}" +
       ".hcr h1{font-size:clamp(40px,6vw,88px)}.hcr p{margin:14px auto 24px;max-width:24em;color:color-mix(in srgb,var(--ink) 70%,transparent)}.hcr .btn.o{color:var(--ink)}" +
       ".hcr .acts{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}",
     render: function (S, t) {
@@ -68,11 +68,11 @@
     }
   };
   P["menu-sticky-photo"] = { // "menu column beside a sticky photo": the list scrolls, the photo stays
-    css: ".msp{display:grid;gap:12px;padding:12px;background:var(--ink)}.msp .list{background:var(--surface);border-radius:20px;padding:clamp(28px,4vw,64px)}" +
+    css: ".msp{display:grid;gap:12px;padding:12px;background:var(--ink)}.msp .list{background:var(--surface);border-radius:var(--r-card);padding:clamp(28px,4vw,64px)}" +
       ".msp h2{font-size:var(--head);margin-bottom:24px}.msp h3{color:var(--accent);font-size:var(--lead);margin:28px 0 8px}" +
       ".msp .it{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed color-mix(in srgb,var(--muted) 40%,transparent)}" +
       ".msp .it small{display:block;color:var(--muted)}.msp .it i{font-style:normal;font-weight:700;color:var(--accent);white-space:nowrap}" +
-      ".msp figure{border-radius:20px;overflow:hidden;background:var(--surface);min-height:50vh}@media (min-width:860px){.msp{grid-template-columns:1fr 1fr}.msp figure{position:sticky;top:calc(var(--nav) + 12px);height:calc(100svh - var(--nav) - 24px)}}",
+      ".msp figure{border-radius:var(--r-card);overflow:hidden;background:var(--surface);min-height:50vh}@media (min-width:860px){.msp{grid-template-columns:1fr 1fr}.msp figure{position:sticky;top:calc(var(--nav) + 12px);height:calc(100svh - var(--nav) - 24px)}}",
     render: function (S, t) {
       var m = S.media || {};
       return '<section class="msp" id="menu"><div class="list"><h2>' + t.menu + "</h2>" + (S.menu || []).map(function (c) {
@@ -86,7 +86,7 @@
   P["menu-tiles"] = { // "specimen catalogue": every item alone on a flat tile, same scale, named plainly
     css: ".mtl{padding:clamp(64px,9vw,140px) var(--gut);background:var(--paper);color:var(--ink)}.mtl h2{font-size:var(--giant);line-height:1;margin-bottom:clamp(24px,4vw,56px)}" +
       ".mtl .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}" +
-      ".mtl article{border-radius:18px;overflow:hidden;background:color-mix(in srgb,var(--accent) 14%,var(--paper))}.mtl article:nth-child(3n+2){background:color-mix(in srgb,var(--accent) 26%,var(--paper))}" +
+      ".mtl article{border-radius:var(--r-card);overflow:hidden;background:color-mix(in srgb,var(--accent) 14%,var(--paper))}.mtl article:nth-child(3n+2){background:color-mix(in srgb,var(--accent) 26%,var(--paper))}" +
       ".mtl figure{aspect-ratio:1}.mtl article div{padding:14px 16px 18px}.mtl b{font:700 19px/1.3 var(--display)}.mtl small{display:block;color:color-mix(in srgb,var(--ink) 60%,transparent)}" +
       ".mtl i{display:block;font-style:normal;font-weight:700;margin-top:6px}",
     render: function (S, t) {
@@ -100,7 +100,7 @@
   };
   P["gallery-sheet"] = { // "contact sheet": columns of photos at their natural shapes, like a photographer's sheet
     css: ".gsh{padding:clamp(64px,9vw,140px) 12px;background:var(--ink)}.gsh h2{padding-inline:calc(var(--gut) - 12px);margin-bottom:24px}" +
-      ".gsh .cols{columns:2 160px;column-gap:12px}.gsh figure{break-inside:avoid;margin-bottom:12px;border-radius:14px;overflow:hidden;background:var(--surface)}.gsh img{height:auto}" +
+      ".gsh .cols{columns:2 160px;column-gap:12px}.gsh figure{break-inside:avoid;margin-bottom:12px;border-radius:var(--r-card);overflow:hidden;background:var(--surface)}.gsh img{height:auto}" +
       "@media (min-width:860px){.gsh .cols{columns:4}}",
     render: function (S, t) {
       var g = (S.media || {}).gallery || [];
@@ -112,7 +112,7 @@
   P["steps-order"] = { // how ordering works, in three real steps (no invented numbers)
     css: ".sto{background:var(--surface);padding:clamp(64px,9vw,140px) var(--gut)}.sto h2{margin-bottom:clamp(24px,4vw,48px)}" +
       ".sto ol{list-style:none;display:grid;gap:12px;counter-reset:s}@media (min-width:860px){.sto ol{grid-template-columns:repeat(3,1fr)}}" +
-      ".sto li{background:var(--ink);border-radius:22px;padding:28px;counter-increment:s}.sto li::before{content:counter(s);display:block;font:800 clamp(48px,6vw,88px)/1 var(--display);color:var(--accent);margin-bottom:12px}" +
+      ".sto li{background:var(--ink);border-radius:var(--r-card);padding:28px;counter-increment:s}.sto li::before{content:counter(s);display:block;font:800 clamp(48px,6vw,88px)/1 var(--display);color:var(--accent);margin-bottom:12px}" +
       ".sto b{font:700 var(--lead)/1.25 var(--display)}.sto p{color:var(--muted);margin-top:6px}",
     render: function (S, t) {
       var ar = t.lang !== "en", st = ar ? [["اختار من المنيو", "شوف الأصناف والأسعار"], ["ابعتلنا على واتساب", "اكتب طلبك أو احجز ترابيزة"], ["استلم أو تعالى", "نجهزه في معاده"]]

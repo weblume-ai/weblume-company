@@ -7,6 +7,7 @@
   var lang = (new URLSearchParams(location.search).get("lang") || store("site-lang") || S.lang || "ar") === "en" && S.en ? "en" : "ar";
   if (lang === "en") Object.keys(S.en).forEach(function (k) { S[k] = S.en[k]; });
   document.documentElement.lang = lang; document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
+  if (S.shape) document.documentElement.dataset.shape = S.shape; // arch | sharp | round | soft | organic
   var UI = {
     ar: {menu: "المنيو", visit: "زورونا", gallery: "الأجواء", about: "عننا", wa: "واتساب", open: "القائمة", close: "إغلاق",
          other: "English", see: "شوف المنيو", order: "اطلب دلوقتي", directions: "الاتجاهات", maps: "افتح في خرائط جوجل",

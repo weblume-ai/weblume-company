@@ -44,7 +44,7 @@ def examples(n: int = 2) -> str:
 HERE = Path(__file__).parent
 PIECES = HERE / "pieces"
 MANIFEST = json.loads((PIECES / "manifest.json").read_text(encoding="utf-8"))
-ORDER = ["nav", "hero", "band", "about", "menu", "how", "cta", "gallery", "contact", "footer", "mobile-bar"]  # a piece type's place on the page
+ORDER = ["nav", "hero", "band", "about", "features", "menu", "how", "cta", "gallery", "contact", "footer", "mobile-bar"]  # a piece type's place on the page
 LENIS = "https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"
 SA = ["الرياض", "جدة", "جده", "الدمام", "مكة", "المدينة", "الخبر", "أبها", "الطائف", "السعودية", "riyadh", "jeddah", "saudi"]
 EG = ["القاهرة", "الاسكندرية", "الإسكندرية", "المنصورة", "الجيزة", "طنطا", "مصر", "cairo", "egypt", "alexandria"]
@@ -53,6 +53,8 @@ SCHEMA = """{
  "name": "full business name", "word": "one short brand word (for the logo text and the footer)",
  "kind": "restaurant | cafe | sweets | bakery | clinic | shop | gym | salon | company",
  "style": "luxury | bold | simple | playful | heritage | modern",
+ "shape": "the shape of photos, cards and buttons: round | arch | sharp | soft | organic (pick what suits the place)",
+ "features": ["2 to 4 real strengths from the request, 2-4 words each (delivery, open late, family hall…); empty if none are known"],
  "tagline": "6 words max", "heroLines": ["2 or 3 short lines, the headline"], "lede": "one sentence under the headline",
  "about": "two sentences: who it's for and why choose it", "together": "a short warm line above the about text",
  "invite": "one short line inviting people to come", "caps": ["3 or 4 one-word scene captions for the hero footage, optional"],
@@ -214,6 +216,8 @@ def normalize(d: dict, request: str, country: str) -> dict:
     d["caps"] = [c for c in d.get("caps") or [] if arabic(c)]  # an Arabic site: no English words over the footage
     d["heroLines"] = [h for h in d.get("heroLines") or [] if arabic(h)] or d.get("heroLines")
     d["colors"] = palette(d.get("colors"))
+    d["shape"] = d.get("shape") if d.get("shape") in ("round", "arch", "sharp", "soft", "organic") else "round"
+    d["features"] = [str(x)[:40] for x in d.get("features") or [] if str(x).strip()][:4]
     f = d.get("fonts") or {}
     d["fonts"] = {"display": f.get("display") if f.get("display") in FONTS_OK else "Alexandria",  # no Kufi display fonts (the owner's taste)
                   "text": f.get("text") if f.get("text") in FONTS_OK else "IBM Plex Sans Arabic"}

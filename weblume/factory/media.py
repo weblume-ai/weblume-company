@@ -217,11 +217,15 @@ def swap(data: dict):
              "hero-split": "" if photo else "hero-waterline", "hero-name-photo": "" if photo else "hero-waterline",
              "hero-card-room": "" if photo else "hero-waterline", "hero-film-title": "" if photo or m.get("video") else "hero-waterline",
              "menu-rows": "" if has_items >= 4 else "menu-cols", "menu-tiles": "" if has_items >= 4 else "menu-cols",
-             "menu-sticky-photo": "" if photo or m.get("about") else "menu-cols"}
+             "menu-sticky-photo": "" if photo or m.get("about") else "menu-cols",
+             "menu-flip": "" if has_items >= 4 else "menu-cols", "menu-polaroid": "" if has_items >= 4 else "menu-cols",
+             "hero-arch": "" if photo else "hero-waterline", "hero-words": "" if photo else "hero-waterline",
+             "hero-layers": "" if photo and len(m.get("gallery") or []) >= 2 else ("hero-split" if photo else "hero-waterline")}
     data["pieces"] = [rules.get(p) or p for p in ps]
     if m.get("frames"):  # footage came: the scroll-played hero (Loopie's signature) is the strongest opening
         data["pieces"] = ["hero-frames" if p.startswith("hero-") else p for p in data["pieces"]]
     for p, ok in (("gallery-track", len(m.get("gallery") or []) >= 3), ("gallery-sheet", len(m.get("gallery") or []) >= 3),
+                  ("gallery-stack", len(m.get("gallery") or []) >= 3), ("features-bento", len(data.get("features") or []) >= 2),
                   ("invite-video", m.get("video") or m.get("poster"))):
         if p in data["pieces"] and not ok:
             data["pieces"].remove(p)

@@ -21,6 +21,7 @@ DEMO = {
         {"cat": "الحلا", "img": "assets/img/menu-dessert.webp", "items": [
             {"name": "تشيز كيك", "desc": "توت", "price": "22", "img": "assets/img/mood-cup.webp"},
             {"name": "ماتشا", "desc": "ماتشا · حليب", "price": "20", "img": "assets/img/drink-green.webp"}]}],
+    "features": ["قهوة مختصة", "مفتوح لآخر الليل", "جلسات عائلية"], "shape": "arch",
     "address": "الرياض، حي العليا", "maps": "Riyadh Olaya", "whatsapp": "966500000000", "country": "SA", "currency": "ر.س", "lang": "ar", "review": [],
     "media": {"frames": {"d": "assets/frames-d/", "m": "assets/frames-m/", "n": 162}, "video": "assets/clip.mp4", "poster": "assets/poster.webp",
               "heroImg": "assets/img/mood-hall.webp", "about": {"src": "assets/img/mood-chair.webp", "alt": "ركن"},

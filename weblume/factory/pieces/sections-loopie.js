@@ -84,7 +84,7 @@
     css: ".visit{background:var(--paper);color:var(--ink);padding:clamp(72px,10vw,160px) var(--gut);display:grid;gap:40px;align-items:center}" +
       ".addr{font:800 var(--lead)/1.3 var(--display);margin-top:18px;max-width:20em}.days{width:100%;max-width:360px;border-collapse:collapse;margin-top:14px}.days td{padding:3px 0}.days td:last-child{text-align:end}" +
       ".visit .acts{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}.visit .btn.o{color:var(--ink)}" +
-      ".map{aspect-ratio:4/3;width:100%;border:0;border-radius:24px;background:#ddd}@media (min-width:860px){.visit{grid-template-columns:1fr 1fr;gap:64px}}",
+      ".map{aspect-ratio:4/3;width:100%;border:0;border-radius:var(--r-card);background:#ddd}@media (min-width:860px){.visit{grid-template-columns:1fr 1fr;gap:64px}}",
     render: function (S, t) {
       var K = SITEKIT, q = encodeURIComponent(S.maps || S.address || S.name);
       return '<section class="visit" id="visit"><div><h2 class="rise">' + t.visit + "</h2>" + (S.address ? '<p class="addr rise" style="--i:1">' + K.esc(S.address) + "</p>" : "") +
