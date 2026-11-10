@@ -422,7 +422,18 @@ function renderChat() {
     box.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send() } });
     const head = h("div", {class: "paneHead"}, h("h3", {}, "💬 Chat"), CHAT_ONLY ? null : h("button", {class: "ghost small", id: "c-big",
       onclick: () => setBig(!document.body.classList.contains("chat-big"))}, "⤢ كبّر الشات"));
-    fill(p, head, h("div", {id: "c-ask"}), h("div", {id: "c-list"}), h("div", {class: "composer"}, box, h("button", {class: "btn", onclick: send}, "Send")));
+    const files = h("input", {type: "file", multiple: true, accept: "image/*,video/*", hidden: true, onchange: async e => {
+      for (const f of e.target.files) {
+        if (f.size > 100e6) { alert(f.name + ": أكبر من 100MB"); continue }
+        up.textContent = "بيرفع " + f.name + "…";
+        const data = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f) });
+        try { const r = await api("/api/upload", {name: f.name, data}); up.textContent = "📎 " + r.inbox.length + " ملف جاهز للموقع الجاي" } catch (err) { alert(err.message) }
+      }
+      e.target.value = "";
+    }});
+    const up = h("div", {class: "small mute", style: "margin-top:6px"}, "📎 ارفع صور أو فيديو للمحل: المصنع يستخدمهم في الموقع الجاي (يقص الصور ويحط عليها أنيميشن)");
+    const clip = h("button", {class: "ghost", title: "ارفع صور أو فيديو", "aria-label": "ارفع صور أو فيديو", onclick: () => files.click()}, "📎");
+    fill(p, head, h("div", {id: "c-ask"}), h("div", {id: "c-list"}), h("div", {class: "composer"}, clip, box, h("button", {class: "btn", onclick: send}, "Send"), files), up);
   }
   const r = S.run, ask = r && r.ask;
   const askEl = $("#c-ask");

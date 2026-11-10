@@ -239,7 +239,12 @@ def _factory_site(run: "Run", goal: str, client: str):
     run.current = "karim"
     run.set_agent("karim", "working")
     run.update("karim", "ببني الموقع في مصنع المواقع: قطع جاهزة + الموديل المحلي + فيديو وصور حقيقية…")
-    res = factory.build(f"{goal} {client}".strip(), log=lambda m: run.log("karim", m.strip()))
+    from . import uploads
+    own = uploads.take(client or goal)
+    if own:
+        run.update("karim", f"هستخدم الصور والفيديوهات اللي رفعتها ({len(uploads.listing())} ملف)")
+    res = factory.build(f"{goal} {client}".strip(), client_photos=own, log=lambda m: run.log("karim", m.strip()))
+    uploads.done(res["name"])
     run.site_dir = Path(res["folder"])
     site = run.site_dir / "index.html"
     run.status["site"] = str(site.relative_to(OUTPUT_DIR))

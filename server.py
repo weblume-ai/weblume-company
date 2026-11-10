@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
-from weblume import company, rules
+from weblume import company, rules, uploads
 from weblume.config import OUTPUT_DIR, PROVIDER, ROOT, model_name
 from weblume.team import ORDER, TEAM
 
@@ -118,7 +118,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             length = int(self.headers.get("Content-Length") or 0)
-            if length > 100_000:
+            if length > (150_000_000 if self.path == "/api/upload" else 100_000):  # a client's video can be big
                 return self.send(413, {"error": "Too big."})
             body = json.loads(self.rfile.read(length) or b"{}")
             if self.path == "/api/start":
@@ -136,6 +136,10 @@ class Handler(BaseHTTPRequestHandler):
                                                                     str(body.get("vote", "")), str(body.get("comment", "")))})
             if self.path == "/api/publish":  # the owner confirmed publishing a site to GitHub Pages
                 return self.send(200, {"url": company.publish(str(body.get("run", "")), str(body.get("name", "")))})
+            if self.path == "/api/upload":  # the owner's photos and videos for the next site
+                return self.send(200, uploads.save(str(body.get("name", "")), str(body.get("data", ""))))
+            if self.path == "/api/uploads/clear":
+                return self.send(200, uploads.clear())
             if self.path == "/api/contacted":
                 biz = str(body.get("business", "")).strip()
                 if not biz:

@@ -347,7 +347,7 @@ from weblume.factory import media as _fm  # noqa: E402
 _s = {"pieces": ["nav", "hero-frames", "menu-tiles", "gallery-sheet", "invite-video", "visit"], "media": {}, "menu": []}
 _fm.swap(_s)
 assert _s["pieces"] == ["nav", "hero-waterline", "menu-cols", "visit"], _s["pieces"]
-assert len(_fac.MANIFEST) == 30 and all((_fac.PIECES / v["file"]).is_file() for v in _fac.MANIFEST.values())
+assert len(_fac.MANIFEST) == 31 and all((_fac.PIECES / v["file"]).is_file() for v in _fac.MANIFEST.values())
 
 # Stock media must match the search: a scrapyard is not "nutella"
 assert not _fm._relevant("scrap, metal, recycling", "warm nutella waffle dessert making process") and _fm._relevant("chocolate, dessert", "nutella dessert")
@@ -358,5 +358,18 @@ _bl = inspiration.blend("محل حلويات شرقية في جدة")
 assert len({l.split("(")[1].split(")")[0] for l in _bl.splitlines()}) == 3 and inspiration.sector("محل حلويات") == "restaurant"
 _m = _fac.normalize({"name": "س", "address": "جدة، حي الروضة", "maps": "https://maps.google.com/?q=x", "menu": []}, "مطعم", "SA")
 assert _m["maps"] == "جدة، حي الروضة س" and _m["motion"] == "lively"
+
+# Uploads: only photos and videos, safe names, kept in upload order
+from weblume import uploads as _up  # noqa: E402
+import base64 as _b64  # noqa: E402
+_up.INBOX = Path(tempfile.mkdtemp()) / "inbox"
+_r = _up.save("../../evil name.JPG", _b64.b64encode(b"x" * 2000).decode())
+assert _r["saved"].endswith("-evil-name.jpg") and len(_up.listing()) == 1
+for _bad in ("x.exe", "x.html", "x.svg"):
+    try:
+        _up.save(_bad, _b64.b64encode(b"x" * 2000).decode()); raise AssertionError(_bad)
+    except ValueError:
+        pass
+assert _fm.tone.__name__ and _fac.MANIFEST["hero-showcase"]["type"] == "hero"
 
 print("All rule checks passed.")

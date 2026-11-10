@@ -51,6 +51,7 @@ def _key(name: str) -> str:
     return os.getenv(name, "").strip()
 
 
+MAN_TYPE = lambda pid: json.loads((Path(__file__).parent / "pieces" / "manifest.json").read_text(encoding="utf-8")).get(pid, {}).get("type")
 VAGUE = {"warm", "delicious", "making", "process", "close", "closeup", "beautiful", "fresh", "tasty", "cozy", "modern", "luxury",
          "with", "over", "into", "from", "that", "this", "very", "best", "food", "photo", "shot", "view", "style", "inside", "people",
          # places say where, not what: "egyptian cafe" must not bring the pyramids
@@ -173,9 +174,17 @@ def footage(query: str, dest: Path, credits: list, log=print) -> dict:
     if not url:
         return {}
     try:
+        return _frames(_download(url, dest / "assets" / "source.mp4"), dest, credits, credit, log)
+    except Exception as e:
+        log(f"   الفيديو مانفعش: {e}")
+        return {}
+
+
+def _frames(src: Path, dest: Path, credits: list, credit: str, log=print, keep: bool = False) -> dict:
+    """A video file -> scroll frames for desktop and phone, a short clip and a poster (like Loopie)."""
+    try:
         import imageio_ffmpeg
         ff, a = imageio_ffmpeg.get_ffmpeg_exe(), dest / "assets"
-        src = _download(url, a / "source.mp4")
         log(f"   فيديو: {credit}")
         run = lambda *args: subprocess.run([ff, "-hide_banner", "-loglevel", "error", "-y", *args], check=True, timeout=600)
         (a / "frames-d").mkdir(parents=True, exist_ok=True)
@@ -185,8 +194,10 @@ def footage(query: str, dest: Path, credits: list, log=print) -> dict:
         run("-ss", "1", "-t", "8", "-i", str(src), "-an", "-vf", "scale=1280:-2", "-c:v", "libx264", "-crf", "28", "-preset", "veryfast",
             "-movflags", "+faststart", str(a / "clip.mp4"))
         run("-ss", "2", "-i", str(src), "-frames:v", "1", "-c:v", "libwebp", "-quality", "75", str(a / "poster.webp"))
-        src.unlink()
-        credits.append(f"- assets/frames-*, clip.mp4, poster.webp: {credit}")
+        if not keep:
+            src.unlink()
+        if not credit.startswith("the client"):
+            credits.append(f"- assets/frames-*, clip.mp4, poster.webp: {credit}")
         n = len(list((a / "frames-d").glob("*.webp")))
         return {"frames": {"d": "assets/frames-d/", "m": "assets/frames-m/", "n": n}, "video": "assets/clip.mp4", "poster": "assets/poster.webp"}
     except Exception as e:
@@ -194,16 +205,75 @@ def footage(query: str, dest: Path, credits: list, log=print) -> dict:
         return {}
 
 
+VIDEO = (".mp4", ".mov", ".webm", ".m4v")
+_cut_session = None
+
+
+def cutout(src: Path, out: Path) -> bool:
+    """The product without its background (rembg, on this laptop). False when rembg isn't installed or it fails."""
+    global _cut_session
+    try:
+        from PIL import Image
+        from rembg import new_session, remove
+        _cut_session = _cut_session or new_session("u2net")
+        with Image.open(src) as im:
+            im = im.convert("RGB")
+            im.thumbnail((1000, 1000))
+            cut = remove(im, session=_cut_session)
+        box = cut.getbbox()
+        if not box:
+            return False
+        out.parent.mkdir(parents=True, exist_ok=True)
+        cut.crop(box).save(out, "PNG", optimize=True)
+        return True
+    except Exception:
+        return False
+
+
+def tone(png: Path) -> tuple[str, str]:
+    """A bright background colour taken from the product itself, and the text colour that reads on it."""
+    import colorsys
+    from PIL import Image
+    with Image.open(png) as im:
+        px = [p[:3] for p in im.convert("RGBA").resize((60, 60)).getdata() if p[3] > 200]
+    if not px:
+        return "#e4447a", "#ffffff"
+    r, g, b = (sum(c[i] for c in px) / len(px) / 255 for i in range(3))
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    r, g, b = colorsys.hls_to_rgb(h, .5, max(.55, min(s * 1.6, .85)))
+    lum = .2126 * r + .7152 * g + .0722 * b
+    return "#" + "".join(f"{round(v * 255):02x}" for v in (r, g, b)), "#141210" if lum > .55 else "#ffffff"
+
+
+def showcase(data: dict, dest: Path, log=print):
+    """Up to 5 menu items with photos become cut-out products for the showcase hero."""
+    out = []
+    for c in data.get("menu") or []:
+        for it in c.get("items") or []:
+            if len(out) == 5 or not it.get("img"):
+                continue
+            png = dest / "assets" / "cut" / f"{len(out) + 1}.png"
+            if cutout(dest / it["img"], png):
+                bg, ink = tone(png)
+                out.append({"name": it["name"], "desc": it.get("desc", ""), "price": it.get("price", ""), "cut": _rel(png, dest), "tone": bg, "ink": ink})
+    if out:
+        log(f"   قصّيت {len(out)} منتج من غير خلفية")
+    data["showcase"] = out
+
+
 def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
     """Put media paths into data['media'], downloading into dest/assets. Client photos come first."""
     q, m, credits = data.get("media_query") or {}, data.setdefault("media", {}), []
-    own = sorted(p for p in (client_photos.iterdir() if client_photos and client_photos.is_dir() else []) if p.suffix.lower() in EXT)
+    files = sorted(client_photos.iterdir()) if client_photos and client_photos.is_dir() else []
+    own = [p for p in files if p.suffix.lower() in EXT]
+    own_video = next((p for p in files if p.suffix.lower() in VIDEO), None)
     own_rel = [_rel(_webp(p, dest / "assets" / "own" / f"{i + 1:02d}.webp"), dest) for i, p in enumerate(own)]
     if own_rel:
         log(f"   {len(own_rel)} صورة من العميل")
     kind = str(data.get("kind") or "")
     topic = lambda query: query if not query or kind in query.lower() else f"{query} {kind}"  # "interior" alone finds any interior
-    m.update(footage(topic(q.get("video", "")), dest, credits, log))
+    # the client's own video first: it becomes the scroll-played hero, like Loopie's
+    m.update(_frames(own_video, dest, credits, "the client's own video", log, keep=True) if own_video else footage(topic(q.get("video", "")), dest, credits, log))
     pick = lambda i, query, name: own_rel[i] if i < len(own_rel) else photo(topic(query), dest / "assets" / "img" / f"{name}.webp", dest, credits)
     # the place's own footage beats a stock photo found by keywords: its still frame is the hero photo
     first = next((i for c in data.get("menu") or [] for i in c.get("items") or [] if i.get("photo")), None)
@@ -215,11 +285,17 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
     gallery = [pick(2 + i, g, f"gallery-{i + 1}") for i, g in enumerate((q.get("gallery") or [])[:5])]
     m["gallery"] = [{"src": g, "alt": data.get("name", "")} for g in gallery if g]
     k = 0
-    for cat in data.get("menu") or []:  # a photo for the first items, so cards never stay empty
+    for cat in data.get("menu") or []:  # the client's photos go to the first items, stock fills the rest
         for it in cat.get("items") or []:
-            if k < 12 and it.get("photo"):
+            if k < len(own_rel):
+                it["img"] = own_rel[k]
+            elif k < 12 and it.get("photo"):
                 it["img"] = photo(it["photo"], dest / "assets" / "img" / f"item-{k + 1}.webp", dest, credits)
-                k += 1
+            k += 1
+    if "hero-showcase" in data["pieces"] or len(own_rel) >= 2:
+        showcase(data, dest, log)
+        if len(data.get("showcase") or []) >= 2 and not m.get("frames"):  # the client's products, cut out: the strongest opening
+            data["pieces"] = ["hero-showcase" if MAN_TYPE(p) == "hero" else p for p in data["pieces"]]
     if not m.get("frames"):
         data["review"].append("مالقيتش فيديو مناسب للنشاط ده في المكتبات المجانية: ابعت فيديو قصير للمكان أو للأكل" if _key("PIXABAY_API_KEY") or _key("PEXELS_API_KEY")
                               else "مفيش فيديو للهيرو: حط PIXABAY_API_KEY في ملف .env (مجاني من pixabay.com/api/docs) أو ابعت فيديو للمكان")
@@ -235,6 +311,8 @@ def swap(data: dict):
     m, ps = data.get("media", {}), data["pieces"]
     has_items = sum(bool(i.get("img")) for c in data.get("menu") or [] for i in c.get("items") or [])
     photo = bool(m.get("heroImg"))
+    if "hero-showcase" in ps and len(data.get("showcase") or []) < 2:
+        ps = ["hero-split" if p == "hero-showcase" else p for p in ps]
     rules = {"hero-frames": m.get("frames") and "" or ("hero-split" if photo else "hero-waterline"),
              "hero-split": "" if photo else "hero-waterline", "hero-name-photo": "" if photo else "hero-waterline",
              "hero-card-room": "" if photo else "hero-waterline", "hero-film-title": "" if photo or m.get("video") else "hero-waterline",

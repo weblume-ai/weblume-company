@@ -555,5 +555,25 @@
   "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): words coming out of the blur",
   "thumb": "thumbs/cta-blur.webp",
   "tested": "360/768/1280 OK"
+ },
+ "hero-showcase": {
+  "file": "hero-showcase.js",
+  "type": "hero",
+  "fits": [
+   "sweets",
+   "cafe",
+   "bakery",
+   "shop",
+   "restaurant"
+  ],
+  "style": [
+   "playful",
+   "bold",
+   "modern"
+  ],
+  "needs": [
+   "2+ product photos (cut out automatically)"
+  ],
+  "from": "Weblume code after the owner's reference video (flavour carousel with cut-out products)"
  }
 }
