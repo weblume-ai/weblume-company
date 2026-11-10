@@ -103,7 +103,8 @@
       return '<footer><div class="huge" aria-hidden="true">' + K.esc(S.word || S.name) + '</div><div class="row"><ul>' +
         soc.map(function (s) { return '<li><a href="' + K.esc(S[s[0]]) + '" target="_blank" rel="noopener noreferrer">' + s[1] + "</a></li>"; }).join("") +
         '<li><a href="' + K.wa() + '" target="_blank" rel="noopener noreferrer">' + t.wa + '</a></li></ul><div class="by">© ' + new Date().getFullYear() + " " + K.esc(S.name) +
-        " · " + t.design + ' <a href="https://weblume-sa.github.io/" target="_blank" rel="noopener noreferrer">Weblume</a></div></div></footer>';
+        " · " + t.design + ' <a href="https://weblume-sa.github.io/" target="_blank" rel="noopener noreferrer">Weblume</a>' +
+        (S.credits ? ' · <a href="' + K.esc(S.credits) + '" target="_blank" rel="noopener">' + (t.lang === "en" ? "Photo credits" : "حقوق الصور") + "</a>" : "") + "</div></div></footer>";
     }
   };
   P.bar = { // phones: WhatsApp and directions always one tap away
