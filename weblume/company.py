@@ -378,6 +378,11 @@ def save_site(run: Run, key: str, file: str, raw: str, name: str) -> str:
         run.write(name, text)
         if final:
             run.site_dir.mkdir(parents=True, exist_ok=True)
+            if 'class="ph' in text:  # no grey boxes: stand-in photos until the client sends his own
+                run.update(key, "بجيب صور مؤقتة للأماكن الفاضية…")
+                text, got = templates.fill_photos(text, run.site_dir, f"{run.status['goal']} {run.status['client']}")
+                if got:
+                    run.log(key, f"RULE: {got} empty photo box(es) got stand-in photos (img/photo-*.jpg); swap in the client's real photos.")
             (run.site_dir / "index.html").write_text(text, encoding="utf-8")
             if "logo.svg" in text and not (run.site_dir / "logo.svg").exists():  # no client logo: a type logo from the name
                 color = lambda v, d: (re.search(rf"{v}\s*:\s*(#[0-9a-fA-F]{{3,8}})", text) or [None, d])[1]
@@ -388,7 +393,8 @@ def save_site(run: Run, key: str, file: str, raw: str, name: str) -> str:
             name = (data.get("name") if run.kind in templates.FOLDER else _site_name(text)) or ""
             if name:
                 run.status["client"] = name
-                run.update(key, f"مفيش اسم في الطلب، فاخترت «{name}». لو عايز اسم تاني قولي.")
+                if not any(w in run.status["goal"] for w in name.split() if len(w) > 2 and w not in ("مطعم", "المطعم", "كافيه")):
+                    run.update(key, f"مفيش اسم في الطلب، فاخترت «{name}». لو عايز اسم تاني قولي.")
         run.site_text = text
         site = run.site_dir / "index.html"
         run.status["site"] = str(site.relative_to(OUTPUT_DIR))

@@ -312,4 +312,10 @@ assert not _co.EDIT.search("تمام شكرا يا جماعة") and _co.EDIT.mat
 from weblume import config as _cfg  # noqa: E402
 assert set(_cfg.JOBS) == {"code", "write", "fast"} and all(s.split(":")[0] in _cfg._KEYS for v in _cfg.JOBS.values() for s in v)
 
+# No grey boxes: every photo placeholder gets a stand-in photo saved with the site
+_d = Path(tempfile.mkdtemp())
+_fake = lambda prompt, out, w, h: (out.parent.mkdir(parents=True, exist_ok=True), out.write_bytes(b"x"), True)[2]
+_html, _n = templates.fill_photos(templates.load("fresh"), _d, "مطعم", make=_fake)
+assert _n == _html.count('src="img/photo-') == 8 and (_d / "img" / "photo-1.jpg").is_file()
+
 print("All rule checks passed.")

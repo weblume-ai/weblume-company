@@ -8,7 +8,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from . import rules
-from .config import model_name, PROVIDER
+from .config import CallTimeout, PROVIDER, _calls, model_name
 
 PASS_SCORE = 8
 TEMPLATE_NOTES = {  # what Tarek must know about Weblume's approved templates, so he doesn't flag their design
@@ -99,20 +99,46 @@ def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
     models = [first, *[m.strip() for m in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash,gemini-3.1-flash-lite").split(",")
                        if m.strip() and m.strip() != first]]
     client, last = genai.Client(api_key=key), None
-    for m in models:
+    ask = lambda m: client.models.generate_content(model=m, contents=parts,
+                                                  config=types.GenerateContentConfig(response_mime_type="application/json")).text
+    jobs = [(m, lambda m=m: ask(m)) for m in models]
+    if os.getenv("GROQ_API_KEY", "").strip():  # when every Gemini model is out of quota, a Groq vision model looks instead
+        jobs.append((GROQ_VISION, lambda: _groq_vision(shots, parts[-1])))
+    for m, job in jobs:
         try:
-            r = client.models.generate_content(model=m, contents=parts,
-                                               config=types.GenerateContentConfig(response_mime_type="application/json"))
-            data = rules.extract_json(r.text)
+            # the SDK waits as long as Gemini says ("retry in 20h" on a used-up quota): give each model 90 s, then move on
+            data = rules.extract_json(_calls.submit(job).result(timeout=90))
             if isinstance(data, dict) and "score" in data:
                 data["score"] = float(data["score"])
                 data["verdict"] = "PASS" if data["score"] >= PASS_SCORE else "FIX"
                 data["model"] = m
                 return data
             last = RuntimeError("Tarek's answer was not in the expected format.")
+        except CallTimeout:
+            last = RuntimeError(f"{m} gave no answer in 90 s (probably out of free quota)")
         except Exception as e:  # busy model: try the next one
             last = e
     raise RuntimeError(f"Tarek couldn't get a verdict: {last}")
+
+
+GROQ_VISION = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+
+
+def _groq_vision(shots: list[Path], prompt: str) -> str:
+    """The same question to a Groq vision model (OpenAI format, screenshots as base64). At most 5 images per request."""
+    import base64
+    import json as _json
+    import urllib.request
+    content = [{"type": "text", "text": prompt}] + [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()}}
+        for p in shots[:5]]
+    req = urllib.request.Request("https://api.groq.com/openai/v1/chat/completions", method="POST",
+                                 data=_json.dumps({"model": GROQ_VISION, "messages": [{"role": "user", "content": content}],
+                                                   "response_format": {"type": "json_object"}}).encode(),
+                                 headers={"Authorization": "Bearer " + os.getenv("GROQ_API_KEY", "").strip(),
+                                          "Content-Type": "application/json", "User-Agent": "weblume-company"})
+    with urllib.request.urlopen(req, timeout=80) as r:
+        return _json.loads(r.read())["choices"][0]["message"]["content"]
 
 
 def report(result: dict) -> str:

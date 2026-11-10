@@ -23,6 +23,7 @@ Never write your own animation library; use these classes on any element:
 
 Rules:
 - Change colors only through the `:root` variables at the top of the template (use the client's brand colors).
+- Every `.ph` needs `data-photo="…"`: an ENGLISH description of the exact photo for this business (it becomes a stand-in photo automatically).
 - `.ph` blocks are photo placeholders: with real image URLs use `<img src alt loading="lazy">`; otherwise keep `.ph` and set `data-label` to the photo the client should send.
 - Keep sections the client needs, delete the rest, add new ones with the same classes. Keep the template's own small `<script>` (tabs, filters, cart).
 - No fake reviews, numbers or awards: remove counters you have no real numbers for.

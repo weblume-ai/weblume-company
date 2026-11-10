@@ -135,6 +135,66 @@ def fix_broken_images(html: str, check=_loads) -> tuple[str, int]:
     return out, sum(not ok for ok in seen.values())
 
 
+_PH = re.compile(r'<div class="([^"]*\bph\b[^"]*)"([^>]*?)data-label="([^"]*)"([^>]*)>\s*</div>', re.I)
+
+
+def _real_photo(sector: str, n: int, out: Path) -> bool:
+    """A real free photo (Unsplash, via Picsum) from the inspiration library's set for this kind of business."""
+    lib = json.loads((Path(__file__).resolve().parents[2] / "knowledge" / "inspiration" / "photos.json").read_text(encoding="utf-8"))
+    pick = {"restaurant": ["interior-and-table"], "ecommerce": ["object-still", "texture"], "health": ["fog-and-quiet", "plants-and-flowers"],
+            }.get(sector, ["architecture", "city-day"])  # only sets that look like the business (the library also lists beaches for restaurants)
+    photos = [ph for k in pick for ph in lib["sets"][k]["photos"]]
+    try:
+        with urllib.request.urlopen(urllib.request.Request(f"https://picsum.photos/id/{photos[n % len(photos)]['id']}/1280/960",
+                                                           headers={"User-Agent": "Mozilla/5.0"}), timeout=20) as r:
+            data = r.read()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(data)
+        return len(data) > 5000
+    except Exception:
+        return False
+
+
+def _drop_badge(out: Path):
+    """The free image service stamps its name in the bottom corner: crop the bottom strip off."""
+    from PIL import Image
+    with Image.open(out) as im:
+        im.convert("RGB").crop((0, 0, im.width, int(im.height * .93))).save(out, "JPEG", quality=88)
+
+
+def fill_photos(html: str, dest: Path, context: str, make=None, limit: int = 8, budget: float = 240) -> tuple[str, int]:
+    """Every empty .ph photo box gets a photo saved with the site, so the client never sees grey boxes. First a
+    realistic photo of exactly what the box's English data-photo describes (free, Pollinations); when that is slow or
+    fails, a real free photo for this kind of business. Stand-ins until the client sends his own. Returns (html, how many)."""
+    import time
+    from html import escape
+    from .. import inspiration
+    if make is None:
+        from ..video import ai_image as make
+    sector = {"cafe": "restaurant", "restaurant": "restaurant", "shop": "ecommerce", "clinic": "health"}.get(
+        inspiration.sector(context), "agency")
+    generic = "a plate of freshly grilled food on a restaurant table" if sector == "restaurant" else "a bright modern interior"
+    done, end = 0, time.time() + budget
+    for i, m in reversed(list(enumerate(list(_PH.finditer(html))[:limit]))):
+        want = re.search(r'data-photo="([^"]+)"', m.group(0))
+        out = dest / "img" / f"photo-{i + 1}.jpg"
+        prompt = f"{want.group(1) if want else generic}, realistic professional photograph, natural light, no text, no people"
+        # shortcut: one AI photo at a time (the free service refuses parallel requests); after `budget` seconds the rest are real stock
+        ok = time.time() < end and make(prompt, out, 1280, 960)
+        if ok:
+            try:
+                _drop_badge(out)
+            except Exception:
+                pass
+        ok = ok or _real_photo(sector, i, out)
+        if ok:
+            label = m.group(3).split("·")[0].strip()
+            html = (html[:m.start()] + f'<img class="{m.group(1)}" src="img/{out.name}" alt="{escape(label)}" loading="lazy" '
+                    'style="width:100%;height:100%;object-fit:cover">' + html[m.end():])
+            done += 1
+    return html, done
+
+
 def claims_to_check(text: str) -> list[str]:
     """Things that are often invented: the owner must confirm them with the client before the site goes out."""
     plain = re.sub(r"<[^>]+>", " ", text)

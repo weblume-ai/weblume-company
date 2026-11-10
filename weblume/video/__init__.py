@@ -52,10 +52,10 @@ def built_sites() -> list[str]:
     return sorted(p.name for p in out.iterdir() if (p / "index.html").is_file() and p.name != "runs") if out.exists() else []
 
 
-def ai_image(prompt: str, out: Path) -> bool:
+def ai_image(prompt: str, out: Path, width: int = 1080, height: int = 1920) -> bool:
     """A free AI photo from Pollinations (no key). Returns False if it didn't come back as an image."""
     url = ("https://image.pollinations.ai/prompt/" + quote(prompt[:400]) +
-           f"?width=1080&height=1920&nologo=true&seed={abs(hash(prompt)) % 100000}")
+           f"?width={width}&height={height}&nologo=true&seed={abs(hash(prompt)) % 100000}")
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=120) as r:
             data = r.read()
