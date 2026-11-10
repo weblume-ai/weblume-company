@@ -210,6 +210,9 @@ def normalize(d: dict, request: str, country: str) -> dict:
     chosen = [p for p in chosen if not (MANIFEST[p]["type"] in kept or kept.add(MANIFEST[p]["type"]))]
     d["pieces"] = sorted(chosen, key=lambda p: ORDER.index(MANIFEST[p]["type"]))
     d["review"] = review
+    arabic = lambda s: bool(re.search(r"[؀-ۿ]", str(s)))
+    d["caps"] = [c for c in d.get("caps") or [] if arabic(c)]  # an Arabic site: no English words over the footage
+    d["heroLines"] = [h for h in d.get("heroLines") or [] if arabic(h)] or d.get("heroLines")
     d["colors"] = palette(d.get("colors"))
     f = d.get("fonts") or {}
     d["fonts"] = {"display": f.get("display") if f.get("display") in FONTS_OK else "Alexandria",  # no Kufi display fonts (the owner's taste)
