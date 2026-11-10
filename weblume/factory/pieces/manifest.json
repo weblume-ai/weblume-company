@@ -574,6 +574,71 @@
   "needs": [
    "2+ product photos (cut out automatically)"
   ],
-  "from": "Weblume code after the owner's reference video (flavour carousel with cut-out products)"
+  "from": "Weblume code after the owner's reference video (flavour carousel with cut-out products)",
+  "thumb": "thumbs/hero-showcase.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-ring": {
+  "file": "sections-motion.js",
+  "type": "hero",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "shop"
+  ],
+  "style": [
+   "modern",
+   "bold",
+   "luxury"
+  ],
+  "needs": [
+   "3+ dish photos (menu[].items[].img or showcase)"
+  ],
+  "from": "Weblume code after the design idea of motionsites.ai 'Outfit Carousel' (idea only, no prompt text or assets)",
+  "thumb": "thumbs/hero-ring.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-rail": {
+  "file": "sections-motion.js",
+  "type": "menu",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "shop"
+  ],
+  "style": [
+   "luxury",
+   "bold",
+   "modern"
+  ],
+  "needs": [
+   "menu[].items[].img (4+)"
+  ],
+  "from": "Weblume code after the design idea of motionsites.ai 'Clothing Rail' (idea only, no prompt text or assets)",
+  "thumb": "thumbs/menu-rail.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "features-scrub": {
+  "file": "sections-motion.js",
+  "type": "features",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "cinematic",
+   "luxury",
+   "bold"
+  ],
+  "needs": [
+   "features (2+)",
+   "media.video or media.heroImg"
+  ],
+  "from": "Weblume code after the design idea of motionsites.ai 'Freight Scroll Hero' (idea only, no prompt text or assets)",
+  "thumb": "thumbs/features-scrub.webp",
+  "tested": "360/768/1280 OK"
  }
 }
