@@ -91,7 +91,7 @@
         (S.hours && S.hours.length ? '<table class="days rise" style="--i:2"><caption class="sr" style="position:absolute;left:-9999px">' + t.hours + "</caption>" +
           S.hours.map(function (h) { return "<tr><td>" + K.esc(h[0]) + "</td><td>" + K.esc(h[1]) + "</td></tr>"; }).join("") + "</table>" : "") +
         '<div class="acts rise" style="--i:3"><a class="btn a" href="' + K.wa("أهلاً، عايز أحجز / أطلب") + '" target="_blank" rel="noopener noreferrer">' + t.wa + "</a>" +
-        '<a class="btn o" href="https://www.google.com/maps/search/?api=1&query=' + q + '" target="_blank" rel="noopener noreferrer">' + t.directions + "</a></div></div>" +
+        '<a class="btn o" href="' + (S.mapsLink ? K.esc(S.mapsLink) : 'https://www.google.com/maps/search/?api=1&query=' + q) + '" target="_blank" rel="noopener noreferrer">' + t.directions + "</a></div></div>" +
         '<iframe class="map rise" title="' + t.maps + '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=' + q + '&z=15&output=embed"></iframe></section>';
     }
   };

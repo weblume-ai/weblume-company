@@ -353,4 +353,10 @@ assert len(_fac.MANIFEST) == 30 and all((_fac.PIECES / v["file"]).is_file() for 
 assert not _fm._relevant("scrap, metal, recycling", "warm nutella waffle dessert making process") and _fm._relevant("chocolate, dessert", "nutella dessert")
 assert not _fm._relevant("rose, flower, garden", "rose water qatayef") and not _fm._relevant("gift, christmas, sweets", "arabic sweets box")
 
+# The blend takes three different sites; a map never searches a link
+_bl = inspiration.blend("محل حلويات شرقية في جدة")
+assert len({l.split("(")[1].split(")")[0] for l in _bl.splitlines()}) == 3 and inspiration.sector("محل حلويات") == "restaurant"
+_m = _fac.normalize({"name": "س", "address": "جدة، حي الروضة", "maps": "https://maps.google.com/?q=x", "menu": []}, "مطعم", "SA")
+assert _m["maps"] == "جدة، حي الروضة س" and _m["motion"] == "lively"
+
 print("All rule checks passed.")

@@ -17,7 +17,8 @@ SECTORS = {  # our kinds / words -> the library's sectors
 }
 WORDS = {
     "game": ["game", "gaming", "play", "لعبة", "ألعاب", "العاب", "جيم"], "portfolio": ["portfolio", "بورتفوليو", "أعمالي", "سيرة"],
-    "restaurant": ["restaurant", "مطعم", "مشويات", "بيتزا", "برجر"], "event": ["event", "wedding", "فرح", "حفلة", "مؤتمر", "ايفنت"],
+    "restaurant": ["restaurant", "مطعم", "مشويات", "بيتزا", "برجر", "حلويات", "حلوى", "كنافة", "بسبوسة", "مخبز", "كافيه", "كافية", "قهوة",
+                   "sweets", "dessert", "bakery", "cafe", "coffee"], "event": ["event", "wedding", "فرح", "حفلة", "مؤتمر", "ايفنت"],
     "music": ["music", "band", "موسيقى", "مزيكا"], "realestate": ["real estate", "عقارات", "شقق"], "school": ["school", "course", "كورس", "مدرسة", "أكاديمية"],
     "app": ["app", "saas", "تطبيق", "ابلكيشن"], "agency": ["agency", "studio", "وكالة", "شركة تسويق"],
 }
@@ -38,6 +39,20 @@ def sector(text: str, kind: str = "") -> str:
 def _cut(s, n):
     s = " ".join(str(s or "").split())
     return s if len(s) <= n else s[:n].rsplit(" ", 1)[0] + "…"
+
+
+def blend(text: str, kind: str = "") -> str:
+    """Three different award-winning sites for this kind of business, one role each: A gives the layout and hero idea,
+    B the colours and type, C the motion and rhythm. Mixing them gives a look none of them has. Seeded by the request."""
+    sec = SECTORS[sector(text, kind)]
+    pool = [s for s in _load("sites") if s["kind"] in sec and not AVOID.search(json.dumps(s))] or _load("sites")
+    seed = int(hashlib.sha1(("blend" + text).encode()).hexdigest(), 16)
+    import random
+    a, b, c = random.Random(seed).sample(pool, 3) if len(pool) >= 3 else (pool * 3)[:3]  # three different sites
+    return "\n".join([
+        f"A — {a['name']} ({a['url']}): LAYOUT & HERO: {_cut(a.get('hero'), 300)} Layout: {_cut(a.get('layout'), 200)}",
+        f"B — {b['name']} ({b['url']}): COLOURS & TYPE: {_cut(b.get('colour'), 220)} Type: {_cut(b.get('type'), 200)}",
+        f"C — {c['name']} ({c['url']}): MOTION & RHYTHM: {_cut(c.get('motion'), 220)} Sections: {_cut(c.get('sections'), 200)}"])
 
 
 def brief(text: str, kind: str = "", sites: int = 3) -> str:

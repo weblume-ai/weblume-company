@@ -52,6 +52,30 @@
   addEventListener("error", function (e) { var el = e.target; if (el && el.tagName === "IMG") { var fig = el.closest("figure"); (fig || el).remove(); } }, true);
   ids.forEach(function (id) { if (P[id].init) P[id].init(S, t); });
 
+  /* motion layer, by data.js "motion": calm (reveals only), lively (default: + drifting photos, word-by-word headings), cinematic (stronger) */
+  var motion = S.motion || "lively", still = SITEKIT.reduce;
+  if (!still) {
+    [].forEach.call(document.querySelectorAll("section:not(.pin) figure"), function (f) { if (f.querySelector("img")) { f.classList.add("mv", "rise"); } });
+    if (motion !== "calm") [].forEach.call(document.querySelectorAll("section:not(.pin):not(.hwd):not(.ctb) h2"), function (h) {
+      if (h.children.length) return; // only plain-text headings: Arabic words stay whole, letters stay joined
+      h.innerHTML = h.textContent.split(/\s+/).filter(Boolean).map(function (w, i) { return '<span class="hw" style="--w:' + i + '">' + SITEKIT.esc(w) + "</span>"; }).join(" ");
+      h.classList.add("rise");
+    });
+    if (motion !== "calm") {
+      var drift = motion === "cinematic" ? .16 : .08, figs = document.querySelectorAll(".mv");
+      var q = false, tick = function () {
+        q = false;
+        [].forEach.call(figs, function (f) {
+          var r = f.getBoundingClientRect();
+          if (r.bottom < 0 || r.top > innerHeight) return;
+          f.style.setProperty("--py", ((r.top + r.height / 2 - innerHeight / 2) * -drift).toFixed(1) + "px");
+        });
+      };
+      addEventListener("scroll", function () { if (!q) { q = true; requestAnimationFrame(tick); } }, {passive: true});
+      tick();
+    }
+  }
+
   /* parts rise in once as they enter */
   var io = "IntersectionObserver" in window && new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });

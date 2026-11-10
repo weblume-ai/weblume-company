@@ -54,6 +54,8 @@ SCHEMA = """{
  "kind": "restaurant | cafe | sweets | bakery | clinic | shop | gym | salon | company",
  "style": "luxury | bold | simple | playful | heritage | modern",
  "shape": "the shape of photos, cards and buttons: round | arch | sharp | soft | organic (pick what suits the place)",
+ "motion": "calm | lively | cinematic (how much the page moves)",
+ "blend": "one line: what you took from A, B and C",
  "features": ["2 to 4 real strengths from the request, 2-4 words each (delivery, open late, family hall…); empty if none are known"],
  "tagline": "6 words max", "heroLines": ["2 or 3 short lines, the headline"], "lede": "one sentence under the headline",
  "about": "two sentences: who it's for and why choose it", "together": "a short warm line above the about text",
@@ -97,8 +99,10 @@ def plan(request: str, ask=None) -> dict:
               "Prices you were not given: realistic for the country, and say so in review. Menu: 3 to 5 categories, 4 to 6 items each. "
               "Colors from the business's mood (no gold on black, no gradients). Pick pieces: exactly one nav, one hero, one menu, "
               f"visit, footer-huge and bar; add about-say, gallery-track, invite-video when they help.\n\nPIECES:\n{pieces}\n\n"
-              f"A DESIGN DIRECTION from award-winning sites for this kind of business (use its mood for colors, style and "
-              f"which pieces you pick; never copy a site):\n{inspiration.brief(request)[:1600]}\n\n"
+              "BLEND THREE AWARD-WINNING SITES into a new look (never copy any of them): take the layout and hero idea from A "
+              "(it decides your hero piece and shape), the colours and type from B (your colors and fonts, in this business's mood), "
+              "and the motion and section rhythm from C (your motion and the order of pieces). Say what you took in \"blend\".\n"
+              f"{inspiration.blend(request)}\n\n"
               + (f"APPROVED EXAMPLES OF WEBLUME SITES (match this quality and voice):\n{examples()}\n\n" if examples() else "") +
               f"Answer with ONE JSON object only, in this shape:\n{SCHEMA}")
     raw = ""
@@ -215,8 +219,13 @@ def normalize(d: dict, request: str, country: str) -> dict:
     arabic = lambda s: bool(re.search(r"[؀-ۿ]", str(s)))
     d["caps"] = [c for c in d.get("caps") or [] if arabic(c)]  # an Arabic site: no English words over the footage
     d["heroLines"] = [h for h in d.get("heroLines") or [] if arabic(h)] or d.get("heroLines")
+    # the map searches words, never a link (a link shows the whole world): the address, then the name to pin it
+    link = re.search(r"https?://(?:www\.)?(?:google\.[a-z.]+/maps|maps\.app\.goo\.gl|goo\.gl/maps)\S*", request)
+    d["mapsLink"] = link.group(0) if link else ""
+    d["maps"] = " ".join(x for x in (str(d.get("address") or "").strip(), str(d.get("name") or "")) if x and not x.startswith("http"))
     d["colors"] = palette(d.get("colors"))
     d["shape"] = d.get("shape") if d.get("shape") in ("round", "arch", "sharp", "soft", "organic") else "round"
+    d["motion"] = d.get("motion") if d.get("motion") in ("calm", "lively", "cinematic") else "lively"
     d["features"] = [str(x)[:40] for x in d.get("features") or [] if str(x).strip()][:4]
     f = d.get("fonts") or {}
     d["fonts"] = {"display": f.get("display") if f.get("display") in FONTS_OK else "Alexandria",  # no Kufi display fonts (the owner's taste)
