@@ -114,15 +114,27 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
                 k += 1
     if not os.getenv("PEXELS_API_KEY", "").strip() and not own_rel:
         data["review"].append("مفيش صور: حط PEXELS_API_KEY في ملف .env (مجاني من pexels.com/api) أو ابعت صور المكان")
-    if "hero-frames" in data["pieces"] and not m.get("frames"):  # no footage: the photo hero instead
-        data["pieces"] = ["hero-split" if p == "hero-frames" else p for p in data["pieces"]]
-    if "gallery-track" in data["pieces"] and len(m.get("gallery") or []) < 3:
-        data["pieces"].remove("gallery-track")
-    if "invite-video" in data["pieces"] and not (m.get("video") or m.get("poster")):
-        data["pieces"].remove("invite-video")
+    swap(data)
     if credits:
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "CREDITS.md").write_text("# Photo and video credits\n\nAll from Pexels (free to use, Pexels license).\n\n" + "\n".join(credits) + "\n", encoding="utf-8")
+
+
+def swap(data: dict):
+    """A piece whose media didn't come is replaced by one that looks finished without it, so nothing shows empty."""
+    m, ps = data.get("media", {}), data["pieces"]
+    has_items = sum(bool(i.get("img")) for c in data.get("menu") or [] for i in c.get("items") or [])
+    photo = bool(m.get("heroImg"))
+    rules = {"hero-frames": m.get("frames") and "" or ("hero-split" if photo else "hero-waterline"),
+             "hero-split": "" if photo else "hero-waterline", "hero-name-photo": "" if photo else "hero-waterline",
+             "hero-card-room": "" if photo else "hero-waterline", "hero-film-title": "" if photo or m.get("video") else "hero-waterline",
+             "menu-rows": "" if has_items >= 4 else "menu-cols", "menu-tiles": "" if has_items >= 4 else "menu-cols",
+             "menu-sticky-photo": "" if photo or m.get("about") else "menu-cols"}
+    data["pieces"] = [rules.get(p) or p for p in ps]
+    for p, ok in (("gallery-track", len(m.get("gallery") or []) >= 3), ("gallery-sheet", len(m.get("gallery") or []) >= 3),
+                  ("invite-video", m.get("video") or m.get("poster"))):
+        if p in data["pieces"] and not ok:
+            data["pieces"].remove(p)
 
 
 def drop_broken(data: dict, issues: list[str]):

@@ -1,14 +1,388 @@
 {
-  "nav": {"file": "nav.js", "type": "nav", "fits": ["*"], "style": ["*"], "needs": [], "from": "Loopie Café"},
-  "hero-frames": {"file": "hero-frames.js", "type": "hero", "fits": ["restaurant", "cafe", "sweets", "bakery", "gym", "shop"], "style": ["luxury", "bold", "cinematic"],
-                  "needs": ["media.frames"], "from": "Loopie Café", "note": "scroll-played footage; needs a video"},
-  "hero-split": {"file": "sections-own.js", "type": "hero", "fits": ["*"], "style": ["simple", "modern", "playful"], "needs": ["media.heroImg"], "from": "Fluent Route"},
-  "about-say": {"file": "sections-loopie.js", "type": "about", "fits": ["*"], "style": ["*"], "needs": ["about"], "from": "Loopie Café"},
-  "menu-cols": {"file": "sections-loopie.js", "type": "menu", "fits": ["restaurant", "cafe", "sweets", "bakery", "clinic", "gym", "salon"], "style": ["*"], "needs": ["menu"], "from": "Loopie Café"},
-  "menu-rows": {"file": "sections-own.js", "type": "menu", "fits": ["restaurant", "cafe", "sweets", "bakery", "shop"], "style": ["playful", "modern"], "needs": ["menu[].items[].img"], "from": "TYT Café"},
-  "invite-video": {"file": "sections-loopie.js", "type": "cta", "fits": ["*"], "style": ["luxury", "bold", "cinematic"], "needs": ["media.video or media.poster"], "from": "Loopie Café"},
-  "gallery-track": {"file": "sections-loopie.js", "type": "gallery", "fits": ["*"], "style": ["*"], "needs": ["media.gallery (3+)"], "from": "Loopie Café"},
-  "visit": {"file": "sections-loopie.js", "type": "contact", "fits": ["*"], "style": ["*"], "needs": ["address or maps"], "from": "Loopie Café"},
-  "footer-huge": {"file": "sections-loopie.js", "type": "footer", "fits": ["*"], "style": ["*"], "needs": [], "from": "Loopie Café"},
-  "bar": {"file": "sections-loopie.js", "type": "mobile-bar", "fits": ["*"], "style": ["*"], "needs": ["whatsapp"], "from": "Loopie Café"}
+ "nav": {
+  "file": "nav.js",
+  "type": "nav",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [],
+  "from": "Loopie Café",
+  "thumb": "thumbs/nav.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-frames": {
+  "file": "hero-frames.js",
+  "type": "hero",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "gym",
+   "shop"
+  ],
+  "style": [
+   "luxury",
+   "bold",
+   "cinematic"
+  ],
+  "needs": [
+   "media.frames"
+  ],
+  "from": "Loopie Café",
+  "note": "scroll-played footage; needs a video",
+  "thumb": "thumbs/hero-frames.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-split": {
+  "file": "sections-own.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "simple",
+   "modern",
+   "playful"
+  ],
+  "needs": [
+   "media.heroImg"
+  ],
+  "from": "Fluent Route",
+  "thumb": "thumbs/hero-split.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "about-say": {
+  "file": "sections-loopie.js",
+  "type": "about",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "about"
+  ],
+  "from": "Loopie Café",
+  "thumb": "thumbs/about-say.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-cols": {
+  "file": "sections-loopie.js",
+  "type": "menu",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "clinic",
+   "gym",
+   "salon"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "menu"
+  ],
+  "from": "Loopie Café",
+  "thumb": "thumbs/menu-cols.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-rows": {
+  "file": "sections-own.js",
+  "type": "menu",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "shop"
+  ],
+  "style": [
+   "playful",
+   "modern"
+  ],
+  "needs": [
+   "menu[].items[].img"
+  ],
+  "from": "TYT Café",
+  "thumb": "thumbs/menu-rows.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "invite-video": {
+  "file": "sections-loopie.js",
+  "type": "cta",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "luxury",
+   "bold",
+   "cinematic"
+  ],
+  "needs": [
+   "media.video or media.poster"
+  ],
+  "from": "Loopie Café",
+  "thumb": "thumbs/invite-video.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "gallery-track": {
+  "file": "sections-loopie.js",
+  "type": "gallery",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "media.gallery (3+)"
+  ],
+  "from": "Loopie Café",
+  "thumb": "thumbs/gallery-track.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "visit": {
+  "file": "sections-loopie.js",
+  "type": "contact",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "address or maps"
+  ],
+  "from": "Loopie Café",
+  "thumb": "thumbs/visit.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "footer-huge": {
+  "file": "sections-loopie.js",
+  "type": "footer",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [],
+  "from": "Loopie Café",
+  "thumb": "thumbs/footer-huge.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "bar": {
+  "file": "sections-loopie.js",
+  "type": "mobile-bar",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "whatsapp"
+  ],
+  "from": "Loopie Café",
+  "thumb": "thumbs/bar.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-name-photo": {
+  "file": "sections-award.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "modern",
+   "luxury"
+  ],
+  "needs": [
+   "media.heroImg"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (name under a photograph)",
+  "thumb": "thumbs/hero-name-photo.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-film-title": {
+  "file": "sections-award.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "cinematic",
+   "luxury",
+   "heritage"
+  ],
+  "needs": [
+   "media.video or media.heroImg"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (film title on the bottom edge)",
+  "thumb": "thumbs/hero-film-title.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-card-room": {
+  "file": "sections-award.js",
+  "type": "hero",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "hotel",
+   "salon",
+   "clinic"
+  ],
+  "style": [
+   "luxury",
+   "heritage",
+   "simple"
+  ],
+  "needs": [
+   "media.heroImg"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (card over a dim room)",
+  "thumb": "thumbs/hero-card-room.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "hero-waterline": {
+  "file": "sections-award.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "playful",
+   "simple"
+  ],
+  "needs": [],
+  "from": "Weblume code after a pattern in the award-site library (headline across two fields); works with no photo",
+  "thumb": "thumbs/hero-waterline.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "marquee-band": {
+  "file": "sections-award.js",
+  "type": "band",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "playful"
+  ],
+  "needs": [
+   "menu"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (moving strip)",
+  "thumb": "thumbs/marquee-band.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "about-statement": {
+  "file": "sections-award.js",
+  "type": "about",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "simple",
+   "luxury",
+   "modern"
+  ],
+  "needs": [
+   "about"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (two-line statement, full width)",
+  "thumb": "thumbs/about-statement.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-sticky-photo": {
+  "file": "sections-award.js",
+  "type": "menu",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "salon",
+   "clinic"
+  ],
+  "style": [
+   "luxury",
+   "heritage",
+   "simple"
+  ],
+  "needs": [
+   "menu",
+   "media.about or heroImg"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (menu column beside a sticky photo)",
+  "thumb": "thumbs/menu-sticky-photo.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-tiles": {
+  "file": "sections-award.js",
+  "type": "menu",
+  "fits": [
+   "sweets",
+   "bakery",
+   "cafe",
+   "shop",
+   "restaurant"
+  ],
+  "style": [
+   "playful",
+   "modern",
+   "simple"
+  ],
+  "needs": [
+   "menu[].items[].img"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (specimen catalogue)",
+  "thumb": "thumbs/menu-tiles.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "gallery-sheet": {
+  "file": "sections-award.js",
+  "type": "gallery",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "media.gallery (3+)"
+  ],
+  "from": "Weblume code after a pattern in the award-site library (contact sheet)",
+  "thumb": "thumbs/gallery-sheet.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "steps-order": {
+  "file": "sections-award.js",
+  "type": "how",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "shop"
+  ],
+  "style": [
+   "*"
+  ],
+  "needs": [
+   "whatsapp"
+  ],
+  "from": "Weblume (order in 3 steps)",
+  "thumb": "thumbs/steps-order.webp",
+  "tested": "360/768/1280 OK"
+ }
 }

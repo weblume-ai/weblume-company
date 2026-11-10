@@ -342,4 +342,11 @@ assert _d["fonts"]["display"] == "Alexandria" and _fac._lum(_d["colors"]["ink"])
 assert [i["price"] for i in _d["menu"][0]["items"]] == ["50"]
 assert _fac.weak({"name": "x", "about": "a" * 50, "heroLines": ["x"], "menu": [{"cat": "a", "items": [{"name": "z"}] * 6}]}) == "repeated menu items"
 
+# A piece whose photos didn't come is swapped for one that looks finished without them
+from weblume.factory import media as _fm  # noqa: E402
+_s = {"pieces": ["nav", "hero-frames", "menu-tiles", "gallery-sheet", "invite-video", "visit"], "media": {}, "menu": []}
+_fm.swap(_s)
+assert _s["pieces"] == ["nav", "hero-waterline", "menu-cols", "visit"], _s["pieces"]
+assert len(_fac.MANIFEST) == 21 and all((_fac.PIECES / v["file"]).is_file() for v in _fac.MANIFEST.values())
+
 print("All rule checks passed.")

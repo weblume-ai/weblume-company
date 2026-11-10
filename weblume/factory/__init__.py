@@ -13,12 +13,38 @@ import urllib.request
 from pathlib import Path
 
 from ..config import OUTPUT_DIR, ROOT
-from .. import rules
+from .. import inspiration, rules
+
+EXAMPLES = ROOT / "knowledge" / "factory-examples"  # every build; approved ones teach the model (and later train it)
+
+
+def save_example(request: str, data: dict, folder: Path):
+    EXAMPLES.mkdir(parents=True, exist_ok=True)
+    keep = {k: data.get(k) for k in ("name", "kind", "style", "tagline", "heroLines", "lede", "about", "together", "invite", "colors", "fonts", "menu", "pieces")}
+    (EXAMPLES / f"{folder.name}.json").write_text(json.dumps({"request": request, "approved": False, "data": keep}, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def approve(name: str, ok: bool = True) -> Path:
+    """The owner liked this site: it becomes an example the model follows (and a training sample later)."""
+    f = EXAMPLES / f"{name}.json"
+    ex = json.loads(f.read_text(encoding="utf-8"))
+    ex["approved"] = ok
+    f.write_text(json.dumps(ex, ensure_ascii=False, indent=1), encoding="utf-8")
+    return f
+
+
+def examples(n: int = 2) -> str:
+    """The last approved sites, trimmed, shown to the model as the quality to match."""
+    if not EXAMPLES.exists():
+        return ""
+    good = [json.loads(f.read_text(encoding="utf-8")) for f in sorted(EXAMPLES.glob("*.json"), key=lambda f: f.stat().st_mtime)]
+    good = [g for g in good if g.get("approved")][-n:]
+    return "\n".join(json.dumps({"request": g["request"], "data": g["data"]}, ensure_ascii=False)[:1800] for g in good)
 
 HERE = Path(__file__).parent
 PIECES = HERE / "pieces"
 MANIFEST = json.loads((PIECES / "manifest.json").read_text(encoding="utf-8"))
-ORDER = ["nav", "hero", "about", "menu", "cta", "gallery", "contact", "footer", "mobile-bar"]  # a piece type's place on the page
+ORDER = ["nav", "hero", "band", "about", "menu", "how", "cta", "gallery", "contact", "footer", "mobile-bar"]  # a piece type's place on the page
 LENIS = "https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"
 SA = ["الرياض", "جدة", "جده", "الدمام", "مكة", "المدينة", "الخبر", "أبها", "الطائف", "السعودية", "riyadh", "jeddah", "saudi"]
 EG = ["القاهرة", "الاسكندرية", "الإسكندرية", "المنصورة", "الجيزة", "طنطا", "مصر", "cairo", "egypt", "alexandria"]
@@ -43,7 +69,7 @@ SCHEMA = """{
 # ------------------------------------------------------------------ plan: the local model writes the content
 def _ask_local(prompt: str) -> str:
     """Ollama on this laptop (no daily limit). FACTORY_MODEL picks the model; JSON mode keeps the answer parseable."""
-    body = {"model": os.getenv("FACTORY_MODEL", "qwen2.5-coder:7b"), "messages": [{"role": "user", "content": prompt}],
+    body = {"model": os.getenv("FACTORY_MODEL", "weblume-factory"), "messages": [{"role": "user", "content": prompt}],
             "format": "json", "stream": False, "options": {"num_ctx": 8192, "temperature": .6}}
     req = urllib.request.Request(os.getenv("OLLAMA_URL", "http://localhost:11434").rstrip("/") + "/api/chat",
                                  data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
@@ -68,6 +94,9 @@ def plan(request: str, ask=None) -> dict:
               "Prices you were not given: realistic for the country, and say so in review. Menu: 3 to 5 categories, 4 to 6 items each. "
               "Colors from the business's mood (no gold on black, no gradients). Pick pieces: exactly one nav, one hero, one menu, "
               f"visit, footer-huge and bar; add about-say, gallery-track, invite-video when they help.\n\nPIECES:\n{pieces}\n\n"
+              f"A DESIGN DIRECTION from award-winning sites for this kind of business (use its mood for colors, style and "
+              f"which pieces you pick; never copy a site):\n{inspiration.brief(request)[:1600]}\n\n"
+              + (f"APPROVED EXAMPLES OF WEBLUME SITES (match this quality and voice):\n{examples()}\n\n" if examples() else "") +
               f"Answer with ONE JSON object only, in this shape:\n{SCHEMA}")
     raw = ""
     for fn in ([ask] if ask else [_ask_local, _ask_cloud]):
@@ -147,8 +176,10 @@ def normalize(d: dict, request: str, country: str) -> dict:
         if need not in chosen:
             chosen.append(need)
     for typ, default in (("hero", "hero-frames"), ("menu", "menu-cols")):
-        same = [p for p in chosen if MANIFEST[p]["type"] == typ]
-        chosen = [p for p in chosen if MANIFEST[p]["type"] != typ] + [same[0] if same else default]
+        if not any(MANIFEST[p]["type"] == typ for p in chosen):
+            chosen.append(default)
+    kept = set()  # one piece per type: the model's first choice
+    chosen = [p for p in chosen if not (MANIFEST[p]["type"] in kept or kept.add(MANIFEST[p]["type"]))]
     d["pieces"] = sorted(chosen, key=lambda p: ORDER.index(MANIFEST[p]["type"]))
     d["review"] = review
     d["colors"] = palette(d.get("colors"))
@@ -226,6 +257,7 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print) 
         media.drop_broken(data, issues)
         assemble(data, dest)
         issues, shots = review.check(dest)
+    save_example(request, data, dest)
     zipped = shutil.make_archive(str(dest), "zip", dest)
     log("5/5 جاهز.")
     return {"name": data["name"], "folder": str(dest), "zip": zipped, "pieces": data["pieces"], "shots": shots,
