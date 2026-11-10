@@ -17,6 +17,8 @@ SKILL_DIR = KNOW / "skills"
 SKILLS = {  # who reads which playbook in knowledge/skills/ ("quality" is everyone's)
     "layla": ["quality"],
     "karim": ["quality", "design", "site-functionality", "copywriting", "quality-gate", "security"],
+    # the API art director of the site factory: briefs the local model, then fixes its work
+    "director": ["quality", "design", "copywriting", "arabic-dialect", "factory-brief", "factory-review", "factory-pieces"],
     "mostafa": ["quality", "design", "quality-gate", "security"],
     "tarek": ["quality", "quality-gate", "security"],
     "youssef": ["quality", "copywriting"],

@@ -372,4 +372,20 @@ for _bad in ("x.exe", "x.html", "x.svg"):
         pass
 assert _fm.tone.__name__ and _fac.MANIFEST["hero-showcase"]["type"] == "hero"
 
+# The API art director briefs the local model, then fixes its JSON; code keeps the facts whatever it answers
+import json  # noqa: E402
+assert "factory-review" in knowledge.SKILLS["director"] and "Skill: fix the local model" in knowledge.skills("director")
+_seen = []
+_req = "مطعم السفرة في القاهرة، واتساب 201012345678"
+assert _fac.brief(_req, ask=lambda p: _seen.append(p) or "FACTS: name السفرة") == "FACTS: name السفرة"
+assert "factory-brief" in _seen[0].lower() or "brief the local model" in _seen[0]
+_menu = [{"cat": "مشويات", "items": [{"name": f"صنف {n}", "price": "50"} for n in range(6)]}]
+_local = {"name": "السفرة", "about": "مكان للعائلة " * 5, "heroLines": ["نار وطعم"], "menu": _menu, "media_query": {"hero": "grill"}}
+_plan = _fac.plan(_req, ask=lambda p: _seen.append(p) or json.dumps(_local, ensure_ascii=False), guide="FACTS: name السفرة")
+assert "ART DIRECTOR'S BRIEF" in _seen[-1] and _plan["whatsapp"] == "201012345678"
+_fixed = _fac.fix_plan(dict(_plan, address="مدينة نصر"), _req, "FACTS: name السفرة",  # the model drops facts and adds a note
+                       ask=lambda p: json.dumps(dict(_local, about="أحلى مشويات على الفحم " * 3, review=["السعر تقديري"]), ensure_ascii=False))
+assert _fixed["whatsapp"] == "201012345678" and _fixed["address"] == "مدينة نصر" and _fixed["media_query"] == {"hero": "grill"}
+assert "السعر تقديري" in _fixed["review"] and _fixed["about"].startswith("أحلى")
+
 print("All rule checks passed.")

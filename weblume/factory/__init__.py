@@ -3,7 +3,7 @@
 
     python -m weblume.factory "اعمل موقع لمطعم مشويات اسمه السفرة في الرياض، واتساب 9665…"
 
-Steps: plan (model → data) → media (client photos, then Pexels) → assemble (pieces + data.js) → review (Playwright) → report.
+Steps: brief (API art director → instructions) → plan (local model → data) → fix (API art director checks it) → media (client photos, then Pexels) → assemble (pieces + data.js) → review (Playwright) → Tarek + art director rounds → report.
 """
 import json
 import os
@@ -88,11 +88,38 @@ def _ask_cloud(prompt: str) -> str:
     return best_llm("write").call(prompt)
 
 
-def plan(request: str, ask=None) -> dict:
-    country = "SA" if any(w in request.lower() for w in SA) else "EG" if any(w in request.lower() for w in EG) else ""
-    pieces = "\n".join(f"- {k}: {v['type']}, fits {','.join(v['fits'])}, style {','.join(v['style'])}, needs {','.join(v['needs']) or '-'}"
-                       for k, v in MANIFEST.items())
+def _country(request: str) -> str:
+    return "SA" if any(w in request.lower() for w in SA) else "EG" if any(w in request.lower() for w in EG) else ""
+
+
+def _catalog() -> str:
+    return "\n".join(f"- {k}: {v['type']}, fits {','.join(v['fits'])}, style {','.join(v['style'])}, needs {','.join(v['needs']) or '-'}"
+                     for k, v in MANIFEST.items())
+
+
+def _director() -> str:
+    """The API art director's skills (knowledge/skills, key "director") and the owner's taste, for its prompts."""
+    from .. import knowledge
+    return knowledge.skills("director") + "\n\n" + knowledge.taste(limit=2500)
+
+
+# ------------------------------------------------------------------ brief: the API model tells the local model what to do
+def brief(request: str, ask=None) -> str:
+    """The stronger API model reads the request and writes clear instructions for the local model (facts to copy
+    exactly, what's missing, dialect, idea, colours, menu plan, pieces, traps). Plain text, short."""
+    prompt = (f"You are the art director of Weblume, a web studio. A junior model on our laptop will write this client's website "
+              f"content as JSON. Write its brief, following the factory-brief skill.{_director()}\n\n"
+              f"THE CLIENT'S REQUEST:\n\"\"\"{request}\"\"\"\n\nPIECES:\n{_catalog()}\n\n"
+              "Answer with the brief only: the headings FACTS, MISSING, DIALECT, IDEA, COLOURS, MENU PLAN, PIECES, WATCH OUT, "
+              "each with short lines. No JSON, no preamble.")
+    return (ask or _ask_cloud)(prompt).strip()[:5000]
+
+
+def plan(request: str, ask=None, guide: str = "") -> dict:
+    country = _country(request)
+    pieces = _catalog()
     prompt = (f"You write the content of a website for Weblume (a web studio). The client's request:\n\"\"\"{request}\"\"\"\n\n"
+              + (f"THE ART DIRECTOR'S BRIEF (follow it exactly; it wins over the general rules below):\n{guide}\n\n" if guide else "") +
               f"Write natural Arabic in the client's dialect ({'Saudi' if country == 'SA' else 'Egyptian' if country == 'EG' else 'simple Arabic'}). "
               "Use every fact the request gives (name, menu, prices, address, WhatsApp, links). When something is missing, write a "
               "realistic placeholder and list it in \"review\". NEVER invent reviews, ratings, customer counts, awards or phone numbers. "
@@ -288,29 +315,44 @@ def load(dest: Path) -> dict:
     return json.loads((dest / "data.js").read_text(encoding="utf-8").split("=", 1)[1].strip().rstrip(";"))
 
 
-def polish(dest: Path, instruction: str, ask=None, log=print) -> dict:
-    """The API art director edits the site through its data only (texts, menu, colors, fonts, which pieces and their
-    order): the pieces' code is never touched, so an edit can't break the page. Rebuilds and re-checks it."""
-    from . import media, review
-    data = load(dest)
-    keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits", "address", "hours", "mapsLink", "order", "instagram", "tiktok") if k in data}
+def edit(data: dict, instruction: str, request: str = "", ask=None) -> dict:
+    """The API art director rewrites the content file (texts, menu, colors, fonts, pieces and their order) with its
+    skills; facts, media and the owner's review list are kept by code, whatever the model answers."""
+    keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits", "address", "hours", "mapsLink", "order", "instagram", "tiktok", "media_query") if k in data}
     nl = "\n"
-    pieces = nl.join(f"- {k}: {v['type']}, style {','.join(v['style'])}, needs {','.join(v['needs']) or '-'}" for k, v in MANIFEST.items())
-    shown = {k: v for k, v in data.items() if k not in ("media", "review")}
-    prompt = (f"You are the art director of Weblume, a web studio. This is the content file of a client's website:{nl}"
-              f"{json.dumps(shown, ensure_ascii=False)}{nl}{nl}WHAT TO CHANGE:{nl}{instruction}{nl}{nl}Rewrite the file to fix all of it. "
-              "You may change texts, the menu, colors, fonts and which pieces are used and their order. Keep the same dialect and "
-              "currency, keep every true fact, never invent reviews, ratings or phone numbers. Copy must sound like a premium "
-              f"local brand: short, warm, specific.{nl}{nl}PIECES:{nl}{pieces}{nl}{nl}Answer with the whole JSON object only, same shape.")
+    shown = {k: v for k, v in data.items() if k not in ("media", "review", "credits")}
+    prompt = (f"You are the art director of Weblume, a web studio.{_director()}{nl}{nl}"
+              + (f"THE CLIENT'S REQUEST:{nl}\"\"\"{request}\"\"\"{nl}{nl}" if request else "") +
+              f"This is the content file of the client's website:{nl}{json.dumps(shown, ensure_ascii=False)}{nl}{nl}WHAT TO CHANGE:{nl}{instruction}{nl}{nl}"
+              "Rewrite the file to fix all of it. You may change texts, the menu, colors, fonts and which pieces are used and their "
+              "order. Keep the same dialect and currency, keep every true fact, never invent reviews, ratings or phone numbers. "
+              f"Copy must sound like a premium local brand: short, warm, specific.{nl}{nl}PIECES:{nl}{_catalog()}{nl}{nl}"
+              "Answer with the whole JSON object only, same shape.")
     new = rules.extract_json((ask or _ask_cloud)(prompt))
     if weak(new):
         raise RuntimeError(f"The art director's edit was unusable: {weak(new)}")
     new.update(keep)
     new["media"] = keep_media
-    new = normalize(new, f"{data.get('name', '')} {keep.get('whatsapp', '')} {keep.get('mapsLink', '')}", keep.get("country", ""))
+    new = normalize(new, request or f"{data.get('name', '')} {keep.get('whatsapp', '')} {keep.get('mapsLink', '')}", keep.get("country", ""))
     new.update({k: keep[k] for k in ("address", "hours", "order", "instagram", "tiktok") if k in keep})
     new["maps"] = " ".join(x for x in (str(new.get("address") or ""), str(new.get("name") or "")) if x)
-    new["review"] = data.get("review", [])
+    new["review"] = list(dict.fromkeys(data.get("review", []) + [str(r) for r in new.get("review") or []]))
+    return new
+
+
+def fix_plan(data: dict, request: str, guide: str, ask=None) -> dict:
+    """After the local model finishes: the API art director checks its JSON against the request and the brief and
+    fixes the mistakes (factory-review skill), before any media is fetched."""
+    return edit(data, "The junior local model wrote this file from the brief below. Find and fix every mistake it made, "
+                      "following the factory-review skill; keep what is already right.\n\nTHE BRIEF:\n" + guide, request, ask)
+
+
+def polish(dest: Path, instruction: str, ask=None, log=print) -> dict:
+    """The API art director edits the built site through its data only: the pieces' code is never touched, so an edit
+    can't break the page. Rebuilds and re-checks it."""
+    from . import media, review
+    data = load(dest)
+    new = edit(data, instruction, ask=ask)
     media.swap(new)
     assemble(new, dest)
     issues, shots = review.check(dest)
@@ -331,41 +373,54 @@ ROUNDS = 2
 
 def build(request: str, client_photos: Path | None = None, ask=None, log=print, polisher=None) -> dict:
     from . import media, review
-    log("1/5 الموديل بيكتب محتوى الموقع…")
-    data = plan(request, ask)
+    log("1/6 المدير الفني (API) بيفهم الطلب وبيكتب تعليمات للموديل المحلي…")
+    guide = ""
+    try:
+        guide = brief(request, polisher)
+    except Exception as e:  # no internet / API limit: the local model works from the request alone, as before
+        log(f"   المدير الفني مش متاح، الموديل المحلي هيشتغل لوحده: {e}")
+    log("2/6 الموديل المحلي بيكتب محتوى الموقع…")
+    data = plan(request, ask, guide)
+    if guide:
+        log("   المدير الفني بيراجع شغل الموديل المحلي وبيصلّح أخطاءه…")
+        try:
+            data = fix_plan(data, request, guide, polisher)
+        except Exception as e:
+            log(f"   المراجعة مانفعتش، هكمل بشغل الموديل المحلي: {e}")
     dest = OUTPUT_DIR / "factory" / rules.slug(data.get("word") or data["name"], "site")
     if dest.exists():
         shutil.rmtree(dest)
-    log(f"2/5 بجيب الصور والفيديو لـ «{data['name']}»…")
+    log(f"3/6 بجيب الصور والفيديو لـ «{data['name']}»…")
     media.fill(data, dest, client_photos, log)
-    log("3/5 بركّب القطع…")
+    log("4/6 بركّب القطع…")
     assemble(data, dest)
-    log("4/5 بفتح الموقع في المتصفح وبراجعه…")
+    log("5/6 بفتح الموقع في المتصفح وبراجعه…")
     issues, shots = review.check(dest)
     if issues:  # one automatic repair round: drop what failed to load, rebuild, check again
         media.drop_broken(data, issues)
         assemble(data, dest)
         issues, shots = review.check(dest)
     verdict = None
-    for rnd in range(1, ROUNDS + 1):  # the API art director: Tarek scores it, the stronger model edits until it passes
+    for rnd in range(1, ROUNDS + 1):  # the API art director: Tarek scores it, the stronger model fixes what he and the browser found
         try:
             verdict = judge(shots, request)
+            log(f"   طارق: {verdict['score']:g}/10")
         except Exception as e:
             log(f"   طارق مقدرش يشوف الموقع: {e}")
+            verdict = None
+        if (verdict is None or verdict["verdict"] == "PASS") and not issues:
             break
-        log(f"   طارق: {verdict['score']:g}/10")
-        if verdict["verdict"] == "PASS":
-            break
-        fixes = "\n".join(f"- {p.get('where', '')}: {p.get('problem', '')} -> {p.get('fix', '')}" for p in verdict.get("problems") or [])
+        fixes = "\n".join(f"- {p.get('where', '')}: {p.get('problem', '')} -> {p.get('fix', '')}" for p in (verdict or {}).get("problems") or [])
+        fixes += "".join(f"\n- browser check: {i}" for i in issues)
         log(f"   المدير الفني بيعدّل (جولة {rnd})…")
         try:
-            out = polish(dest, f"Tarek (QA, {verdict['score']:g}/10) found:\n{fixes}", ask=polisher, log=log)
+            out = polish(dest, (f"Tarek (QA, {verdict['score']:g}/10) and the browser check found:\n" if verdict else "The browser check found:\n") + fixes.strip(), ask=polisher, log=log)
             data, issues, shots = out["data"], out["issues"], out["shots"]
         except Exception as e:
             log(f"   التعديل مانفعش: {e}")
             break
     save_example(request, data, dest)
     zipped = shutil.make_archive(str(dest), "zip", dest)
-    log("5/5 جاهز.")
+    log("6/6 جاهز.")
     return {"name": data["name"], "folder": str(dest), "zip": zipped, "pieces": data["pieces"], "shots": shots, "test": verdict,
             "issues": issues, "review": data["review"], "preview": f"http://127.0.0.1:8501/site/factory/{dest.name}/"}
