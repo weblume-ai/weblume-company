@@ -62,10 +62,22 @@ def _words(text: str) -> set:
     return {w for w in re.findall(r"[a-z]+", text.lower()) if len(w) > 2 and w not in VAGUE}
 
 
+DISHES = {"kunafa", "knafeh", "basbousa", "baklava", "qatayef", "dessert", "desserts", "pastry", "pastries", "cake", "cakes", "sweets",
+          "chocolate", "waffle", "waffles", "crepe", "pancake", "cookies", "donut", "icecream", "coffee", "espresso", "latte", "cappuccino",
+          "tea", "juice", "smoothie", "kebab", "kabab", "shawarma", "grill", "grilled", "barbecue", "bbq", "steak", "meat", "lamb", "chicken",
+          "rice", "kabsa", "mandi", "biryani", "falafel", "hummus", "bread", "pizza", "burger", "sandwich", "salad", "soup", "fish", "seafood",
+          "restaurant", "cafe", "bakery", "dish", "meal", "plate", "tajine", "tagine", "stew", "pasta", "noodles", "sushi", "dates"}
+SEASONAL = {"christmas", "xmas", "halloween", "easter", "valentine", "santa", "thanksgiving", "pumpkin"}
+
+
 def _relevant(tags: str, query: str) -> bool:
-    """A stock search engine fills a long query with anything (a scrapyard for "nutella"): a hit counts only when its
-    own tags share a real word with the query."""
-    return bool(_words(tags) & _words(query))
+    """A stock search engine fills a long query with anything (a scrapyard for "nutella", a rose for "rose water
+    qatayef"): a hit counts when its tags share a dish word with the query, or two real words; never a holiday photo."""
+    t, q = _words(tags), _words(query)
+    if t & SEASONAL and not q & SEASONAL:
+        return False
+    shared = t & q
+    return bool(shared & DISHES) or len(shared) >= 2
 
 
 def _queries(query: str) -> list[str]:

@@ -351,5 +351,6 @@ assert len(_fac.MANIFEST) == 30 and all((_fac.PIECES / v["file"]).is_file() for 
 
 # Stock media must match the search: a scrapyard is not "nutella"
 assert not _fm._relevant("scrap, metal, recycling", "warm nutella waffle dessert making process") and _fm._relevant("chocolate, dessert", "nutella dessert")
+assert not _fm._relevant("rose, flower, garden", "rose water qatayef") and not _fm._relevant("gift, christmas, sweets", "arabic sweets box")
 
 print("All rule checks passed.")

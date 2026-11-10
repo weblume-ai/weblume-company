@@ -2,7 +2,7 @@
    data: media.frames = {d: "assets/frames-d/", m: "assets/frames-m/", n: 120}; heroLines, lede, caps (optional). */
 (window.PIECES = window.PIECES || {})["hero-frames"] = {
   css: ".hf{height:420vh}.hf .stage{background:var(--ink)}.hf canvas{position:absolute;inset:0;width:100%;height:100%}" +
-    ".hf .scrim{position:absolute;inset:0;background:#000;opacity:.35}" +
+    ".hf .scrim{position:absolute;inset:0;background:#000;opacity:.48}.hf .hero{text-shadow:0 2px 24px #000a}" +
     ".hf .hero{position:absolute;inset-inline:var(--gut);top:calc(var(--nav) + 8vh);max-width:min(56vw,860px);z-index:2}" +
     ".hf h1{font-size:clamp(38px,5.4vw,96px)}.hf h1 span{display:block}" +
     ".hf .hero p{font-size:var(--lead);line-height:1.4;margin-top:clamp(18px,3vh,32px);max-width:26em}" +
