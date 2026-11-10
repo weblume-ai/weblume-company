@@ -218,7 +218,7 @@ def normalize(d: dict, request: str, country: str) -> dict:
     d["review"] = review
     arabic = lambda s: bool(re.search(r"[؀-ۿ]", str(s)))
     d["caps"] = [c for c in d.get("caps") or [] if arabic(c)]  # an Arabic site: no English words over the footage
-    d["heroLines"] = [h for h in d.get("heroLines") or [] if arabic(h)] or d.get("heroLines")
+    d["heroLines"] = [" ".join(str(h).split()[:5]) for h in ([h for h in d.get("heroLines") or [] if arabic(h)] or d.get("heroLines") or [])][:3]
     # the map searches words, never a link (a link shows the whole world): the address, then the name to pin it
     link = re.search(r"https?://(?:www\.)?(?:google\.[a-z.]+/maps|maps\.app\.goo\.gl|goo\.gl/maps)\S*", request)
     d["mapsLink"] = link.group(0) if link else ""
@@ -293,7 +293,7 @@ def polish(dest: Path, instruction: str, ask=None, log=print) -> dict:
     order): the pieces' code is never touched, so an edit can't break the page. Rebuilds and re-checks it."""
     from . import media, review
     data = load(dest)
-    keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits") if k in data}
+    keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits", "address", "hours", "mapsLink", "order", "instagram", "tiktok") if k in data}
     nl = "\n"
     pieces = nl.join(f"- {k}: {v['type']}, style {','.join(v['style'])}, needs {','.join(v['needs']) or '-'}" for k, v in MANIFEST.items())
     shown = {k: v for k, v in data.items() if k not in ("media", "review")}
@@ -307,7 +307,9 @@ def polish(dest: Path, instruction: str, ask=None, log=print) -> dict:
         raise RuntimeError(f"The art director's edit was unusable: {weak(new)}")
     new.update(keep)
     new["media"] = keep_media
-    new = normalize(new, f"{data.get('name', '')} {keep.get('whatsapp', '')}", keep.get("country", ""))
+    new = normalize(new, f"{data.get('name', '')} {keep.get('whatsapp', '')} {keep.get('mapsLink', '')}", keep.get("country", ""))
+    new.update({k: keep[k] for k in ("address", "hours", "order", "instagram", "tiktok") if k in keep})
+    new["maps"] = " ".join(x for x in (str(new.get("address") or ""), str(new.get("name") or "")) if x)
     new["review"] = data.get("review", [])
     media.swap(new)
     assemble(new, dest)

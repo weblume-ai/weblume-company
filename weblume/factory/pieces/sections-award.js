@@ -19,7 +19,7 @@
     css: ".hft{position:relative;height:calc(100svh - var(--nav));overflow:hidden;background:var(--surface)}.hft video,.hft img{position:absolute;inset:0}" +
       ".hft .shade{position:absolute;inset:auto 0 0;height:55%;background:linear-gradient(transparent,rgba(0,0,0,.72))}" +
       ".hft .txt{position:absolute;inset-inline:var(--gut);bottom:clamp(20px,6vh,56px);display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px}" +
-      ".hft h1{font-size:clamp(40px,7vw,120px)}.hft h1 span{display:block}.hft p{max-width:22em;font-size:var(--lead);line-height:1.35}",
+      ".hft h1{font-size:clamp(36px,5.6vw,96px);line-height:1.18;max-width:14em;text-shadow:0 2px 24px #000a}.hft h1 span{display:block}.hft p{max-width:22em;font-size:var(--lead);line-height:1.35}",
     render: function (S, t) {
       var m = S.media || {}, media = m.video ? '<video autoplay muted loop playsinline poster="' + SITEKIT.esc(m.poster || m.heroImg || "") + '" aria-hidden="true"><source src="' +
         SITEKIT.esc(m.video) + '" type="video/mp4"></video>' : img(m.heroImg, S.name);

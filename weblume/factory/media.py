@@ -62,12 +62,13 @@ def _words(text: str) -> set:
     return {w for w in re.findall(r"[a-z]+", text.lower()) if len(w) > 2 and w not in VAGUE}
 
 
-DISHES = {"kunafa", "knafeh", "basbousa", "baklava", "qatayef", "dessert", "desserts", "pastry", "pastries", "cake", "cakes", "sweets",
+DISHES = {"kunafa", "knafeh", "kunefe", "kadayif", "basbousa", "revani", "baklava", "qatayef", "katayef", "dessert", "desserts", "pastry", "pastries", "cake", "cakes",
           "chocolate", "waffle", "waffles", "crepe", "pancake", "cookies", "donut", "icecream", "coffee", "espresso", "latte", "cappuccino",
           "tea", "juice", "smoothie", "kebab", "kabab", "shawarma", "grill", "grilled", "barbecue", "bbq", "steak", "meat", "lamb", "chicken",
           "rice", "kabsa", "mandi", "biryani", "falafel", "hummus", "bread", "pizza", "burger", "sandwich", "salad", "soup", "fish", "seafood",
           "restaurant", "cafe", "bakery", "dish", "meal", "plate", "tajine", "tagine", "stew", "pasta", "noodles", "sushi", "dates"}
-SEASONAL = {"christmas", "xmas", "halloween", "easter", "valentine", "santa", "thanksgiving", "pumpkin"}
+SEASONAL = {"christmas", "xmas", "halloween", "easter", "valentine", "santa", "thanksgiving", "pumpkin",
+            "candy", "candies", "gummy", "gummies", "lollipop", "jelly", "marshmallow"}  # off-topic unless asked for
 
 
 def _relevant(tags: str, query: str) -> bool:
@@ -76,14 +77,20 @@ def _relevant(tags: str, query: str) -> bool:
     t, q = _words(tags), _words(query)
     if t & SEASONAL and not q & SEASONAL:
         return False
+    q |= {w for k, v in ALIASES.items() if k in query.lower() for w in v.split()}  # künefe counts for kunafa
     shared = t & q
     return bool(shared & DISHES) or len(shared) >= 2
 
 
+ALIASES = {"kunafa": "kunefe", "knafeh": "kunefe", "kunafeh": "kunefe", "qatayef": "katayef pancake", "basbousa": "revani semolina cake",
+           "mandi": "rice lamb", "kabsa": "rice chicken spices", "luqaimat": "fried dough balls honey", "umm ali": "bread pudding"}
+
+
 def _queries(query: str) -> list[str]:
-    """The model's query, then its first three real words: long queries find less and worse."""
+    """The model's query, its first three real words, then the name stock libraries use (kunafa = künefe)."""
     short = " ".join([w for w in query.lower().split() if w in _words(query)][:3])
-    return list(dict.fromkeys(q for q in (query[:100], short) if q))
+    alias = next((v for k, v in ALIASES.items() if k in query.lower()), "")
+    return list(dict.fromkeys(q for q in (query[:100], short, alias) if q))
 
 
 def _find_photo(query: str, n: int = 0) -> tuple[str, str]:
@@ -199,7 +206,9 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
     m.update(footage(topic(q.get("video", "")), dest, credits, log))
     pick = lambda i, query, name: own_rel[i] if i < len(own_rel) else photo(topic(query), dest / "assets" / "img" / f"{name}.webp", dest, credits)
     # the place's own footage beats a stock photo found by keywords: its still frame is the hero photo
-    m["heroImg"] = own_rel[0] if own_rel else m.get("poster") or pick(0, q.get("hero", ""), "hero")
+    first = next((i for c in data.get("menu") or [] for i in c.get("items") or [] if i.get("photo")), None)
+    dish = photo(first["photo"], dest / "assets" / "img" / "hero.webp", dest, credits) if first and not own_rel and not m.get("poster") else ""
+    m["heroImg"] = own_rel[0] if own_rel else m.get("poster") or dish or pick(0, q.get("hero", ""), "hero")
     about = pick(1, q.get("about", ""), "about")
     if about:
         m["about"] = {"src": about, "alt": data.get("name", "")}
@@ -212,7 +221,8 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
                 it["img"] = photo(it["photo"], dest / "assets" / "img" / f"item-{k + 1}.webp", dest, credits)
                 k += 1
     if not m.get("frames"):
-        data["review"].append("مفيش فيديو للهيرو: حط PIXABAY_API_KEY في ملف .env (مجاني من pixabay.com/api/docs) أو ابعت فيديو للمكان")
+        data["review"].append("مالقيتش فيديو مناسب للنشاط ده في المكتبات المجانية: ابعت فيديو قصير للمكان أو للأكل" if _key("PIXABAY_API_KEY") or _key("PEXELS_API_KEY")
+                              else "مفيش فيديو للهيرو: حط PIXABAY_API_KEY في ملف .env (مجاني من pixabay.com/api/docs) أو ابعت فيديو للمكان")
     swap(data)
     if credits:
         data["credits"] = "CREDITS.md"  # the footer links it: CC BY photos need visible credit
