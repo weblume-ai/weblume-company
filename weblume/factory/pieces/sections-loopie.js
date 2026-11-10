@@ -80,19 +80,21 @@
       addEventListener("scroll", function () { requestAnimationFrame(tick); }, {passive: true}); addEventListener("resize", tick); tick();
     }
   };
-  P.visit = { // address, today's hours, map, WhatsApp and directions
+  P.visit = { // address, hours, WhatsApp and directions, beside a photo of the place (never an embedded map: the owner's rule)
     css: ".visit{background:var(--paper);color:var(--ink);padding:clamp(72px,10vw,160px) var(--gut);display:grid;gap:40px;align-items:center}" +
       ".addr{font:800 var(--lead)/1.3 var(--display);margin-top:18px;max-width:20em}.days{width:100%;max-width:360px;border-collapse:collapse;margin-top:14px}.days td{padding:3px 0}.days td:last-child{text-align:end}" +
       ".visit .acts{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}.visit .btn.o{color:var(--ink)}" +
-      ".map{aspect-ratio:4/3;width:100%;border:0;border-radius:var(--r-card);background:#ddd}@media (min-width:860px){.visit{grid-template-columns:1fr 1fr;gap:64px}}",
+      ".visit figure{margin:0;aspect-ratio:4/3;border-radius:var(--r-card);overflow:hidden;background:var(--surface)}.visit figure img{width:100%;height:100%;object-fit:cover;display:block}" +
+      "@media (min-width:860px){.visit:has(figure){grid-template-columns:1fr 1fr;gap:64px}}",
     render: function (S, t) {
-      var K = SITEKIT, q = encodeURIComponent(S.maps || S.address || S.name);
+      var K = SITEKIT, q = encodeURIComponent(S.maps || S.address || S.name), m = S.media || {}, g = m.gallery || [];
+      var ph = g.length > 1 ? g[g.length - 1] : g[0] || (m.heroImg ? {src: m.heroImg, alt: S.name} : null);
       return '<section class="visit" id="visit"><div><h2 class="rise">' + t.visit + "</h2>" + (S.address ? '<p class="addr rise" style="--i:1">' + K.esc(S.address) + "</p>" : "") +
         (S.hours && S.hours.length ? '<table class="days rise" style="--i:2"><caption class="sr" style="position:absolute;left:-9999px">' + t.hours + "</caption>" +
           S.hours.map(function (h) { return "<tr><td>" + K.esc(h[0]) + "</td><td>" + K.esc(h[1]) + "</td></tr>"; }).join("") + "</table>" : "") +
         '<div class="acts rise" style="--i:3"><a class="btn a" href="' + K.wa("أهلاً، عايز أحجز / أطلب") + '" target="_blank" rel="noopener noreferrer">' + t.wa + "</a>" +
         '<a class="btn o" href="' + (S.mapsLink ? K.esc(S.mapsLink) : 'https://www.google.com/maps/search/?api=1&query=' + q) + '" target="_blank" rel="noopener noreferrer">' + t.directions + "</a></div></div>" +
-        '<iframe class="map rise" title="' + t.maps + '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=' + q + '&z=15&output=embed"></iframe></section>';
+        (ph ? '<figure class="rise"><img src="' + K.esc(ph.src) + '" alt="' + K.esc(ph.alt || S.name) + '" loading="lazy"></figure>' : "") + "</section>";
     }
   };
   P["footer-huge"] = { // the brand word as big as the screen, links and the Weblume credit

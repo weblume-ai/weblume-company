@@ -364,7 +364,7 @@ def judge(shots: list[str], request: str) -> dict:
     """Tarek looks at the screenshots (vision model): a score and the most important problems."""
     from .. import tester
     notes = ("This site is assembled from Weblume's tested pieces: judge the design, copy, photos and colors, not the code. "
-             "The hero plays footage with the scroll, so a frame may look blurred mid-motion; pinned sections are caught mid-animation (a clip still small, a row mid-slide); the Google map iframe often shows grey in automated screenshots but loads for visitors. None of these are problems.")
+             "The hero plays footage with the scroll, so a frame may look blurred mid-motion; pinned sections are caught mid-animation (a clip still small, a row mid-slide). None of these are problems.")
     return tester.judge([Path(s) for s in shots if "desktop" in s or "phone" in s][:8], request, notes)
 
 

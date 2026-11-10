@@ -43,7 +43,6 @@ def main():
         data = dict(DEMO, pieces=[pid])
         assemble(data, dest)
         issues, shots = review.check(dest)
-        issues = [i for i in issues if not i.startswith("MAP") or pid == "visit"]  # the map check is only for the visit piece
         if issues:
             bad[pid] = issues
         desk = next((s for s in shots if "desktop_0" in s), None)

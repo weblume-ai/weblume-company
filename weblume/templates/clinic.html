@@ -64,8 +64,7 @@ details{background:var(--card);border:1px solid var(--line);border-radius:16px;p
 summary{cursor:pointer;font-weight:700;list-style:none}summary::-webkit-details-marker{display:none}
 summary::after{content:"+";float:inline-end;color:var(--accent);font-size:1.3rem;transition:transform .3s}
 details[open] summary::after{transform:rotate(45deg)}
-.visit{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center}
-.map{border:0;width:100%;min-height:340px;border-radius:var(--radius)}
+.visit{display:grid;gap:2rem;align-items:center}
 @media (max-width:860px){.visit{grid-template-columns:1fr}}
 footer{border-top:1px solid var(--line);padding:2rem 0;text-align:center;color:var(--muted)}
 .wa-float{position:fixed;inset:auto auto 20px 20px;z-index:60;width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;display:grid;place-items:center;font-size:1.6rem;box-shadow:0 12px 30px #0003;text-decoration:none}
@@ -168,8 +167,8 @@ footer{border-top:1px solid var(--line);padding:2rem 0;text-align:center;color:v
       <h2 data-en="Easy to reach">سهل توصلنا</h2>
       <p data-en="Street, area, city · Sat–Thu 10:00–22:00">الشارع، المنطقة، المدينة · السبت–الخميس 10:00–22:00</p>
       <a class="btn magnetic" href="#" data-wa-msg="أهلاً، عندي سؤال" data-en="Ask on WhatsApp">اسأل على واتساب</a>
+      <a class="btn" href="https://www.google.com/maps/search/?api=1&query=Cairo" target="_blank" rel="noopener noreferrer" data-en="Directions">الاتجاهات</a>
     </div>
-    <iframe class="map reveal from-left" loading="lazy" title="Map" src="https://www.google.com/maps?q=Cairo&output=embed"></iframe>
   </div>
 </section>
 </main>

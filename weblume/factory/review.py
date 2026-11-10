@@ -47,8 +47,8 @@ def check(site: Path) -> tuple[list[str], list[str]]:
                 bad_wa = pg.evaluate("[...document.querySelectorAll('a[href*=\"wa.me\"]')].filter(a => !/wa\\.me\\/\\d{10,15}/.test(a.href)).length")
                 if bad_wa:
                     issues.append(f"WHATSAPP {name}: {bad_wa} link(s) without a valid number")
-                if pg.evaluate("!!document.querySelector('#visit') && !document.querySelector('iframe.map')"):
-                    issues.append(f"MAP {name}: the visit section has no map")
+                if pg.evaluate("!!document.querySelector('iframe[src*=\"google.com/maps\"], iframe[src*=\"maps.google\"]')"):
+                    issues.append(f"MAP {name}: an embedded Google map is on the page; the owner never wants one (use the directions button)")
                 issues += [f"CONSOLE {name}: {e[:200]}" for e in dict.fromkeys(errs)]
                 pg.close()
             b.close()
