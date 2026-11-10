@@ -1,0 +1,14 @@
+{
+  "nav": {"file": "nav.js", "type": "nav", "fits": ["*"], "style": ["*"], "needs": [], "from": "Loopie Café"},
+  "hero-frames": {"file": "hero-frames.js", "type": "hero", "fits": ["restaurant", "cafe", "sweets", "bakery", "gym", "shop"], "style": ["luxury", "bold", "cinematic"],
+                  "needs": ["media.frames"], "from": "Loopie Café", "note": "scroll-played footage; needs a video"},
+  "hero-split": {"file": "sections-own.js", "type": "hero", "fits": ["*"], "style": ["simple", "modern", "playful"], "needs": ["media.heroImg"], "from": "Fluent Route"},
+  "about-say": {"file": "sections-loopie.js", "type": "about", "fits": ["*"], "style": ["*"], "needs": ["about"], "from": "Loopie Café"},
+  "menu-cols": {"file": "sections-loopie.js", "type": "menu", "fits": ["restaurant", "cafe", "sweets", "bakery", "clinic", "gym", "salon"], "style": ["*"], "needs": ["menu"], "from": "Loopie Café"},
+  "menu-rows": {"file": "sections-own.js", "type": "menu", "fits": ["restaurant", "cafe", "sweets", "bakery", "shop"], "style": ["playful", "modern"], "needs": ["menu[].items[].img"], "from": "TYT Café"},
+  "invite-video": {"file": "sections-loopie.js", "type": "cta", "fits": ["*"], "style": ["luxury", "bold", "cinematic"], "needs": ["media.video or media.poster"], "from": "Loopie Café"},
+  "gallery-track": {"file": "sections-loopie.js", "type": "gallery", "fits": ["*"], "style": ["*"], "needs": ["media.gallery (3+)"], "from": "Loopie Café"},
+  "visit": {"file": "sections-loopie.js", "type": "contact", "fits": ["*"], "style": ["*"], "needs": ["address or maps"], "from": "Loopie Café"},
+  "footer-huge": {"file": "sections-loopie.js", "type": "footer", "fits": ["*"], "style": ["*"], "needs": [], "from": "Loopie Café"},
+  "bar": {"file": "sections-loopie.js", "type": "mobile-bar", "fits": ["*"], "style": ["*"], "needs": ["whatsapp"], "from": "Loopie Café"}
+}

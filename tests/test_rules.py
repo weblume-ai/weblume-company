@@ -330,4 +330,16 @@ assert rules.extract_json('window.CAFE = {name: "قهوة", menu: [{name: "x", p
 from weblume import research  # noqa: E402
 assert not research._public("http://127.0.0.1:8501") and not research._public("http://192.168.1.1") and not research._public("file:///c:/x")
 
+# Site factory: the code fixes what the model gets wrong
+from weblume import factory as _fac  # noqa: E402
+_d = _fac.normalize({"name": "س", "pieces": ["hero-frames", "hero-split", "bogus", "menu-cols"], "colors": {"ink": "#eee", "surface": "#f0f0f0"},
+                     "fonts": {"display": "Reem Kufi"}, "about": "اتصل 0501234567 الآن",
+                     "menu": [{"cat": "أ", "items": [{"name": "كباب", "price": "50 ريال"}, {"name": "كباب", "price": "٦٠"}]}]},
+                    "مطعم في الرياض واتساب 966501234567", "SA")
+assert _d["pieces"][0] == "nav" and sum(_fac.MANIFEST[p]["type"] == "hero" for p in _d["pieces"]) == 1 and "bogus" not in _d["pieces"]
+assert _d["currency"] == "ر.س" and _d["whatsapp"] == "966501234567" and "0501234567" not in _d["about"]
+assert _d["fonts"]["display"] == "Alexandria" and _fac._lum(_d["colors"]["ink"]) < .06 and _fac._contrast(_d["colors"]["paper"], _d["colors"]["surface"]) >= 7
+assert [i["price"] for i in _d["menu"][0]["items"]] == ["50"]
+assert _fac.weak({"name": "x", "about": "a" * 50, "heroLines": ["x"], "menu": [{"cat": "a", "items": [{"name": "z"}] * 6}]}) == "repeated menu items"
+
 print("All rule checks passed.")

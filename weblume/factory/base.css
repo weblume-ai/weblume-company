@@ -1,0 +1,27 @@
+/* Shared by every piece: tokens come from data.js through runtime.js (--ink, --paper, --accent, --muted, --surface). */
+:root{--gut:clamp(16px,3.4vw,56px);--nav:64px;--small:14px;--body:clamp(16px,1.2vw,18px);--lead:clamp(22px,2.3vw,34px);
+  --head:clamp(44px,6.6vw,108px);--giant:clamp(72px,14vw,220px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:var(--nav)}
+body{background:var(--ink);color:var(--paper);font:400 var(--body)/1.6 var(--text);-webkit-font-smoothing:antialiased;overflow-x:clip}
+a{color:inherit;text-decoration:none}
+img,video{display:block;width:100%;height:100%;object-fit:cover}
+ul{list-style:none}
+h1,h2,h3{font-family:var(--display);font-weight:800;line-height:1.12}
+h1,h2{font-size:var(--head)}
+html[dir=ltr] h1,html[dir=ltr] h2{letter-spacing:-.03em}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 28px;border-radius:999px;font:700 var(--body) var(--text);border:0;cursor:pointer;transition:transform .2s,background .2s,color .2s}
+.btn:hover{transform:translateY(-2px)}.btn:active{transform:scale(.97)}
+.btn.a{background:var(--accent);color:var(--on-accent)}.btn.a:hover{background:var(--paper);color:var(--ink)}
+.btn.w{background:var(--paper);color:var(--ink)}.btn.w:hover{background:var(--accent);color:var(--on-accent)}
+.btn.o{background:none;color:inherit;box-shadow:inset 0 0 0 2px currentColor}
+.pin{position:relative}
+.stage{position:sticky;top:0;height:100svh;overflow:hidden}
+.loop{border-radius:999px;overflow:hidden}
+.disc{border-radius:50%;overflow:hidden}
+@media (prefers-reduced-motion:no-preference){
+  .js .rise{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i,0)*80ms)}
+  .js .rise.in{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
