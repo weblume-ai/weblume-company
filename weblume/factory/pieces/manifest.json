@@ -662,5 +662,96 @@
   "from": "Weblume code after a figurine-carousel design idea Asser shared (idea only, no prompt text or assets)",
   "thumb": "thumbs/hero-stage.webp",
   "tested": "360/768/1280 OK"
+ },
+ "features-glow": {
+  "file": "sections-uiverse.js",
+  "type": "features",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "modern",
+   "playful"
+  ],
+  "needs": [
+   "features (2+)"
+  ],
+  "from": "Uiverse.io 'swift-bullfrog-34' by SelfMadeSystem (MIT), reworked by Weblume into a section",
+  "thumb": "thumbs/features-glow.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "menu-iso": {
+  "file": "sections-uiverse.js",
+  "type": "menu",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "shop"
+  ],
+  "style": [
+   "playful",
+   "bold",
+   "modern"
+  ],
+  "needs": [
+   "menu[].items[].img (4+)"
+  ],
+  "from": "Uiverse.io 'popular-walrus-75' by JaydipPrajapati1910 (MIT), reworked by Weblume into a section",
+  "thumb": "thumbs/menu-iso.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "band-stripes": {
+  "file": "sections-uiverse.js",
+  "type": "band",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "playful",
+   "bold"
+  ],
+  "needs": [
+   "caps or features"
+  ],
+  "from": "Uiverse.io 'afraid-sheep-52' by jeremyssocial (MIT), reworked by Weblume into a section",
+  "thumb": "thumbs/band-stripes.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "about-bubbles": {
+  "file": "sections-uiverse.js",
+  "type": "about",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "playful",
+   "modern",
+   "luxury"
+  ],
+  "needs": [
+   "about"
+  ],
+  "from": "Uiverse.io 'lovely-monkey-46' by csemszepp (MIT), reworked by Weblume into a section",
+  "thumb": "thumbs/about-bubbles.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "cta-glow": {
+  "file": "sections-uiverse.js",
+  "type": "cta",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "modern",
+   "luxury"
+  ],
+  "needs": [],
+  "from": "Uiverse.io 'rare-rattlesnake-22' by Aryan-81 (MIT), reworked by Weblume into a section",
+  "thumb": "thumbs/cta-glow.webp",
+  "tested": "360/768/1280 OK"
  }
 }
