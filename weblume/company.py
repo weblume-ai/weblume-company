@@ -209,7 +209,10 @@ NAME_AND_LOGO = ("If the request gives no business name, choose a short, memorab
 
 def karim_brief(kind: str, goal: str = "") -> str:
     """What Karim is told to produce for this template, starting with the owner's saved taste."""
-    ideas = ("\n\nDESIGN IDEAS FOR THIS SITE (adapt them to this business and its real photos; never copy a site):\n"
+    ideas = ("\n\nKEEP EVERY SECTION of the template (hero, about, menu/offer, photo strip, visit/contact) and fill each one "
+             "with real content: a site with only a headline and a list looks unfinished. Every menu item / product keeps its "
+             ".ph photo box with an English data-photo naming exactly that dish or product. Give the menu 2-4 groups with "
+             "4-6 items each.\n\nDESIGN IDEAS FOR THIS SITE (adapt them to this business and its real photos; never copy a site):\n"
              + inspiration.brief(goal, kind)) if kind == "fresh" and goal else ""
     return (knowledge.taste("site") + "\n\n" if knowledge.taste("site") else "") + _karim_brief(kind) + "\n\n" + NAME_AND_LOGO + ideas
 
