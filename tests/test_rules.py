@@ -318,4 +318,9 @@ _fake = lambda prompt, out, w, h: (out.parent.mkdir(parents=True, exist_ok=True)
 _html, _n = templates.fill_photos(templates.load("fresh"), _d, "مطعم", make=_fake)
 assert _n == _html.count('src="img/photo-') == 8 and (_d / "img" / "photo-1.jpg").is_file()
 
+# "I want a site" starts work, it is never just talked about
+for _w in ["يلا انا عايز موقع مطعم احترافي", "اعمل الموقع بس اجرببه الاول", "محتاج ويب لعيادة"]:
+    assert _co.wants_new_site(_w), _w
+assert not _co.wants_new_site("ازاي أربط دومين؟")
+
 print("All rule checks passed.")

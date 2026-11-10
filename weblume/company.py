@@ -677,10 +677,16 @@ def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
         if mode == "advice":  # the owner asked a question: Layla answers from the playbook, about anything
             run.set_agent("layla", "working")
             ans = advise(run.status["goal"])
-            run.say("layla", "you", ans, full=True)
-            run.set_agent("layla", "done", ans)
-            run.status["state"] = "done"
-            return
+            task = re.match(r"\W*START:\s*(.+)", ans, re.S)
+            if not task:
+                run.say("layla", "you", ans, full=True)
+                run.set_agent("layla", "done", ans)
+                run.status["state"] = "done"
+                return
+            # he asked for work, not advice: the same run becomes a whole-company job on it
+            run.status.update(goal=task.group(1).strip(), mode="whole")
+            run.say("layla", "you", "تمام، الفريق بدأ دلوقتي: " + run.status["goal"], full=True)
+            mode = "whole"
         config.on_switch = lambda msg: run.log("system", msg)
         goal, client, names = run.status["goal"], run.status["client"], run.status["names"]
         agents = {k: make_agent(k, get_llm(JOB.get(k, "write"))) for k in ["layla", *ORDER]}
@@ -808,10 +814,14 @@ def is_question(text: str) -> bool:
 
 def advise(text: str) -> str:
     """Layla's short answer to the owner, from the playbook and his rules. About anything, not only websites."""
-    q = Task(description=f"The owner (Asser) writes to you:\n\"\"\"{text}\"\"\"\n\nAnswer him in Egyptian Arabic, short "
-                         "and practical: the answer first, then at most 5 numbered steps if steps help. Help with anything "
-                         "(clients, prices, marketing, tech, business), not only websites. Use the playbook and his rules "
-                         "below; if you don't know something, say so instead of guessing.\n\n"
+    q = Task(description=f"The owner (Asser) writes to you:\n\"\"\"{text}\"\"\"\n\nYou run the team. If he is asking the team "
+                         "to MAKE or DO something (a website, a video, posts, client messages, a price offer…), do not describe "
+                         "a plan and do not promise anything: reply with exactly one line `START: <the task, with every detail "
+                         "he gave>` and nothing else; the team starts on it right away.\nOtherwise answer him in Egyptian "
+                         "Arabic, short and practical: the answer first, then at most 5 numbered steps if steps help. Help with "
+                         "anything (clients, prices, marketing, tech, business), not only websites. Never claim the team did "
+                         "or will do something it can't (staging servers, buying domains, payments). Use the playbook and his "
+                         "rules below; if you don't know something, say so instead of guessing.\n\n"
                          f"PLAYBOOK:\n{knowledge.playbook()}\n\n{knowledge.taste()}",
              expected_output="A short answer in Egyptian Arabic.", agent=make_agent("layla", get_llm()), context=[])
     Crew(agents=[q.agent], tasks=[q], verbose=False).kickoff()
@@ -822,12 +832,16 @@ EDIT = re.compile(r"عد[ّ]?ل|غي[ّ]?ر|صل[ّ]?ح|ضيف|زو[ّ]?د|شي�
 
 
 def wants_new_site(text: str) -> bool:
-    return wants_website(text) or bool(re.match(r"\s*(اعمل|اعملي|ابني|ابنيلي|صمم|صمملي)\s*(لي\s*)?(موقع|ويب|صفحة|سايت)", text))
+    return wants_website(text) or bool(re.search(
+        r"(عايز|عاوز|محتاج|اعمل|اعملي|ابني|ابنيلي|صمم|صمملي|نفذ|ابدأ|ابدا)\W*(\w+\W+){0,3}?(ال)?(موقع|ويب|صفحة|سايت|website|site)", text, re.I))
 
 
 def _answer_during_run(run: "Run", text: str):
     try:
-        run.say("layla", "you", advise(text), full=True)
+        ans = advise(text)
+        task = re.match(r"\W*START:\s*(.+)", ans, re.S)
+        run.say("layla", "you", f"الفريق شغال دلوقتي على حاجة تانية. ابعتلي «{task.group(1).strip()}» تاني أول ما يخلصوا وهنبدأ عليها."
+                if task else ans, full=True)
     except Exception as e:  # her answer failing must never touch the team's work
         run.log("system", f"Layla couldn't answer during the run: {e}")
 
