@@ -1,5 +1,6 @@
 """Real photos and footage for a factory site, all free for commercial use: the client's own photos first, then
-Pexels (PEXELS_API_KEY), Pixabay (PIXABAY_API_KEY, photos and videos) and Openverse (photos, no key, commercial
+Unsplash (UNSPLASH_ACCESS_KEY, photos, shown from Unsplash's servers as their API requires), Pexels (PEXELS_API_KEY),
+Pixabay (PIXABAY_API_KEY, photos and videos, Editor's Choice first) and Openverse (photos, no key, commercial
 licenses only). A video becomes WebP frames for the scroll hero, like Loopie (desktop + phone crops).
 Every downloaded file is credited in CREDITS.md inside the site."""
 import json
@@ -94,9 +95,41 @@ def _queries(query: str) -> list[str]:
     return list(dict.fromkeys(q for q in (query[:100], short, alias) if q))
 
 
+UTM = "utm_source=weblume&utm_medium=referral"
+
+
+def _unsplash(query: str, n: int) -> tuple[str, str]:
+    """(hotlink url, credit) from Unsplash. Their API terms: show the photo from their URL (never re-host it), report
+    the use to download_location, and credit the photographer and Unsplash with links."""
+    q, key = urllib.parse.urlencode, _key("UNSPLASH_ACCESS_KEY")
+    get = lambda url: json.loads(urllib.request.urlopen(urllib.request.Request(url, headers={"Authorization": f"Client-ID {key}",
+                                                                                              "Accept-Version": "v1"}), timeout=30).read())
+    for qq in _queries(query):
+        res = get("https://api.unsplash.com/search/photos?" + q({"query": qq, "per_page": 20, "orientation": "landscape", "content_filter": "high"}))["results"]
+        hits = [r for r in res if (r.get("width") or 0) >= 1600 and _relevant(" ".join([r.get("alt_description") or "", r.get("description") or ""]
+                                                                                       + [t.get("title", "") for t in r.get("tags") or []]), query)]
+        if len(hits) > n:
+            r = hits[n]
+            try:
+                get(r["links"]["download_location"])  # counts as a use, as their guidelines ask
+            except Exception:
+                pass
+            user = r["user"]
+            return (r["urls"]["raw"] + "&w=1600&q=80&fm=webp&fit=max",
+                    f"photo by {user['name']} ({user['links']['html']}?{UTM}) on Unsplash (https://unsplash.com/?{UTM})")
+    return "", ""
+
+
 def _find_photo(query: str, n: int = 0) -> tuple[str, str]:
     """(image url, credit line) from the first source that has one, or ('', '')."""
     q = urllib.parse.urlencode
+    if _key("UNSPLASH_ACCESS_KEY"):
+        try:
+            found = _unsplash(query, n)
+            if found[0]:
+                return found
+        except Exception:  # no key, rate limit (50 an hour on a new key) or offline: the next source
+            pass
     if _key("PEXELS_API_KEY"):
         try:
             ph = _pexels("/v1/search?" + q({"query": query, "per_page": n + 1, "orientation": "landscape"}))["photos"][n]
@@ -105,12 +138,14 @@ def _find_photo(query: str, n: int = 0) -> tuple[str, str]:
             pass
     if _key("PIXABAY_API_KEY"):
         try:
-            for qq in _queries(query):
-                hits = [h for h in _get_json("https://pixabay.com/api/?" + q({"key": _key("PIXABAY_API_KEY"), "q": qq, "image_type": "photo",
-                                                                            "orientation": "horizontal", "safesearch": "true", "per_page": 20}))["hits"]
-                        if _relevant(h.get("tags", ""), query)]
-                if len(hits) > n:
-                    return hits[n]["largeImageURL"], f"photo by {hits[n]['user']} on Pixabay ({hits[n]['pageURL']})"
+            for best in ("true", "false"):  # Editor's Choice = hand-picked by Pixabay's team: try those first
+                for qq in _queries(query):
+                    hits = [h for h in _get_json("https://pixabay.com/api/?" + q({"key": _key("PIXABAY_API_KEY"), "q": qq, "image_type": "photo",
+                                                                                "orientation": "horizontal", "safesearch": "true", "per_page": 20,
+                                                                                "editors_choice": best, "min_width": 1600, "order": "popular"}))["hits"]
+                            if _relevant(h.get("tags", ""), query)]
+                    if len(hits) > n:
+                        return hits[n]["largeImageURL"], f"photo by {hits[n]['user']} on Pixabay ({hits[n]['pageURL']})"
         except Exception:
             pass
     try:  # Openverse: no key needed; only licenses that allow commercial use
@@ -131,6 +166,9 @@ def photo(query: str, out: Path, dest: Path, credits: list, n: int = 0) -> str:
     url, credit = _find_photo(query, n)
     if not url:
         return ""
+    if url.startswith("https://images.unsplash.com/"):
+        credits.append(f"- {url.split('?')[0]}: {credit}")
+        return url
     try:
         tmp = _download(url, out.with_suffix(".src"))
         _webp(tmp, out)
@@ -155,12 +193,14 @@ def _find_video(query: str) -> tuple[str, str]:
             pass
     if _key("PIXABAY_API_KEY"):
         try:
-            for qq in _queries(query):
-                for h in _get_json("https://pixabay.com/api/videos/?" + q({"key": _key("PIXABAY_API_KEY"), "q": qq,
-                                                                           "safesearch": "true", "per_page": 20}))["hits"]:
-                    f = h["videos"].get("medium") or h["videos"].get("large")
-                    if f and f.get("url") and (f.get("width") or 0) >= 1280 and h.get("duration", 0) >= 5 and _relevant(h.get("tags", ""), query):
-                        return f["url"], f"video by {h['user']} on Pixabay ({h['pageURL']})"
+            for best in ("true", "false"):  # Editor's Choice first
+                for qq in _queries(query):
+                    for h in _get_json("https://pixabay.com/api/videos/?" + q({"key": _key("PIXABAY_API_KEY"), "q": qq, "safesearch": "true",
+                                                                               "per_page": 20, "editors_choice": best, "order": "popular"}))["hits"]:
+                        v = h["videos"]
+                        f = next((x for x in (v.get("large"), v.get("medium")) if x and x.get("url") and 1280 <= (x.get("width") or 0) <= 1920), None)
+                        if f and h.get("duration", 0) >= 5 and _relevant(h.get("tags", ""), query):
+                            return f["url"], f"video by {h['user']} on Pixabay ({h['pageURL']})"
         except Exception:
             pass
     return "", ""
@@ -250,7 +290,7 @@ def showcase(data: dict, dest: Path, log=print):
     out = []
     for c in data.get("menu") or []:
         for it in c.get("items") or []:
-            if len(out) == 5 or not it.get("img"):
+            if len(out) == 5 or not it.get("img") or str(it["img"]).startswith("http"):
                 continue
             png = dest / "assets" / "cut" / f"{len(out) + 1}.png"
             if cutout(dest / it["img"], png):
@@ -303,7 +343,7 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
     if credits:
         data["credits"] = "CREDITS.md"  # the footer links it: CC BY photos need visible credit
         dest.mkdir(parents=True, exist_ok=True)
-        (dest / "CREDITS.md").write_text("# Photo and video credits\n\nAll free for commercial use: Pexels, Pixabay, or Openverse with a commercial license.\n\n" + "\n".join(credits) + "\n", encoding="utf-8")
+        (dest / "CREDITS.md").write_text("# Photo and video credits\n\nAll free for commercial use: Unsplash, Pexels, Pixabay, or Openverse with a commercial license.\n\n" + "\n".join(credits) + "\n", encoding="utf-8")
 
 
 def swap(data: dict):

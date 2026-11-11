@@ -398,4 +398,15 @@ assert "menu-iso" in _p["pieces"] and "menu-cols" not in _p["pieces"] and _p["pi
 _e = _fac.edit(dict(_plan, picked=["menu-iso"]), "x", _req, ask=lambda p: json.dumps(dict(_local, pieces=["menu-cols"]), ensure_ascii=False))
 assert "menu-iso" in _e["pieces"] and "menu-cols" not in _e["pieces"]
 
+# An Unsplash photo stays on Unsplash (their API terms): photo() returns its URL, credits it, and it is never cut out
+_old = _fm._find_photo
+_fm._find_photo = lambda q, n=0: ("https://images.unsplash.com/photo-1?ixid=x&w=1600", "photo by A (https://unsplash.com/@a?utm_source=weblume) on Unsplash")
+_cr = []
+_u = _fm.photo("latte", Path(tempfile.mkdtemp()) / "assets" / "img" / "x.webp", Path(tempfile.mkdtemp()), _cr)
+assert _u.startswith("https://images.unsplash.com/") and "Unsplash" in _cr[0]
+_fm._find_photo = _old
+_sd = {"menu": [{"items": [{"name": "لاتيه", "img": _u}]}]}
+_fm.showcase(_sd, Path(tempfile.mkdtemp()), log=lambda m: None)
+assert _sd["showcase"] == []
+
 print("All rule checks passed.")
