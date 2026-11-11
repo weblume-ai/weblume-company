@@ -98,6 +98,17 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, path.read_bytes(), "video/mp4", {"Accept-Ranges": "none"})
             return self.send(200, path.read_bytes(), "application/octet-stream",
                              {"Content-Disposition": f"attachment; filename*=UTF-8''{_quote(path.name)}"})
+        if url.path == "/api/pieces":  # the factory's pieces with their pictures, for the owner's design picker
+            from weblume import factory
+            pieces = [{"id": k, "type": v["type"], "style": v["style"], "needs": v["needs"]} for k, v in factory.MANIFEST.items()]
+            return self.send(200, {"pieces": pieces, "order": factory.ORDER, "design": uploads.design()})
+        if url.path.startswith("/pieces/thumb/"):
+            from weblume import factory
+            pid = url.path.rsplit("/", 1)[-1]
+            thumb = factory.PIECES / "thumbs" / f"{pid}.webp"
+            if pid not in factory.MANIFEST or not thumb.is_file():
+                return self.send(404, {"error": "Not found."})
+            return self.send(200, thumb.read_bytes(), "image/webp")
         if url.path.startswith("/site/"):
             # A built site with its folder (pages, data.js, photos, frames): scroll scenes need http, not a file.
             path = (OUTPUT_DIR / unquote(url.path[len("/site/"):])).resolve()
@@ -138,6 +149,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, {"url": company.publish(str(body.get("run", "")), str(body.get("name", "")))})
             if self.path == "/api/upload":  # the owner's photos and videos for the next site
                 return self.send(200, uploads.save(str(body.get("name", "")), str(body.get("data", ""))))
+            if self.path == "/api/design":  # the owner's design picks for the next site
+                return self.send(200, uploads.design_save(body.get("picks") if isinstance(body.get("picks"), dict) else {}))
             if self.path == "/api/uploads/clear":
                 return self.send(200, uploads.clear())
             if self.path == "/api/contacted":

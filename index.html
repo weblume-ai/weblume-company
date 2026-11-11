@@ -34,6 +34,7 @@ button{cursor:pointer}
 /* focused team picker */
 .picker{display:none;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center;background:#050505}
 .picker.show{display:flex}
+dialog.design{width:min(1100px,94vw);max-height:90vh;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0}dialog.design::backdrop{background:#000b}.design .dh{position:sticky;top:0;display:flex;gap:10px;align-items:center;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line);z-index:1}.design .dh b{flex:1}.design section{padding:10px 16px}.design h4{margin:6px 0 8px}.design .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}.design .pc{display:grid;gap:4px;text-align:start;background:var(--card);border:2px solid var(--line);border-radius:10px;padding:6px;color:var(--text);cursor:pointer}.design .pc img{width:100%;aspect-ratio:8/5;object-fit:cover;border-radius:6px;background:#000}.design .pc small{color:var(--mute)}.design .pc.on{border-color:var(--red)}.design .pc.auto{place-content:center;min-height:120px;text-align:center}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:5px 11px;color:var(--mute)}
 .chip.on{border-color:var(--red);color:#fff;background:#2a0306}
 /* main */
@@ -232,6 +233,33 @@ const store = {get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d
                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} }};
 // Opened from the online link (GitHub Pages)? Then talk to start.bat on this computer.
 const LOCAL = /^(127\.0\.0\.1|localhost)$/.test(location.hostname), SRV = LOCAL ? "" : "http://127.0.0.1:8501";
+// 🎨 the owner picks the factory pieces for the next site: one per section, with a picture of each
+const SECTION = {hero: "الواجهة (أول الصفحة)", band: "شريط", about: "عننا", features: "المميزات", menu: "المنيو", how: "إزاي تطلب",
+                 cta: "الدعوة", gallery: "الصور", contact: "زورونا", footer: "آخر الصفحة", nav: "القائمة", "mobile-bar": "شريط الموبايل"};
+async function openDesign(note) {
+  let data;
+  try { data = await (await fetch("/api/pieces")).json() } catch (e) { return alert(e.message) }
+  const picks = {...(data.design || {})}, skip = ["nav", "footer", "mobile-bar", "contact"]; // these have one piece each
+  const dlg = h("dialog", {class: "design", "aria-label": "اختار التصميم"});
+  const sections = data.order.filter(t => !skip.includes(t) && data.pieces.some(p => p.type === t)).map(t => {
+    const cards = h("div", {class: "cards"});
+    const draw = () => fill(cards,
+      h("button", {class: "pc auto" + (picks[t] ? "" : " on"), type: "button", onclick: () => { delete picks[t]; draw() }}, "✨ المصنع يختار"),
+      data.pieces.filter(p => p.type === t).map(p => h("button", {class: "pc" + (picks[t] === p.id ? " on" : ""), type: "button", "aria-pressed": String(picks[t] === p.id),
+        onclick: () => { picks[t] = p.id; draw() }}, h("img", {src: "/pieces/thumb/" + p.id, alt: p.id, loading: "lazy"}), h("b", {}, p.id),
+        h("small", {}, (p.needs || []).join(" · ") || "مش محتاجة صور"))));
+    draw();
+    return h("section", {}, h("h4", {}, SECTION[t] || t), cards);
+  });
+  const save = async () => {
+    try { const r = await api("/api/design", {picks}); const n = Object.keys(r.design).length;
+      note.textContent = n ? "🎨 " + n + " قطع مختارة للموقع الجاي" : "🎨 المصنع هيختار التصميم"; dlg.close() } catch (e) { alert(e.message) }
+  };
+  fill(dlg, h("div", {class: "dh"}, h("b", {}, "🎨 اختار تصميم الموقع الجاي: قطعة لكل جزء (اللي متختارهوش المصنع يختاره)"),
+    h("button", {class: "btn", onclick: save}, "احفظ"), h("button", {class: "ghost", onclick: () => dlg.close()}, "إلغاء")), sections);
+  dlg.addEventListener("close", () => dlg.remove());
+  document.body.append(dlg); dlg.showModal();
+}
 async function api(path, body) {
   const r = await fetch(SRV + path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {cache: "no-store"});
   const j = await r.json().catch(() => ({error: "Server not reachable"}));
@@ -433,7 +461,8 @@ function renderChat() {
     }});
     const up = h("div", {class: "small mute", style: "margin-top:6px"}, "📎 ارفع صور أو فيديو للمحل: المصنع يستخدمهم في الموقع الجاي (يقص الصور ويحط عليها أنيميشن)");
     const clip = h("button", {class: "ghost", title: "ارفع صور أو فيديو", "aria-label": "ارفع صور أو فيديو", onclick: () => files.click()}, "📎");
-    fill(p, head, h("div", {id: "c-ask"}), h("div", {id: "c-list"}), h("div", {class: "composer"}, clip, box, h("button", {class: "btn", onclick: send}, "Send"), files), up);
+    const paint = h("button", {class: "ghost", title: "اختار تصميم الموقع الجاي", "aria-label": "اختار تصميم الموقع الجاي", onclick: () => openDesign(up)}, "🎨");
+    fill(p, head, h("div", {id: "c-ask"}), h("div", {id: "c-list"}), h("div", {class: "composer"}, clip, paint, box, h("button", {class: "btn", onclick: send}, "Send"), files), up);
   }
   const r = S.run, ask = r && r.ask;
   const askEl = $("#c-ask");

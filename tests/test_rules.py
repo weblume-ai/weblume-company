@@ -388,4 +388,14 @@ _fixed = _fac.fix_plan(dict(_plan, address="مدينة نصر"), _req, "FACTS: n
 assert _fixed["whatsapp"] == "201012345678" and _fixed["address"] == "مدينة نصر" and _fixed["media_query"] == {"hero": "grill"}
 assert "السعر تقديري" in _fixed["review"] and _fixed["about"].startswith("أحلى")
 
+# The owner's design picks: only real pieces under their own type, used once, and they beat the model's choice
+import tempfile  # noqa: E402
+_up.DESIGN = Path(tempfile.mkdtemp()) / "design.json"
+assert _up.design_save({"hero": "hero-stage", "menu": "hero-ring", "band": "nope"}) == {"design": {"hero": "hero-stage"}}
+assert _up.design_take() == ["hero-stage"] and _up.design() == {} and _up.design_take() == []
+_p = _fac.normalize({"name": "س", "picked": ["menu-iso", "bogus"], "pieces": ["menu-cols", "hero-split"], "menu": []}, "مطعم", "EG")
+assert "menu-iso" in _p["pieces"] and "menu-cols" not in _p["pieces"] and _p["picked"] == ["menu-iso"]
+_e = _fac.edit(dict(_plan, picked=["menu-iso"]), "x", _req, ask=lambda p: json.dumps(dict(_local, pieces=["menu-cols"]), ensure_ascii=False))
+assert "menu-iso" in _e["pieces"] and "menu-cols" not in _e["pieces"]
+
 print("All rule checks passed.")

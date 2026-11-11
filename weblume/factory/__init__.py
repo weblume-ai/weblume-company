@@ -232,7 +232,8 @@ def normalize(d: dict, request: str, country: str) -> dict:
     for k in ("about", "lede", "tagline", "invite", "together"):  # a phone number the model typed is never kept
         if isinstance(d.get(k), str):
             d[k] = re.sub(r"\+?\d[\d\s-]{8,}\d", "", d[k])
-    chosen = [p for p in dict.fromkeys(d.get("pieces") or []) if p in MANIFEST]
+    d["picked"] = [p for p in d.get("picked") or [] if p in MANIFEST]  # the owner chose these in the dashboard: they win
+    chosen = [p for p in dict.fromkeys(d["picked"] + list(d.get("pieces") or [])) if p in MANIFEST]
     for need in ("nav", "visit", "footer-huge", "bar"):
         if need not in chosen:
             chosen.append(need)
@@ -318,7 +319,7 @@ def load(dest: Path) -> dict:
 def edit(data: dict, instruction: str, request: str = "", ask=None) -> dict:
     """The API art director rewrites the content file (texts, menu, colors, fonts, pieces and their order) with its
     skills; facts, media and the owner's review list are kept by code, whatever the model answers."""
-    keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits", "address", "hours", "mapsLink", "order", "instagram", "tiktok", "media_query") if k in data}
+    keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits", "address", "hours", "mapsLink", "order", "instagram", "tiktok", "media_query", "picked") if k in data}
     nl = "\n"
     shown = {k: v for k, v in data.items() if k not in ("media", "review", "credits")}
     prompt = (f"You are the art director of Weblume, a web studio.{_director()}{nl}{nl}"
@@ -371,12 +372,12 @@ def judge(shots: list[str], request: str) -> dict:
 ROUNDS = 2
 
 
-def build(request: str, client_photos: Path | None = None, ask=None, log=print, polisher=None) -> dict:
+def build(request: str, client_photos: Path | None = None, ask=None, log=print, polisher=None, picks: list[str] | None = None) -> dict:
     from . import media, review
     log("1/6 المدير الفني (API) بيفهم الطلب وبيكتب تعليمات للموديل المحلي…")
     guide = ""
     try:
-        guide = brief(request, polisher)
+        guide = brief(request + (f"\nThe owner already chose these pieces (keep them): {', '.join(picks)}" if picks else ""), polisher)
     except Exception as e:  # no internet / API limit: the local model works from the request alone, as before
         log(f"   المدير الفني مش متاح، الموديل المحلي هيشتغل لوحده: {e}")
     log("2/6 الموديل المحلي بيكتب محتوى الموقع…")
@@ -387,11 +388,20 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
             data = fix_plan(data, request, guide, polisher)
         except Exception as e:
             log(f"   المراجعة مانفعتش، هكمل بشغل الموديل المحلي: {e}")
+    if picks:
+        data["picked"] = picks
+        data = normalize(data, request, data.get("country", ""))
+        data["review"] = list(dict.fromkeys(data["review"]))
+        log("   التصميم اللي اخترته: " + "، ".join(data["picked"]))
     dest = OUTPUT_DIR / "factory" / rules.slug(data.get("word") or data["name"], "site")
     if dest.exists():
         shutil.rmtree(dest)
     log(f"3/6 بجيب الصور والفيديو لـ «{data['name']}»…")
     media.fill(data, dest, client_photos, log)
+    gone = [p for p in data.get("picked") or [] if p not in data["pieces"]]
+    if gone:  # a chosen piece needs media that didn't come (e.g. a photo menu with no photos)
+        log("   القطع دي اتبدلت لأن صورها مش موجودة (ارفع صور وأعيد): " + "، ".join(gone))
+        data["review"].append("قطع اخترتها اتبدلت لأن صورها ناقصة: " + "، ".join(gone))
     log("4/6 بركّب القطع…")
     assemble(data, dest)
     log("5/6 بفتح الموقع في المتصفح وبراجعه…")

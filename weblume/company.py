@@ -243,7 +243,10 @@ def _factory_site(run: "Run", goal: str, client: str):
     own = uploads.take(client or goal)
     if own:
         run.update("karim", f"هستخدم الصور والفيديوهات اللي رفعتها ({len(uploads.listing())} ملف)")
-    res = factory.build(f"{goal} {client}".strip(), client_photos=own, log=lambda m: run.log("karim", m.strip()))
+    picks = uploads.design_take()
+    if picks:
+        run.update("karim", f"هستخدم التصميم اللي اخترته ({len(picks)} قطع)")
+    res = factory.build(f"{goal} {client}".strip(), client_photos=own, log=lambda m: run.log("karim", m.strip()), picks=picks)
     uploads.done(res["name"])
     run.site_dir = Path(res["folder"])
     site = run.site_dir / "index.html"
