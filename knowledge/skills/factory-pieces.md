@@ -13,6 +13,9 @@ The page is built from tested pieces; you only choose ids (one per type) from th
 - About: about-say, about-statement, about-badge, about-bubbles, about-labels (text in black labels, light page).
 - Mood: luxury/cinematic → dark pages, hero-frames, menu-rail, features-scrub, cta-glow. Playful → hero-stage,
   menu-iso, band-stripes, about-bubbles. Simple/modern → hero-split, menu-rows, about-statement.
+- Motion: Asser wants every site to move. motion = lively by default, cinematic for luxury, dark or bold places;
+  never calm unless the request asks for a still page. Prefer pieces that move on their own (hero-frames, hero-blueprint,
+  hero-ring, menu-rail, gallery-curve, about-labels, features-scrub, band-stripes, marquee-band) and mix at least three.
 - Variety: neighbouring sections must look different (don't put two dark photo-heavy pieces in a row), and each new
   site should not repeat the last site's hero.
 If you're unsure a piece's needs are met, pick the simpler piece: the factory swaps a piece whose media is missing,

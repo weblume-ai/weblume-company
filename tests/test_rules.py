@@ -417,4 +417,8 @@ _sw = {"pieces": ["nav", "hero-split"], "media": {"frames": {"n": 1}, "heroImg":
 _fm.swap(_sw)
 assert "hero-frames" in _sw["pieces"]
 
+# Every site moves: the model can't pick "calm"; only a request for a still page does
+assert _fac.normalize({"name": "س", "motion": "calm", "menu": []}, "كافيه هادي", "EG")["motion"] == "lively"
+assert _fac.normalize({"name": "س", "motion": "lively", "menu": []}, "عايزه بدون حركة", "EG")["motion"] == "calm"
+
 print("All rule checks passed.")

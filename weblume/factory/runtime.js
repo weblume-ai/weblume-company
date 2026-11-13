@@ -76,6 +76,22 @@
     }
   }
 
+  /* lively and cinematic: text blocks, list rows, cards and the footer word come in one after another, and a thin bar
+     shows how far you've read. Parts that move themselves (3D, pinned, carousels, labels) are left alone. */
+  if (!still && motion !== "calm") {
+    var own = ".pin,.gcv,.mrl,.hrg,.hst,.hsc,.hbp,.fsc,.alb,.ctb,.mq,.bst,.hwd,.hfr";
+    [].forEach.call(document.querySelectorAll("#app section p, #app section li, #app section h3, #app section table, #app section .acts, #app section .tile, #app footer .huge"), function (el) {
+      if (el.classList.contains("rise") || el.closest(own) || el.parentElement.closest(".rise") || el.querySelector(".rise")) return;
+      var cs = getComputedStyle(el); if (cs.transform !== "none" || cs.animationName !== "none") return; // a tilted polaroid keeps its tilt
+      el.classList.add("rise");
+      el.style.setProperty("--i", Array.prototype.indexOf.call(el.parentElement.children, el) % 6);
+    });
+    var bar = document.createElement("div"), qb = false;
+    bar.className = "readbar"; bar.setAttribute("aria-hidden", "true"); document.body.appendChild(bar);
+    var fillBar = function () { qb = false; var h = document.documentElement.scrollHeight - innerHeight; bar.style.transform = "scaleX(" + (h > 0 ? Math.min(1, scrollY / h) : 0).toFixed(4) + ")"; };
+    addEventListener("scroll", function () { if (!qb) { qb = true; requestAnimationFrame(fillBar); } }, {passive: true}); fillBar();
+  }
+
   /* parts rise in once as they enter */
   var io = "IntersectionObserver" in window && new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });

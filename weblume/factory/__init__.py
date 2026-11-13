@@ -54,7 +54,7 @@ SCHEMA = """{
  "kind": "restaurant | cafe | sweets | bakery | clinic | shop | gym | salon | company",
  "style": "luxury | bold | simple | playful | heritage | modern",
  "shape": "the shape of photos, cards and buttons: round | arch | sharp | soft | organic (pick what suits the place)",
- "motion": "calm | lively | cinematic (how much the page moves)",
+ "motion": "lively | cinematic (how much the page moves; Weblume sites always move: calm only when the request asks for little motion)",
  "blend": "one line: what you took from A, B and C",
  "features": ["2 to 4 real strengths from the request, 2-4 words each (delivery, open late, family hall…); empty if none are known"],
  "tagline": "6 words max", "heroLines": ["2 or 3 short lines, the headline"], "lede": "one sentence under the headline",
@@ -253,7 +253,9 @@ def normalize(d: dict, request: str, country: str) -> dict:
     d["maps"] = " ".join(x for x in (str(d.get("address") or "").strip(), str(d.get("name") or "")) if x and not x.startswith("http"))
     d["colors"] = palette(d.get("colors"))
     d["shape"] = d.get("shape") if d.get("shape") in ("round", "arch", "sharp", "soft", "organic") else "round"
-    d["motion"] = d.get("motion") if d.get("motion") in ("calm", "lively", "cinematic") else "lively"
+    d["motion"] = d.get("motion") if d.get("motion") in ("lively", "cinematic") else "lively"
+    if re.search(r"بدون (?:حركة|أنيميشن|انيميشن)|حركة (?:قليلة|خفيفة)|من غير (?:حركة|أنيميشن|انيميشن)|no animation|calm", request, re.I):
+        d["motion"] = "calm"  # the owner asked for a still page: the only way a site is calm
     d["features"] = [str(x)[:40] for x in d.get("features") or [] if str(x).strip()][:4]
     f = d.get("fonts") or {}
     d["fonts"] = {"display": f.get("display") if f.get("display") in FONTS_OK else "Alexandria",  # no Kufi display fonts (the owner's taste)
@@ -337,6 +339,8 @@ def edit(data: dict, instruction: str, request: str = "", ask=None) -> dict:
     new = normalize(new, request or f"{data.get('name', '')} {keep.get('whatsapp', '')} {keep.get('mapsLink', '')}", keep.get("country", ""))
     new.update({k: keep[k] for k in ("address", "hours", "order", "instagram", "tiktok") if k in keep})
     new["maps"] = " ".join(x for x in (str(new.get("address") or ""), str(new.get("name") or "")) if x)
+    if data.get("motion") == "calm":  # a still page the owner asked for stays still
+        new["motion"] = "calm"
     new["review"] = list(dict.fromkeys(data.get("review", []) + [str(r) for r in new.get("review") or []]))
     return new
 
