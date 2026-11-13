@@ -753,5 +753,60 @@
   "from": "Uiverse.io 'rare-rattlesnake-22' by Aryan-81 (MIT), reworked by Weblume into a section",
   "thumb": "thumbs/cta-glow.webp",
   "tested": "360/768/1280 OK"
+ },
+ "hero-blueprint": {
+  "file": "sections-studio.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "cinematic",
+   "luxury",
+   "modern",
+   "bold"
+  ],
+  "needs": [
+   "media.heroImg (optional)"
+  ],
+  "from": "Weblume code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
+  "thumb": "thumbs/hero-blueprint.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "gallery-curve": {
+  "file": "sections-studio.js",
+  "type": "gallery",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "cinematic",
+   "luxury",
+   "bold"
+  ],
+  "needs": [
+   "media.gallery (3+)"
+  ],
+  "from": "Weblume code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
+  "thumb": "thumbs/gallery-curve.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "about-labels": {
+  "file": "sections-studio.js",
+  "type": "about",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "modern",
+   "bold",
+   "simple"
+  ],
+  "needs": [
+   "about"
+  ],
+  "from": "Weblume code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
+  "thumb": "thumbs/about-labels.webp",
+  "tested": "360/768/1280 OK"
  }
 }

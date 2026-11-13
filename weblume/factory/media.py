@@ -367,7 +367,7 @@ def swap(data: dict):
     if m.get("frames"):  # footage came: the scroll-played hero (Loopie's signature) is the strongest opening
         data["pieces"] = ["hero-frames" if p.startswith("hero-") else p for p in data["pieces"]]
     for p, ok in (("gallery-track", len(m.get("gallery") or []) >= 3), ("gallery-sheet", len(m.get("gallery") or []) >= 3),
-                  ("gallery-stack", len(m.get("gallery") or []) >= 3), ("features-bento", len(data.get("features") or []) >= 2), ("features-glow", len(data.get("features") or []) >= 2),
+                  ("gallery-stack", len(m.get("gallery") or []) >= 3), ("gallery-curve", len(m.get("gallery") or []) >= 3), ("features-bento", len(data.get("features") or []) >= 2), ("features-glow", len(data.get("features") or []) >= 2),
                   ("features-scrub", len(data.get("features") or []) >= 2 and (m.get("video") or m.get("heroImg") or m.get("poster"))),
                   ("invite-video", m.get("video") or m.get("poster"))):
         if p in data["pieces"] and not ok:
