@@ -22,6 +22,10 @@ DEMO = {
             {"name": "تشيز كيك", "desc": "توت", "price": "22", "img": "assets/img/mood-cup.webp"},
             {"name": "ماتشا", "desc": "ماتشا · حليب", "price": "20", "img": "assets/img/drink-green.webp"}]}],
     "features": ["قهوة مختصة", "مفتوح لآخر الليل", "جلسات عائلية"], "shape": "arch",
+    # products for hero-showcase (the menu photos stand in for cut-outs), so that piece is really tested
+    "showcase": [{"name": n, "desc": d, "price": pr, "cut": f"assets/img/{img}.webp", "tone": tn, "ink": "#ffffff"} for n, d, pr, img, tn in
+                 (("إسبريسو", "بن إثيوبي", "14", "drink-esp", "#c2410c"), ("كابتشينو", "حليب · رغوة", "18", "drink-capp", "#7c3aed"),
+                  ("ماتشا", "ماتشا · حليب", "20", "drink-green", "#15803d"))],
     "address": "الرياض، حي العليا", "maps": "Riyadh Olaya", "whatsapp": "966500000000", "country": "SA", "currency": "ر.س", "lang": "ar", "review": [],
     "media": {"frames": {"d": "assets/frames-d/", "m": "assets/frames-m/", "n": 162}, "video": "assets/clip.mp4", "poster": "assets/poster.webp",
               "heroImg": "assets/img/mood-hall.webp", "about": {"src": "assets/img/mood-chair.webp", "alt": "ركن"},
