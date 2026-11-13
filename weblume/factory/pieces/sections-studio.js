@@ -20,15 +20,15 @@
       ".hbp .win{position:absolute;top:12%;bottom:30%;inset-inline-start:40%;inset-inline-end:8%;overflow:hidden;clip-path:inset(50% 50% 50% 50%);animation:hbpOpen 1.3s cubic-bezier(.7,0,.2,1) 1.2s forwards}" +
       ".hbp .win img{width:100%;height:100%;object-fit:cover;transform:scale(1.25);animation:hbpZoom 2.6s cubic-bezier(.2,.7,.2,1) 1.2s forwards}" +
       "@keyframes hbpOpen{to{clip-path:inset(0)}}@keyframes hbpZoom{to{transform:scale(1)}}" +
-      ".hbp .word{position:absolute;inset-inline:0;bottom:-.08em;text-align:center;font:800 clamp(80px,22vw,340px)/1 var(--display);white-space:nowrap;overflow:hidden;pointer-events:none}" +
+      ".hbp .word{position:absolute;inset-inline:0;bottom:-.08em;text-align:center;font:800 clamp(70px,17vw,260px)/1 var(--display);white-space:nowrap;overflow:hidden;pointer-events:none}" +
       ".hbp .word span{display:inline-block;transform:translateY(105%);animation:hbpRise 1.1s cubic-bezier(.2,.8,.2,1) 2.1s forwards}@keyframes hbpRise{to{transform:none}}" +
       ".hbp .say{position:absolute;top:clamp(18px,5vh,48px);inset-inline-start:var(--gut);max-width:min(30ch,34vw);opacity:0;animation:hbpFade .8s ease 2.4s forwards}" +
-      ".hbp h1{font-size:var(--head);line-height:1.05;margin:0 0 12px}.hbp .say p{margin:0 0 16px;color:var(--muted)}" +
+      ".hbp h1{font-size:clamp(34px,4.4vw,68px);line-height:1.1;margin:0 0 12px}.hbp .say p{margin:0 0 16px;color:var(--muted)}" +
       "@keyframes hbpFade{to{opacity:1}}" +
-      "@media (max-width:700px){.hbp .win{top:40%;bottom:24%;inset-inline:8%}.hbp .say{max-width:84vw}}" +
+      "@media (max-width:700px){.hbp .win{top:40%;bottom:30%;inset-inline:8%}.hbp .say{max-width:84vw}.hbp .word{bottom:52px}}" +
       "@media (prefers-reduced-motion:reduce){.hbp svg line,.hbp .win,.hbp .win img,.hbp .word span,.hbp .say{animation:none;stroke-dashoffset:0;clip-path:none;transform:none;opacity:1}}",
     render: function (S, t) {
-      var m = S.media || {}, ph = m.heroImg;
+      var m = S.media || {}, g = m.gallery || [], ph = (m.frames && g[0] ? g[0].src : m.heroImg); // a real photo beats a still frame of the footage
       var lines = [], d = 0, add = function (x1, y1, x2, y2, c) { lines.push('<line pathLength="1" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" style="--d:' + (d++) + '"' + (c ? ' class="x"' : "") + "/>"); };
       [12, 22, 50, 78, 88].forEach(function (x) { add(x, 0, x, 100); });
       [14, 70, 86].forEach(function (y) { add(0, y, 100, y); });

@@ -334,7 +334,7 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
             k += 1
     if "hero-showcase" in data["pieces"] or len(own_rel) >= 2:
         showcase(data, dest, log)
-        if len(data.get("showcase") or []) >= 2 and not m.get("frames"):  # the client's products, cut out: the strongest opening
+        if len(data.get("showcase") or []) >= 2 and not m.get("frames") and not any(p.startswith("hero-") for p in data.get("picked") or []):  # the client's products, cut out: the strongest opening
             data["pieces"] = ["hero-showcase" if MAN_TYPE(p) == "hero" else p for p in data["pieces"]]
     if not m.get("frames"):
         data["review"].append("مالقيتش فيديو مناسب للنشاط ده في المكتبات المجانية: ابعت فيديو قصير للمكان أو للأكل" if _key("PIXABAY_API_KEY") or _key("PEXELS_API_KEY")
@@ -364,7 +364,9 @@ def swap(data: dict):
              "hero-arch": "" if photo else "hero-waterline", "hero-words": "" if photo else "hero-waterline",
              "hero-layers": "" if photo and len(m.get("gallery") or []) >= 2 else ("hero-split" if photo else "hero-waterline")}
     data["pieces"] = [rules.get(p) or p for p in ps]
-    if m.get("frames"):  # footage came: the scroll-played hero (Loopie's signature) is the strongest opening
+    picked = set(data.get("picked") or [])
+    if m.get("frames") and not picked & {p for p in data["pieces"] if p.startswith("hero-")}:
+        # footage came: the scroll-played hero (Loopie's signature) is the strongest opening, unless the owner chose one
         data["pieces"] = ["hero-frames" if p.startswith("hero-") else p for p in data["pieces"]]
     for p, ok in (("gallery-track", len(m.get("gallery") or []) >= 3), ("gallery-sheet", len(m.get("gallery") or []) >= 3),
                   ("gallery-stack", len(m.get("gallery") or []) >= 3), ("gallery-curve", len(m.get("gallery") or []) >= 3), ("features-bento", len(data.get("features") or []) >= 2), ("features-glow", len(data.get("features") or []) >= 2),

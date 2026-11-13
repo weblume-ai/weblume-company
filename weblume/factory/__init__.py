@@ -400,7 +400,7 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
     media.fill(data, dest, client_photos, log)
     gone = [p for p in data.get("picked") or [] if p not in data["pieces"]]
     if gone:  # a chosen piece needs media that didn't come (e.g. a photo menu with no photos)
-        log("   القطع دي اتبدلت لأن صورها مش موجودة (ارفع صور وأعيد): " + "، ".join(gone))
+        log("   القطع دي اتبدلت لأن الصور أو الفيديو اللي محتاجاها مش موجودة: " + "، ".join(gone))
         data["review"].append("قطع اخترتها اتبدلت لأن صورها ناقصة: " + "، ".join(gone))
     log("4/6 بركّب القطع…")
     assemble(data, dest)

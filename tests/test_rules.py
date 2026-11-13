@@ -409,4 +409,12 @@ _sd = {"menu": [{"items": [{"name": "لاتيه", "img": _u}]}]}
 _fm.showcase(_sd, Path(tempfile.mkdtemp()), log=lambda m: None)
 assert _sd["showcase"] == []
 
+# Footage makes the video hero the opening, but never over a hero the owner picked
+_sw = {"pieces": ["nav", "hero-blueprint", "menu-cols"], "picked": ["hero-blueprint"], "media": {"frames": {"n": 1}, "heroImg": "x.webp"}, "menu": []}
+_fm.swap(_sw)
+assert "hero-blueprint" in _sw["pieces"] and "hero-frames" not in _sw["pieces"]
+_sw = {"pieces": ["nav", "hero-split"], "media": {"frames": {"n": 1}, "heroImg": "x.webp"}, "menu": []}
+_fm.swap(_sw)
+assert "hero-frames" in _sw["pieces"]
+
 print("All rule checks passed.")
