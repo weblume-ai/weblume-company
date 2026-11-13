@@ -376,7 +376,8 @@ def judge(shots: list[str], request: str) -> dict:
 ROUNDS = 2
 
 
-def build(request: str, client_photos: Path | None = None, ask=None, log=print, polisher=None, picks: list[str] | None = None) -> dict:
+def build(request: str, client_photos: Path | None = None, ask=None, log=print, polisher=None, picks: list[str] | None = None,
+          fresh_name: bool = False) -> dict:
     from . import media, review
     log("1/6 المدير الفني (API) بيفهم الطلب وبيكتب تعليمات للموديل المحلي…")
     guide = ""
@@ -398,6 +399,9 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
         data["review"] = list(dict.fromkeys(data["review"]))
         log("   التصميم اللي اخترته: " + "، ".join(data["picked"]))
     dest = OUTPUT_DIR / "factory" / rules.slug(data.get("word") or data["name"], "site")
+    base, k = dest, 2
+    while fresh_name and (dest.exists() or (EXAMPLES / f"{dest.name}.json").exists()):  # practice runs never replace an earlier site
+        dest, k = base.with_name(f"{base.name}-{k}"), k + 1
     if dest.exists():
         shutil.rmtree(dest)
     log(f"3/6 بجيب الصور والفيديو لـ «{data['name']}»…")
@@ -414,15 +418,17 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
         media.drop_broken(data, issues)
         assemble(data, dest)
         issues, shots = review.check(dest)
-    verdict = None
-    for rnd in range(1, ROUNDS + 1):  # the API art director: Tarek scores it, the stronger model fixes what he and the browser found
+    verdict, best = None, None
+    for rnd in range(1, ROUNDS + 2):  # Tarek scores, the API art director fixes what he and the browser found; the last round only scores
         try:
             verdict = judge(shots, request)
             log(f"   طارق: {verdict['score']:g}/10")
         except Exception as e:
             log(f"   طارق مقدرش يشوف الموقع: {e}")
             verdict = None
-        if (verdict is None or verdict["verdict"] == "PASS") and not issues:
+        if verdict and (best is None or verdict["score"] > best[0]["score"]):
+            best = (verdict, json.loads(json.dumps(data)), issues, shots)
+        if (verdict is None or verdict["verdict"] == "PASS") and not issues or rnd > ROUNDS:
             break
         fixes = "\n".join(f"- {p.get('where', '')}: {p.get('problem', '')} -> {p.get('fix', '')}" for p in (verdict or {}).get("problems") or [])
         fixes += "".join(f"\n- browser check: {i}" for i in issues)
@@ -433,6 +439,10 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
         except Exception as e:
             log(f"   التعديل مانفعش: {e}")
             break
+    if best and verdict and best[0]["score"] > verdict["score"]:  # an edit made it worse: go back to the best version Tarek saw
+        verdict, data, issues, shots = best
+        assemble(data, dest)
+        log(f"   رجعت لأحسن نسخة ({verdict['score']:g}/10)")
     save_example(request, data, dest)
     zipped = shutil.make_archive(str(dest), "zip", dest)
     log("6/6 جاهز.")

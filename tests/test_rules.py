@@ -421,4 +421,11 @@ assert "hero-frames" in _sw["pieces"]
 assert _fac.normalize({"name": "س", "motion": "calm", "menu": []}, "كافيه هادي", "EG")["motion"] == "lively"
 assert _fac.normalize({"name": "س", "motion": "lively", "menu": []}, "عايزه بدون حركة", "EG")["motion"] == "calm"
 
+# Nightly practice: varied new requests for imaginary places, its files outside the examples list
+from weblume.factory import nightly as _nt  # noqa: E402
+_rq = _nt.requests(8, 3)
+assert len(_rq) == 8 == len(set(_rq)) and all(r.startswith("اعمل موقع ل") for r in _rq) and _nt.DONE.parent.name == "nightly"
+assert not any(c.isdigit() and len(c) > 8 for r in _rq for c in r.split())  # never a phone number
+_fac.examples()  # the examples list reads only examples (nightly/done.json is a list and lives in its own folder)
+
 print("All rule checks passed.")
