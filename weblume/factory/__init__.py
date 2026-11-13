@@ -18,19 +18,63 @@ from .. import inspiration, rules
 EXAMPLES = ROOT / "knowledge" / "factory-examples"  # every build; approved ones teach the model (and later train it)
 
 
-def save_example(request: str, data: dict, folder: Path):
+def save_example(request: str, data: dict, folder: Path, grade: dict | None = None):
     EXAMPLES.mkdir(parents=True, exist_ok=True)
-    keep = {k: data.get(k) for k in ("name", "kind", "style", "tagline", "heroLines", "lede", "about", "together", "invite", "colors", "fonts", "menu", "pieces")}
-    (EXAMPLES / f"{folder.name}.json").write_text(json.dumps({"request": request, "approved": False, "data": keep}, ensure_ascii=False, indent=1), encoding="utf-8")
+    keep = {k: data.get(k) for k in ("name", "kind", "style", "tagline", "heroLines", "lede", "about", "together", "invite", "colors", "fonts", "menu", "pieces", "motion")}
+    (EXAMPLES / f"{folder.name}.json").write_text(json.dumps({"request": request, "approved": False, "data": keep, "grade": grade or {}},
+                                                             ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+# pieces that move on their own (the rest only rise in with the motion layer)
+MOVING = {"hero-frames", "hero-film-title", "hero-layers", "hero-words", "hero-showcase", "hero-ring", "hero-stage", "hero-blueprint", "marquee-band",
+          "band-stripes", "about-bubbles", "about-labels", "features-scrub", "features-glow", "menu-rail", "menu-flip", "menu-iso", "invite-video",
+          "cta-blur", "cta-glow", "gallery-track", "gallery-stack", "gallery-curve"}
+
+
+def grade(data: dict, verdict: dict | None, issues: list[str]) -> dict:
+    """Is this site good enough to teach the model? Motion (the owner's rule: every site moves), Tarek's score for
+    how professional it looks, and the browser's problems. 'recommend' is the factory's advice; the owner decides."""
+    moving = [p for p in data.get("pieces") or [] if p in MOVING]
+    score = (verdict or {}).get("score")
+    why = []
+    if data.get("motion") == "calm":
+        why.append("الموقع هادي من غير حركة")
+    if len(moving) < 3:
+        why.append(f"فيه {len(moving)} قطع بس بتتحرك لوحدها (المطلوب 3 أو أكتر)")
+    if score is None:
+        why.append("طارق مقيّمهوش")
+    elif score < 7:
+        why.append(f"طارق إداله {score:g}/10 بس")
+    if issues:
+        why.append(f"فيه {len(issues)} مشكلة في فحص المتصفح")
+    return {"score": score, "moving": moving, "motion": data.get("motion"), "issues": issues[:5], "recommend": not why,
+            "why": why or [f"بيتحرك ({len(moving)} قطع بحركة) وطارق إداله {score:g}/10 ومفيش مشاكل"]}
 
 
 def approve(name: str, ok: bool = True) -> Path:
-    """The owner liked this site: it becomes an example the model follows (and a training sample later)."""
-    f = EXAMPLES / f"{name}.json"
+    """The owner liked this site: it becomes an example the model follows (and a training sample later).
+    ok=False rejects it: it stays on disk but never teaches the model."""
+    f = EXAMPLES / f"{Path(name).name}.json"
+    if not f.is_file():
+        raise ValueError(f"مفيش مثال اسمه {name}")
     ex = json.loads(f.read_text(encoding="utf-8"))
-    ex["approved"] = ok
+    ex["approved"], ex["rejected"] = ok, not ok
     f.write_text(json.dumps(ex, ensure_ascii=False, indent=1), encoding="utf-8")
     return f
+
+
+def example_list() -> list[dict]:
+    """Every saved example, newest first, for the owner's review in the dashboard."""
+    if not EXAMPLES.exists():
+        return []
+    out = []
+    for f in sorted(EXAMPLES.glob("*.json"), key=lambda f: f.stat().st_mtime, reverse=True):
+        ex = json.loads(f.read_text(encoding="utf-8"))
+        site = OUTPUT_DIR / "factory" / f.stem
+        out.append({"name": f.stem, "title": (ex.get("data") or {}).get("name", f.stem), "request": ex.get("request", ""), "approved": bool(ex.get("approved")),
+                    "rejected": bool(ex.get("rejected")), "source": ex.get("source", ""), "grade": ex.get("grade") or grade(ex.get("data") or {}, None, []),  # built before grading: judged by its pieces
+                    "site": f"factory/{f.stem}/index.html" if (site / "index.html").is_file() else ""})
+    return out
 
 
 def examples(n: int = 2) -> str:
@@ -443,7 +487,7 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
         verdict, data, issues, shots = best
         assemble(data, dest)
         log(f"   رجعت لأحسن نسخة ({verdict['score']:g}/10)")
-    save_example(request, data, dest)
+    save_example(request, data, dest, grade(data, verdict, issues))
     zipped = shutil.make_archive(str(dest), "zip", dest)
     log("6/6 جاهز.")
     return {"name": data["name"], "folder": str(dest), "zip": zipped, "pieces": data["pieces"], "shots": shots, "test": verdict,

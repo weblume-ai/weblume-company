@@ -99,7 +99,8 @@ def run(n: int = 10, log=print) -> list[dict]:
             if desk:
                 shutil.copy(desk, SHOTS / f"{name}.png")
             results.append({"request": req, "name": name, "score": (res.get("test") or {}).get("score")})
-            log(f"   ✓ {name}: Tarek {results[-1]['score']}")
+            g = json.loads((EXAMPLES / f"{name}.json").read_text(encoding="utf-8")).get("grade") or {} if (EXAMPLES / f"{name}.json").exists() else {}
+            log(f"   ✓ {name}: Tarek {results[-1]['score']} · {'أنصح بيه' if g.get('recommend') else 'مش أنصح بيه'}: {'، '.join(g.get('why') or [])}")
         except Exception as e:  # one bad site never stops the night
             results.append({"request": req, "error": str(e)[:200]})
             log(f"   ✗ {e}")

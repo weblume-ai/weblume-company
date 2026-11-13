@@ -428,4 +428,14 @@ assert len(_rq) == 8 == len(set(_rq)) and all(r.startswith("اعمل موقع ل
 assert not any(c.isdigit() and len(c) > 8 for r in _rq for c in r.split())  # never a phone number
 _fac.examples()  # the examples list reads only examples (nightly/done.json is a list and lives in its own folder)
 
+# Each example gets a grade: it must move (3+ moving pieces, not calm), Tarek 7+, no browser problems
+_good = {"pieces": ["nav", "hero-blueprint", "about-labels", "menu-rail", "gallery-curve", "visit"], "motion": "cinematic"}
+assert _fac.grade(_good, {"score": 8}, [])["recommend"]
+_g = _fac.grade(dict(_good, motion="calm", pieces=["nav", "hero-split", "menu-cols"]), {"score": 6}, ["OVERFLOW phone"])
+assert not _g["recommend"] and len(_g["why"]) == 4
+try:
+    _fac.approve("../../server"); raise AssertionError("approved a path")
+except ValueError:
+    pass
+
 print("All rule checks passed.")

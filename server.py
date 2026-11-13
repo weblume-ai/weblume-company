@@ -102,6 +102,18 @@ class Handler(BaseHTTPRequestHandler):
             from weblume import factory
             pieces = [{"id": k, "type": v["type"], "style": v["style"], "needs": v["needs"]} for k, v in factory.MANIFEST.items()]
             return self.send(200, {"pieces": pieces, "order": factory.ORDER, "design": uploads.design()})
+        if url.path == "/api/examples":  # the factory's examples (nightly practice + real builds) for the owner to approve
+            from weblume import factory
+            items = factory.example_list()
+            return self.send(200, {"examples": items, "approved": sum(e["approved"] for e in items), "goal": 100})
+        if url.path.startswith("/examples/shot/"):  # a picture of an example's site (kept by the nightly run, or its review)
+            from weblume import factory
+            name = Path(unquote(url.path.rsplit("/", 1)[-1])).name
+            pics = [factory.EXAMPLES / "nightly" / "shots" / f"{name}.png", *sorted((OUTPUT_DIR / "factory" / name / "_review").glob("*desktop_0*.png"))]
+            pic = next((p for p in pics if p.is_file()), None)
+            if not pic or factory.EXAMPLES.resolve() not in pic.resolve().parents and OUTPUT_DIR.resolve() not in pic.resolve().parents:
+                return self.send(404, {"error": "Not found."})
+            return self.send(200, pic.read_bytes(), "image/png")
         if url.path.startswith("/pieces/thumb/"):
             from weblume import factory
             pid = url.path.rsplit("/", 1)[-1]
@@ -149,6 +161,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, {"url": company.publish(str(body.get("run", "")), str(body.get("name", "")))})
             if self.path == "/api/upload":  # the owner's photos and videos for the next site
                 return self.send(200, uploads.save(str(body.get("name", "")), str(body.get("data", ""))))
+            if self.path == "/api/examples/approve":  # ✅ / ❌ on an example: approved ones teach the model
+                from weblume import factory
+                factory.approve(str(body.get("name", "")), bool(body.get("ok")))
+                return self.send(200, {"ok": True})
             if self.path == "/api/design":  # the owner's design picks for the next site
                 return self.send(200, uploads.design_save(body.get("picks") if isinstance(body.get("picks"), dict) else {}))
             if self.path == "/api/uploads/clear":
