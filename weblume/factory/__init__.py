@@ -123,7 +123,8 @@ SCHEMA = """{
             "accent": "#one brand color (never gold or yellow-gold on a dark page)", "muted": "#soft text color", "surface": "#card color", "onAccent": "#text on accent"},
  "fonts": {"display": "an Arabic Google Font for headings (Alexandria, Lalezar, El Messiri, Reem Kufi Fun, Cairo)", "text": "IBM Plex Sans Arabic or Tajawal"},
  "menu": [{"cat": "category", "items": [{"name": "item", "desc": "ingredients · separated · by dots", "price": "number or empty", "photo": "English photo search words for this exact item"}]}],
- "media_query": {"video": "English search words for a short video of this place's craft (e.g. 'meat grilling on charcoal close up')",
+ "media_query": {"style": "one English line: this place's photo shoot (light, background colour, mood, lens), used for every AI photo so they look like one shoot",
+                 "video": "English search words for a short video of this place's craft (e.g. 'meat grilling on charcoal close up')",
                  "hero": "English words for the hero photo", "about": "English words", "gallery": ["5 English photo searches: interior, food, people at tables…"]},
  "pieces": ["ids from the PIECES list, in page order"],
  "review": ["anything the owner must check before the client sees it: estimated prices, address, photos…"]

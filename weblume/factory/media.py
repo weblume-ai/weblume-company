@@ -3,6 +3,7 @@ Unsplash (UNSPLASH_ACCESS_KEY, photos, shown from Unsplash's servers as their AP
 Pixabay (PIXABAY_API_KEY, photos and videos, Editor's Choice first) and Openverse (photos, no key, commercial
 licenses only). A video becomes WebP frames for the scroll hero, like Loopie (desktop + phone crops).
 Every downloaded file is credited in CREDITS.md inside the site."""
+import base64
 import json
 import os
 import subprocess
@@ -159,13 +160,44 @@ def _find_photo(query: str, n: int = 0) -> tuple[str, str]:
         return "", ""
 
 
+AI_MAX = 6  # AI photos per site: real photos come first, these only fill what the libraries didn't have
+_ai = {"used": 0, "style": ""}  # per site, reset by fill()
+
+
+def ai_photo(prompt: str, out: Path, dest: Path, credits: list) -> str:
+    """When no real photo matches: one made by FLUX.1 [schnell] (Apache-2.0, commercial use allowed) on Cloudflare
+    Workers AI's free daily allowance (CF_ACCOUNT_ID + CF_API_TOKEN in .env). '' without keys, quota or on any error."""
+    acc, tok = _key("CF_ACCOUNT_ID"), _key("CF_API_TOKEN")
+    if not (acc and tok and prompt) or _ai["used"] >= AI_MAX:
+        return ""
+    style = _ai["style"] or "professional photography, soft natural light, shallow depth of field, 85mm lens"
+    body = {"prompt": f"{prompt}, {style}, realistic photo, no text, no watermark, no logo"[:2000], "steps": 6}
+    req = urllib.request.Request(f"https://api.cloudflare.com/client/v4/accounts/{acc}/ai/run/@cf/black-forest-labs/flux-1-schnell",
+                                 data=json.dumps(body).encode(), headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            img = base64.b64decode(json.loads(r.read())["result"]["image"])
+        if len(img) < 5000:
+            return ""
+        tmp = out.with_suffix(".src")
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        tmp.write_bytes(img)
+        _webp(tmp, out)
+        tmp.unlink()
+    except Exception:
+        return ""
+    _ai["used"] += 1
+    credits.append(f"- {_rel(out, dest)}: AI photo, FLUX.1 [schnell] (Apache-2.0) via Cloudflare Workers AI, prompt: {prompt[:80]}")
+    return _rel(out, dest)
+
+
 def photo(query: str, out: Path, dest: Path, credits: list, n: int = 0) -> str:
-    """The n-th free photo for a search, saved as WebP in the site. '' when none."""
+    """The n-th free photo for a search, saved as WebP in the site; an AI photo when no library has one. '' when none."""
     if not query:
         return ""
     url, credit = _find_photo(query, n)
     if not url:
-        return ""
+        return ai_photo(query, out, dest, credits)
     if url.startswith("https://images.unsplash.com/"):
         credits.append(f"- {url.split('?')[0]}: {credit}")
         return url
@@ -304,6 +336,7 @@ def showcase(data: dict, dest: Path, log=print):
 def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
     """Put media paths into data['media'], downloading into dest/assets. Client photos come first."""
     q, m, credits = data.get("media_query") or {}, data.setdefault("media", {}), []
+    _ai.update(used=0, style=str(q.get("style") or "")[:200])  # every AI photo of this site follows the same shoot
     files = sorted(client_photos.iterdir()) if client_photos and client_photos.is_dir() else []
     own = [p for p in files if p.suffix.lower() in EXT]
     own_video = next((p for p in files if p.suffix.lower() in VIDEO), None)
@@ -339,6 +372,8 @@ def fill(data: dict, dest: Path, client_photos: Path | None = None, log=print):
     if not m.get("frames"):
         data["review"].append("مالقيتش فيديو مناسب للنشاط ده في المكتبات المجانية: ابعت فيديو قصير للمكان أو للأكل" if _key("PIXABAY_API_KEY") or _key("PEXELS_API_KEY")
                               else "مفيش فيديو للهيرو: حط PIXABAY_API_KEY في ملف .env (مجاني من pixabay.com/api/docs) أو ابعت فيديو للمكان")
+    if _ai["used"]:
+        data["review"].append(f"{_ai['used']} صور اتعملت بالذكاء الاصطناعي لأن المكتبات ملقتش صور مناسبة: راجعها، وأحسن تستبدلها بصور العميل الحقيقية")
     swap(data)
     if credits:
         data["credits"] = "CREDITS.md"  # the footer links it: CC BY photos need visible credit

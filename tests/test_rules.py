@@ -454,4 +454,26 @@ if _last.get("feel"):
     assert _v["feel"] != _last["feel"] and _v["shape"] != _last.get("shape")
 assert _fac.normalize({"name": "س", "feel": "weird", "menu": []}, "مطعم", "EG")["feel"] in _fac.FEELS
 
+# No library photo: FLUX on Cloudflare makes one (mocked here), credited, counted, never past the per-site cap
+import base64 as _b64x, io as _io, os as _osx  # noqa: E402
+from PIL import Image as _Im  # noqa: E402
+_buf = _io.BytesIO(); _Im.new("RGB", (64, 64), (200, 120, 40)).save(_buf, "PNG"); _png = _buf.getvalue() * 1  # a real image
+_png = _png + bytes(max(0, 6000 - len(_png)))
+class _R:
+    def __init__(self, b): self.b = b
+    def read(self): return self.b
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+_old_open, _old_find = _fm.urllib.request.urlopen, _fm._find_photo
+_fm.urllib.request.urlopen = lambda req, timeout=0: _R(json.dumps({"result": {"image": _b64x.b64encode(_png).decode()}}).encode())
+_fm._find_photo = lambda q, n=0: ("", "")
+_osx.environ["CF_ACCOUNT_ID"], _osx.environ["CF_API_TOKEN"] = "acc", "tok"
+_d = Path(tempfile.mkdtemp()); _cr = []
+_fm._ai.update(used=0, style="warm light")
+assert _fm.photo("koshari bowl", _d / "assets" / "img" / "a.webp", _d, _cr) == "assets/img/a.webp" and "FLUX" in _cr[0]
+_fm._ai["used"] = _fm.AI_MAX
+assert _fm.photo("koshari bowl", _d / "assets" / "img" / "b.webp", _d, _cr) == ""  # the cap holds
+_fm.urllib.request.urlopen, _fm._find_photo = _old_open, _old_find
+del _osx.environ["CF_ACCOUNT_ID"], _osx.environ["CF_API_TOKEN"]
+
 print("All rule checks passed.")
