@@ -81,14 +81,48 @@ def _cleanup(days: int = 14):
             Path(str(site) + ".zip").unlink(missing_ok=True)
 
 
+def _ollama(log=print) -> bool:
+    """The local model writes the content: start Ollama if it isn't running (it isn't always, at night)."""
+    import os, subprocess, urllib.request
+    url = os.getenv("OLLAMA_URL", "http://localhost:11434").rstrip("/")
+    for i in range(40):
+        try:
+            urllib.request.urlopen(url + "/api/tags", timeout=3)
+            return True
+        except OSError:
+            if i == 0:
+                log("   Ollama مش شغال: بشغّله")
+                subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            time.sleep(3)
+    return False
+
+
+def _awake(on: bool):
+    """Windows would sleep in the middle of the night's work: ask it to stay up until the run ends."""
+    if sys.platform == "win32":
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | (0x00000001 if on else 0))  # ES_CONTINUOUS (+ ES_SYSTEM_REQUIRED)
+
+
+def _art_director(prompt: str) -> str:
+    """Practice uses Groq first, so the owner's daily Gemini requests stay free for his real clients."""
+    from ..config import best_llm
+    return best_llm("fast").call(prompt)
+
+
 def run(n: int = 10, log=print) -> list[dict]:
     SHOTS.mkdir(parents=True, exist_ok=True)
+    _awake(True)
+    if not _ollama(log):
+        log("✗ Ollama مش راضي يشتغل: مفيش تدريب الليلة")
+        _awake(False)
+        return []
     reqs, results = requests(n, int(time.time())), []
     log(f"{datetime.now():%Y-%m-%d %H:%M} nightly: {len(reqs)} sites")
     for i, req in enumerate(reqs, 1):
         log(f"[{i}/{len(reqs)}] {req}")
         try:
-            res = build(req, log=lambda m: log("   " + m.strip()), fresh_name=True)
+            res = build(req, log=lambda m: log("   " + m.strip()), fresh_name=True, polisher=_art_director)
             name = Path(res["folder"]).name
             ex = EXAMPLES / f"{name}.json"
             if ex.exists():  # mark it as practice, so the owner knows where it came from
@@ -107,6 +141,7 @@ def run(n: int = 10, log=print) -> list[dict]:
         done = json.loads(DONE.read_text(encoding="utf-8")) if DONE.exists() else []
         DONE.write_text(json.dumps(done + [req], ensure_ascii=False, indent=0), encoding="utf-8")
     _cleanup()
+    _awake(False)
     return results
 
 
