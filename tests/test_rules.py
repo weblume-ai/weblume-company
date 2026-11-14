@@ -347,7 +347,7 @@ from weblume.factory import media as _fm  # noqa: E402
 _s = {"pieces": ["nav", "hero-frames", "menu-tiles", "gallery-sheet", "invite-video", "visit"], "media": {}, "menu": []}
 _fm.swap(_s)
 assert _s["pieces"] == ["nav", "hero-words", "menu-cols", "visit"], _s["pieces"]  # no photo: a still fallback opening becomes a moving one
-assert len(_fac.MANIFEST) == 45 and all((_fac.PIECES / v["file"]).is_file() for v in _fac.MANIFEST.values())
+assert len(_fac.MANIFEST) == 49 and all((_fac.PIECES / v["file"]).is_file() for v in _fac.MANIFEST.values())
 
 # Stock media must match the search: a scrapyard is not "nutella"
 assert not _fm._relevant("scrap, metal, recycling", "warm nutella waffle dessert making process") and _fm._relevant("chocolate, dessert", "nutella dessert")
@@ -444,7 +444,7 @@ _lv = {"name": "س", "pieces": ["nav", "hero-split", "about-statement", "menu-ti
        "media": {"heroImg": "h.webp", "gallery": [{"src": "g.webp"}] * 4}, "menu": _menu4, "about": "نص", "features": []}
 _fm.lively(_lv)
 assert all(p in _fac.MOVING for p in _lv["pieces"] if _fac.MANIFEST[p]["type"] in ("hero", "about", "menu", "band")), _lv["pieces"]
-assert "gallery-sheet" in _lv["pieces"] and "marquee-band" in _lv["pieces"]
+assert "gallery-sheet" in _lv["pieces"] and ({"marquee-band", "band-chapters"} & set(_lv["pieces"]))  # a moving band: names or colour chapters
 
 # Every site its own look: a motion personality, never the same personality or shape as the last site
 _last = _fac._last_site()

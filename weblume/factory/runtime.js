@@ -80,7 +80,7 @@
   /* lively and cinematic: text blocks, list rows, cards and the footer word come in one after another, and a thin bar
      shows how far you've read. Parts that move themselves (3D, pinned, carousels, labels) are left alone. */
   if (!still && motion !== "calm") {
-    var own = ".pin,.gcv,.mrl,.hrg,.hst,.hsc,.hbp,.fsc,.alb,.ctb,.mq,.bst,.hwd,.hfr";
+    var own = ".pin,.gcv,.mrl,.hrg,.hst,.hsc,.hbp,.fsc,.alb,.ctb,.mq,.bst,.hwd,.hfr,.hor,.bch,.hfm";
     [].forEach.call(document.querySelectorAll("#app section p, #app section li, #app section h3, #app section table, #app section .acts, #app section .tile, #app footer .huge"), function (el) {
       if (el.classList.contains("rise") || el.closest(own) || el.parentElement.closest(".rise") || el.querySelector(".rise")) return;
       var cs = getComputedStyle(el); if (cs.transform !== "none" || cs.animationName !== "none") return; // a tilted polaroid keeps its tilt

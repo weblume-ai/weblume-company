@@ -393,7 +393,7 @@ def swap(data: dict):
              "hero-card-room": "" if photo else "hero-waterline", "hero-film-title": "" if photo or m.get("video") else "hero-waterline",
              "menu-rows": "" if has_items >= 4 else "menu-cols", "menu-tiles": "" if has_items >= 4 else "menu-cols",
              "menu-sticky-photo": "" if photo or m.get("about") else "menu-cols",
-             "menu-flip": "" if has_items >= 4 else "menu-cols", "menu-rail": "" if has_items >= 4 else "menu-cols", "about-floats": "" if has_items >= 3 or len(data.get("showcase") or []) >= 3 else "about-labels", "menu-iso": "" if has_items >= 4 else "menu-cols",
+             "menu-flip": "" if has_items >= 4 else "menu-cols", "menu-rail": "" if has_items >= 4 else "menu-cols", "hero-orbit": "" if has_items >= 3 or len(data.get("showcase") or []) >= 3 else ("hero-split" if photo else "hero-waterline"), "about-floats": "" if has_items >= 3 or len(data.get("showcase") or []) >= 3 else "about-labels", "menu-iso": "" if has_items >= 4 else "menu-cols",
              "hero-stage": "" if has_items >= 3 or len(data.get("showcase") or []) >= 3 else ("hero-split" if photo else "hero-waterline"),
              "hero-ring": "" if has_items >= 3 or len(data.get("showcase") or []) >= 3 else ("hero-split" if photo else "hero-waterline"), "menu-polaroid": "" if has_items >= 4 else "menu-cols",
              "hero-arch": "" if photo else "hero-waterline", "hero-words": "" if photo else "hero-waterline",
@@ -404,7 +404,7 @@ def swap(data: dict):
         # footage came: the scroll-played hero (Loopie's signature) is the strongest opening, unless the owner chose one
         data["pieces"] = ["hero-frames" if p.startswith("hero-") else p for p in data["pieces"]]
     for p, ok in (("gallery-track", len(m.get("gallery") or []) >= 3), ("gallery-sheet", len(m.get("gallery") or []) >= 3),
-                  ("gallery-stack", len(m.get("gallery") or []) >= 3), ("gallery-curve", len(m.get("gallery") or []) >= 3), ("features-bento", len(data.get("features") or []) >= 2), ("features-glow", len(data.get("features") or []) >= 2),
+                  ("gallery-stack", len(m.get("gallery") or []) >= 3), ("gallery-curve", len(m.get("gallery") or []) >= 3), ("band-chapters", has_items >= 3 or len(data.get("showcase") or []) >= 3), ("features-stats", sum(any(ch.isdigit() for ch in str(f)) for f in data.get("features") or []) >= 2), ("how-film", len(m.get("gallery") or []) >= 3 and len(data.get("caps") or data.get("features") or []) >= 3), ("features-bento", len(data.get("features") or []) >= 2), ("features-glow", len(data.get("features") or []) >= 2),
                   ("features-scrub", len(data.get("features") or []) >= 2 and (m.get("video") or m.get("heroImg") or m.get("poster"))),
                   ("invite-video", m.get("video") or m.get("poster"))):
         if p in data["pieces"] and not ok:
@@ -420,7 +420,7 @@ def lively(data: dict):
     photos = sum(bool(i.get("img")) for c in data.get("menu") or [] for i in c.get("items") or [])
     names = sum(len(c.get("items") or []) for c in data.get("menu") or [])
     video_hero, seed = "hero-frames" in ps, sum(map(ord, str(data.get("name", ""))))  # the same place always gets the same choice
-    opts = {"hero": (["hero-blueprint"] if m.get("heroImg") else []) + ["hero-words", "hero-wordmark"],
+    opts = {"hero": (["hero-blueprint"] if m.get("heroImg") else []) + ["hero-words", "hero-wordmark"] + (["hero-orbit"] if photos >= 3 else []),
             "about": (["about-labels", "about-bubbles"] + (["about-floats"] if photos >= 3 else [])) if data.get("about") else [],
             "features": (["features-glow"] + ([] if video_hero or not (m.get("heroImg") or m.get("poster")) else ["features-scrub"]))
                         if len(data.get("features") or []) >= 2 else [],
@@ -431,6 +431,8 @@ def lively(data: dict):
     for p in ps:
         o = opts.get(MAN_TYPE(p)) or []
         out.append(o[seed % len(o)] if p not in MOVING and p not in picked and o else p)
+    if photos >= 3 and not any(MAN_TYPE(p) == "band" for p in out) and seed % 2:  # half the sites: a colour chapter per signature item
+        out.insert(next((i + 1 for i, p in enumerate(out) if MAN_TYPE(p) == "hero"), 1), "band-chapters")
     if names >= 4 and not any(MAN_TYPE(p) == "band" for p in out):
         at = next((i + 1 for i, p in enumerate(out) if MAN_TYPE(p) == "hero"), 1)
         out.insert(at, "marquee-band")

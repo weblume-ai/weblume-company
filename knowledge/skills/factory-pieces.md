@@ -10,6 +10,9 @@ The page is built from tested pieces; you only choose ids (one per type) from th
   hero-waterline or hero-words.
 - Menu: 4+ dish photos → menu-rail, menu-tiles, menu-iso, menu-polaroid, menu-flip, menu-rows; no photos → menu-cols.
 - Features (only with 2+ real strengths): features-glow, features-bento, features-scrub (needs a video or photo).
+- More openings and sections: hero-orbit (products orbit a brand-colour shape), band-chapters (a full colour screen
+  per signature item), how-film (the craft in pinned chapters: scene captions over zooming photos), features-stats
+  (numbers counting up: ONLY when the strengths carry true numbers like "24 ساعة" or "15 سنة").
 - Gallery (3+ photos): gallery-track, gallery-sheet, gallery-stack, gallery-curve (a curved wall in a dark room).
 - About: about-say, about-statement, about-badge, about-bubbles, about-labels (text in black labels, light page).
 - Mood: luxury/cinematic → dark pages, hero-frames, menu-rail, features-scrub, cta-glow. Playful → hero-stage,

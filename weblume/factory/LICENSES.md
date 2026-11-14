@@ -11,6 +11,7 @@
 | features-glow, menu-iso, band-stripes, about-bubbles, cta-glow | built on Uiverse.io elements (github.com/uiverse-io/galaxy): swift-bullfrog-34 by SelfMadeSystem, popular-walrus-75 by JaydipPrajapati1910, afraid-sheep-52 by jeremyssocial, lovely-monkey-46 by csemszepp, rare-rattlesnake-22 by Aryan-81; reworked by Weblume | MIT (notice below) |
 | hero-blueprint, gallery-curve, about-labels | written by Weblume after design ideas in a screen recording Asser shared of a creative studio's site (a blueprint opening, a curved wall of works, text in black labels): no code, images or brand copied | Weblume's own work |
 | hero-wordmark, about-floats | written by Weblume after design ideas in a screen recording Asser shared of a studio site (the name as big as the screen, floating products): no code, images or brand copied | Weblume's own work |
+| hero-orbit, band-chapters, how-film, features-stats | written by Weblume after design ideas in product-showroom screen recordings Asser shared (orbiting jars, a colour chapter per product, a scroll-told coffee story, counting numbers): no code, images or brands copied | Weblume's own work |
 | runtime.js, base.css | written for the factory, from Loopie's engine | Weblume's own work |
 | Smooth scroll | Lenis 1.1.13 (cdn.jsdelivr.net/npm/lenis) | MIT |
 | Fonts | Google Fonts (Alexandria, IBM Plex Sans Arabic, …) | SIL Open Font License |

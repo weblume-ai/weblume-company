@@ -850,5 +850,86 @@
   "from": "Weblume code after a studio site in a screen recording Asser shared (NOTHIN'; idea only: no code, images or brand)",
   "thumb": "thumbs/about-floats.webp",
   "tested": "360/768/1280 OK"
+ },
+ "hero-orbit": {
+  "file": "sections-showroom.js",
+  "type": "hero",
+  "fits": [
+   "sweets",
+   "cafe",
+   "bakery",
+   "shop",
+   "restaurant"
+  ],
+  "style": [
+   "playful",
+   "bold",
+   "modern"
+  ],
+  "needs": [
+   "3+ product or dish photos"
+  ],
+  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "thumb": "thumbs/hero-orbit.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "band-chapters": {
+  "file": "sections-showroom.js",
+  "type": "band",
+  "fits": [
+   "sweets",
+   "cafe",
+   "bakery",
+   "shop",
+   "restaurant"
+  ],
+  "style": [
+   "bold",
+   "playful",
+   "cinematic"
+  ],
+  "needs": [
+   "3+ product or dish photos"
+  ],
+  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "thumb": "thumbs/band-chapters.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "how-film": {
+  "file": "sections-showroom.js",
+  "type": "how",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "cinematic",
+   "luxury",
+   "bold"
+  ],
+  "needs": [
+   "caps or features (3+)",
+   "media.gallery (3+)"
+  ],
+  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "thumb": "thumbs/how-film.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "features-stats": {
+  "file": "sections-showroom.js",
+  "type": "features",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "modern",
+   "luxury"
+  ],
+  "needs": [
+   "2+ features that carry a TRUE number (24 ساعة, 15 سنة, 3 فروع)"
+  ],
+  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "thumb": "thumbs/features-stats.webp",
+  "tested": "360/768/1280 OK"
  }
 }

@@ -21,7 +21,7 @@ DEMO = {
         {"cat": "الحلا", "img": "assets/img/menu-dessert.webp", "items": [
             {"name": "تشيز كيك", "desc": "توت", "price": "22", "img": "assets/img/mood-cup.webp"},
             {"name": "ماتشا", "desc": "ماتشا · حليب", "price": "20", "img": "assets/img/drink-green.webp"}]}],
-    "features": ["قهوة مختصة", "مفتوح لآخر الليل", "جلسات عائلية"], "shape": "arch",
+    "features": ["قهوة مختصة من 12 بلد", "مفتوحين 18 ساعة", "جلسات عائلية"], "shape": "arch",
     # products for hero-showcase (the menu photos stand in for cut-outs), so that piece is really tested
     "showcase": [{"name": n, "desc": d, "price": pr, "cut": f"assets/img/{img}.webp", "tone": tn, "ink": "#ffffff"} for n, d, pr, img, tn in
                  (("إسبريسو", "بن إثيوبي", "14", "drink-esp", "#c2410c"), ("كابتشينو", "حليب · رغوة", "18", "drink-capp", "#7c3aed"),
