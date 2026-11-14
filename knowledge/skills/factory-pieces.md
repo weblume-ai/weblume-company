@@ -5,7 +5,8 @@ The page is built from tested pieces; you only choose ids (one per type) from th
 - Always: nav, a hero, a menu, visit, footer-huge, bar. Add about, features, band, cta, gallery when they help the idea.
 - Hero by what media there is: client video → hero-frames (scroll-played footage, the strongest); 2+ cut-out
   products → hero-showcase or hero-stage; 3+ dish photos → hero-ring; one good photo → hero-split, hero-arch,
-  hero-name-photo, hero-blueprint (lines draw a blueprint, a window opens on the photo: cinematic); nothing →
+  hero-name-photo, hero-blueprint (lines draw a blueprint, a window opens on the photo: cinematic), hero-wordmark (the name as big as
+  the screen, products floating around it: bold); nothing →
   hero-waterline or hero-words.
 - Menu: 4+ dish photos → menu-rail, menu-tiles, menu-iso, menu-polaroid, menu-flip, menu-rows; no photos → menu-cols.
 - Features (only with 2+ real strengths): features-glow, features-bento, features-scrub (needs a video or photo).

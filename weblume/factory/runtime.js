@@ -90,6 +90,41 @@
     bar.className = "readbar"; bar.setAttribute("aria-hidden", "true"); document.body.appendChild(bar);
     var fillBar = function () { qb = false; var h = document.documentElement.scrollHeight - innerHeight; bar.style.transform = "scaleX(" + (h > 0 ? Math.min(1, scrollY / h) : 0).toFixed(4) + ")"; };
     addEventListener("scroll", function () { if (!qb) { qb = true; requestAnimationFrame(fillBar); } }, {passive: true}); fillBar();
+
+    /* big headings slide sideways as their section passes (like Loopie's words); buttons lean toward the pointer */
+    var heads = [].filter.call(document.querySelectorAll("#app section h2, #app footer .huge"), function (h) { return !h.closest(own); });
+    var reach = motion === "cinematic" ? 9 : 5, qh = false;
+    var slide = function () {
+      qh = false;
+      heads.forEach(function (h, k) {
+        var r = h.getBoundingClientRect(); if (r.bottom < -200 || r.top > innerHeight + 200) return;
+        var p = (r.top + r.height / 2) / innerHeight - .5; // -0.5 (top) … 0.5 (bottom)
+        h.style.translate = (p * reach * (k % 2 ? -1 : 1)).toFixed(2) + "vw 0";
+      });
+    };
+    addEventListener("scroll", function () { if (!qh) { qh = true; requestAnimationFrame(slide); } }, {passive: true}); slide();
+    if (matchMedia("(hover: hover)").matches) [].forEach.call(document.querySelectorAll("#app .btn"), function (b) {
+      b.addEventListener("pointermove", function (e) { var r = b.getBoundingClientRect(); b.style.translate = ((e.clientX - r.left - r.width / 2) * .25).toFixed(1) + "px " + ((e.clientY - r.top - r.height / 2) * .35).toFixed(1) + "px"; });
+      b.addEventListener("pointerleave", function () { b.style.translate = ""; });
+    });
+  }
+
+  /* cinematic sites open like a film: the name in the middle, a counter to 100, then the curtain lifts.
+     Once per visit, and never for the automatic review (its screenshots must show the page). */
+  if (!still && motion === "cinematic" && !navigator.webdriver) {
+    var seen = false;
+    try { seen = !!sessionStorage.getItem("wl-intro"); sessionStorage.setItem("wl-intro", "1"); } catch (e) { seen = true; } // no storage (a sandboxed preview): no curtain
+    if (!seen) {
+      var cur = document.createElement("div"), num = document.createElement("i"), t0 = performance.now();
+      cur.className = "curtain"; cur.setAttribute("aria-hidden", "true");
+      cur.innerHTML = "<b>" + SITEKIT.esc(S.word || S.name) + "</b>"; cur.appendChild(num); document.body.appendChild(cur);
+      (function count(now) {
+        var k = Math.min(1, (now - t0) / 1100);
+        num.textContent = String(Math.round(k * 100)).padStart(3, "0");
+        if (k < 1) return requestAnimationFrame(count);
+        cur.classList.add("go"); setTimeout(function () { cur.remove(); }, 900);
+      })(t0);
+    }
   }
 
   /* parts rise in once as they enter */

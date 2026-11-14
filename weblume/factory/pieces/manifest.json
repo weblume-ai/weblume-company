@@ -808,5 +808,47 @@
   "from": "Weblume code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
   "thumb": "thumbs/about-labels.webp",
   "tested": "360/768/1280 OK"
+ },
+ "hero-wordmark": {
+  "file": "sections-float.js",
+  "type": "hero",
+  "fits": [
+   "*"
+  ],
+  "style": [
+   "bold",
+   "modern",
+   "playful"
+  ],
+  "needs": [
+   "product photos (optional, they float)"
+  ],
+  "from": "Weblume code after a studio site in a screen recording Asser shared (NOTHIN'; idea only: no code, images or brand)",
+  "thumb": "thumbs/hero-wordmark.webp",
+  "tested": "360/768/1280 OK"
+ },
+ "about-floats": {
+  "file": "sections-float.js",
+  "type": "about",
+  "fits": [
+   "restaurant",
+   "cafe",
+   "sweets",
+   "bakery",
+   "shop"
+  ],
+  "style": [
+   "bold",
+   "modern",
+   "playful",
+   "cinematic"
+  ],
+  "needs": [
+   "about",
+   "3+ product photos"
+  ],
+  "from": "Weblume code after a studio site in a screen recording Asser shared (NOTHIN'; idea only: no code, images or brand)",
+  "thumb": "thumbs/about-floats.webp",
+  "tested": "360/768/1280 OK"
  }
 }

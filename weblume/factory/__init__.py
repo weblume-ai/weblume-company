@@ -26,7 +26,7 @@ def save_example(request: str, data: dict, folder: Path, grade: dict | None = No
 
 
 # pieces that move on their own (the rest only rise in with the motion layer)
-MOVING = {"hero-frames", "hero-film-title", "hero-layers", "hero-words", "hero-showcase", "hero-ring", "hero-stage", "hero-blueprint", "marquee-band",
+MOVING = {"hero-wordmark", "about-floats", "about-badge", "menu-sticky-photo", "hero-frames", "hero-film-title", "hero-layers", "hero-words", "hero-showcase", "hero-ring", "hero-stage", "hero-blueprint", "marquee-band",
           "band-stripes", "about-bubbles", "about-labels", "features-scrub", "features-glow", "menu-rail", "menu-flip", "menu-iso", "invite-video",
           "cta-blur", "cta-glow", "gallery-track", "gallery-stack", "gallery-curve"}
 

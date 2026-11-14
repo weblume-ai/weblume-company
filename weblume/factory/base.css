@@ -41,4 +41,10 @@ html[data-shape=organic]{--r-card:42% 58% 52% 48% / 38% 46% 54% 62%;--r-loop:62%
   .js .in .hw,.js .hw.in{opacity:1;transform:none}
   .readbar{position:fixed;top:0;left:0;right:0;height:3px;z-index:999;background:var(--accent);transform:scaleX(0);transform-origin:0 50%;pointer-events:none}
   html[dir=rtl] .readbar{transform-origin:100% 50%}
+  .curtain{position:fixed;inset:0;z-index:1000;background:var(--ink);color:var(--paper);display:grid;place-items:center;transition:transform .85s cubic-bezier(.7,0,.2,1)}
+  .curtain b{font:900 clamp(56px,14vw,200px)/1 var(--display);animation:curIn .9s cubic-bezier(.2,.8,.2,1) both}
+  .curtain i{position:absolute;bottom:clamp(20px,5vh,48px);inset-inline-end:var(--gut);font:700 var(--small)/1 var(--text);font-style:normal;letter-spacing:.2em;color:var(--accent)}
+  .curtain.go{transform:translateY(-100%)}@keyframes curIn{from{opacity:0;transform:translateY(30px) scale(.96)}}
+  #app section,#app footer{overflow-x:clip}#app section h2,#app footer .huge{transition:translate .25s linear}#app .btn{transition:translate .25s cubic-bezier(.2,.7,.2,1),transform .2s,background .2s,color .2s}
+  @media (hover:hover){.js .mv:hover img{transform:translateY(var(--py,0)) scale(1.12)}}
 }
