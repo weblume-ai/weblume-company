@@ -446,4 +446,12 @@ _fm.lively(_lv)
 assert all(p in _fac.MOVING for p in _lv["pieces"] if _fac.MANIFEST[p]["type"] in ("hero", "about", "menu", "band")), _lv["pieces"]
 assert "gallery-sheet" in _lv["pieces"] and "marquee-band" in _lv["pieces"]
 
+# Every site its own look: a motion personality, never the same personality or shape as the last site
+_last = _fac._last_site()
+_v = _fac.normalize({"name": "اختبار", "feel": _last.get("feel") or "luxe", "shape": _last.get("shape") or "round", "menu": []}, "مطعم", "EG")
+assert _v["feel"] in _fac.FEELS and _v["shape"] in _fac.SHAPES
+if _last.get("feel"):
+    assert _v["feel"] != _last["feel"] and _v["shape"] != _last.get("shape")
+assert _fac.normalize({"name": "س", "feel": "weird", "menu": []}, "مطعم", "EG")["feel"] in _fac.FEELS
+
 print("All rule checks passed.")

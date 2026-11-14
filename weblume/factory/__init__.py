@@ -20,7 +20,7 @@ EXAMPLES = ROOT / "knowledge" / "factory-examples"  # every build; approved ones
 
 def save_example(request: str, data: dict, folder: Path, grade: dict | None = None):
     EXAMPLES.mkdir(parents=True, exist_ok=True)
-    keep = {k: data.get(k) for k in ("name", "kind", "style", "tagline", "heroLines", "lede", "about", "together", "invite", "colors", "fonts", "menu", "pieces", "motion")}
+    keep = {k: data.get(k) for k in ("name", "kind", "style", "tagline", "heroLines", "lede", "about", "together", "invite", "colors", "fonts", "menu", "pieces", "motion", "feel", "shape")}
     (EXAMPLES / f"{folder.name}.json").write_text(json.dumps({"request": request, "approved": False, "data": keep, "grade": grade or {}},
                                                              ensure_ascii=False, indent=1), encoding="utf-8")
 
@@ -63,6 +63,20 @@ def approve(name: str, ok: bool = True) -> Path:
     return f
 
 
+FEELS = ["cinematic", "playful", "editorial", "kinetic", "luxe"]
+SHAPES = ["round", "arch", "sharp", "soft", "organic"]
+
+
+def _last_site() -> dict:
+    """The look of the last site the factory made, so the next one looks different."""
+    exs = sorted(EXAMPLES.glob("*.json"), key=lambda f: f.stat().st_mtime) if EXAMPLES.exists() else []
+    for f in reversed(exs):
+        d = json.loads(f.read_text(encoding="utf-8")).get("data") or {}
+        if d.get("feel") or d.get("shape"):
+            return d
+    return {}
+
+
 def example_list() -> list[dict]:
     """Every saved example, newest first, for the owner's review in the dashboard."""
     if not EXAMPLES.exists():
@@ -98,6 +112,7 @@ SCHEMA = """{
  "kind": "restaurant | cafe | sweets | bakery | clinic | shop | gym | salon | company",
  "style": "luxury | bold | simple | playful | heritage | modern",
  "shape": "the shape of photos, cards and buttons: round | arch | sharp | soft | organic (pick what suits the place)",
+ "feel": "the motion personality, from the place's character: cinematic (slow reveals, curtain) | playful (bouncy pops) | editorial (wipes, drawn lines) | kinetic (fast sliding type) | luxe (soft blur, slow)",
  "motion": "lively | cinematic (how much the page moves; Weblume sites always move: calm only when the request asks for little motion)",
  "blend": "one line: what you took from A, B and C",
  "features": ["2 to 4 real strengths from the request, 2-4 words each (delivery, open late, family hall…); empty if none are known"],
@@ -174,7 +189,7 @@ def plan(request: str, ask=None, guide: str = "") -> dict:
               "(it decides your hero piece and shape), the colours and type from B (your colors and fonts, in this business's mood), "
               "and the motion and section rhythm from C (your motion and the order of pieces). Say what you took in \"blend\".\n"
               f"{inspiration.blend(request)}\n\n"
-              + (f"APPROVED EXAMPLES OF WEBLUME SITES (match this quality and voice):\n{examples()}\n\n" if examples() else "") +
+              + (f"APPROVED EXAMPLES OF WEBLUME SITES (match their quality and voice only: never their colours, fonts, shape, motion, pieces or words; every site has its own look):\n{examples()}\n\n" if examples() else "") +
               f"Answer with ONE JSON object only, in this shape:\n{SCHEMA}")
     raw = ""
     for fn in ([ask] if ask else [_ask_local, _ask_cloud]):
@@ -296,8 +311,14 @@ def normalize(d: dict, request: str, country: str) -> dict:
     d["mapsLink"] = link.group(0) if link else ""
     d["maps"] = " ".join(x for x in (str(d.get("address") or "").strip(), str(d.get("name") or "")) if x and not x.startswith("http"))
     d["colors"] = palette(d.get("colors"))
-    d["shape"] = d.get("shape") if d.get("shape") in ("round", "arch", "sharp", "soft", "organic") else "round"
+    d["shape"] = d.get("shape") if d.get("shape") in SHAPES else "round"
     d["motion"] = d.get("motion") if d.get("motion") in ("lively", "cinematic") else "lively"
+    last = _last_site()
+    seed = sum(map(ord, str(d.get("name", ""))))
+    feel = d.get("feel") if d.get("feel") in FEELS else FEELS[seed % len(FEELS)]
+    d["feel"] = FEELS[(FEELS.index(feel) + 1) % len(FEELS)] if feel == last.get("feel") else feel  # two sites in a row never feel the same
+    if d["shape"] == last.get("shape"):
+        d["shape"] = SHAPES[(SHAPES.index(d["shape"]) + 1 + seed % 3) % len(SHAPES)]
     if re.search(r"بدون (?:حركة|أنيميشن|انيميشن)|حركة (?:قليلة|خفيفة)|من غير (?:حركة|أنيميشن|انيميشن)|no animation|calm", request, re.I):
         d["motion"] = "calm"  # the owner asked for a still page: the only way a site is calm
     d["features"] = [str(x)[:40] for x in d.get("features") or [] if str(x).strip()][:4]

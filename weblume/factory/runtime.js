@@ -8,6 +8,7 @@
   if (lang === "en") Object.keys(S.en).forEach(function (k) { S[k] = S.en[k]; });
   document.documentElement.lang = lang; document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
   if (S.shape) document.documentElement.dataset.shape = S.shape; // arch | sharp | round | soft | organic
+  if (S.feel) document.documentElement.dataset.feel = S.feel; // the motion personality: cinematic | playful | editorial | kinetic | luxe
   var UI = {
     ar: {menu: "المنيو", visit: "زورونا", gallery: "الأجواء", about: "عننا", wa: "واتساب", open: "القائمة", close: "إغلاق",
          other: "English", see: "شوف المنيو", order: "اطلب دلوقتي", directions: "الاتجاهات", maps: "افتح في خرائط جوجل",
@@ -93,7 +94,7 @@
 
     /* big headings slide sideways as their section passes (like Loopie's words); buttons lean toward the pointer */
     var heads = [].filter.call(document.querySelectorAll("#app section h2, #app footer .huge"), function (h) { return !h.closest(own); });
-    var reach = motion === "cinematic" ? 9 : 5, qh = false;
+    var reach = S.feel === "kinetic" ? 16 : motion === "cinematic" ? 9 : 5, qh = false;
     var slide = function () {
       qh = false;
       heads.forEach(function (h, k) {

@@ -47,4 +47,27 @@ html[data-shape=organic]{--r-card:42% 58% 52% 48% / 38% 46% 54% 62%;--r-loop:62%
   .curtain.go{transform:translateY(-100%)}@keyframes curIn{from{opacity:0;transform:translateY(30px) scale(.96)}}
   #app section,#app footer{overflow-x:clip}#app section h2,#app footer .huge{transition:translate .25s linear}#app .btn{transition:translate .25s cubic-bezier(.2,.7,.2,1),transform .2s,background .2s,color .2s}
   @media (hover:hover){.js .mv:hover img{transform:translateY(var(--py,0)) scale(1.12)}}
+  /* motion personalities (data.js "feel"): the same parts arrive in a different way on each site */
+  .js[data-feel=playful] .rise{transform:translateY(40px) scale(.88) rotate(-3deg);transition:opacity .5s,transform .8s cubic-bezier(.34,1.56,.64,1);transition-delay:calc(var(--i,0)*90ms)}
+  .js[data-feel=playful] .mv{clip-path:circle(18% at 50% 50%);transition:clip-path 1s cubic-bezier(.34,1.3,.64,1)}.js[data-feel=playful] .mv.in{clip-path:circle(75% at 50% 50%)}
+  .js[data-feel=playful] .hw{transform:translateY(.6em) scale(.4) rotate(-8deg);transition:opacity .4s,transform .7s cubic-bezier(.34,1.56,.64,1);transition-delay:calc(var(--w)*80ms)}
+  @media (hover:hover){.js[data-feel=playful] .btn:hover{animation:pWob .5s}}@keyframes pWob{30%{transform:rotate(-4deg) scale(1.06)}60%{transform:rotate(3deg)}}
+  .js[data-feel=editorial] .rise{opacity:1;clip-path:inset(0 0 100% 0);transform:translateY(14px);transition:clip-path .9s cubic-bezier(.7,0,.2,1),transform .9s cubic-bezier(.7,0,.2,1);transition-delay:calc(var(--i,0)*110ms)}
+  .js[data-feel=editorial] .rise.in{clip-path:inset(0 0 -10% 0)}
+  .js[data-feel=editorial] .mv{clip-path:inset(0 100% 0 0);transition:clip-path 1.2s cubic-bezier(.7,0,.2,1)}.js[dir=rtl][data-feel=editorial] .mv{clip-path:inset(0 0 0 100%)}.js[data-feel=editorial] .mv.in{clip-path:inset(0)}
+  .js[data-feel=editorial] #app section h2{background:linear-gradient(var(--accent),var(--accent)) no-repeat 100% 100%/0 3px;transition:background-size 1s cubic-bezier(.7,0,.2,1) .3s,translate .25s linear}
+  .js[data-feel=editorial] #app section h2.in{background-size:100% 3px}
+  .js[data-feel=kinetic] .rise{transform:translateX(70px) skewX(-10deg);transition:opacity .5s,transform .7s cubic-bezier(.2,.9,.2,1);transition-delay:calc(var(--i,0)*60ms)}
+  .js[dir=rtl][data-feel=kinetic] .rise{transform:translateX(-70px) skewX(10deg)}
+  .js[data-feel=kinetic] .hw{transform:translateY(110%);transition:opacity .2s,transform .5s cubic-bezier(.2,.9,.2,1);transition-delay:calc(var(--w)*45ms)}
+  .js[data-feel=kinetic] .mv{clip-path:inset(50% 0 50% 0);transition:clip-path .8s cubic-bezier(.2,.9,.2,1)}.js[data-feel=kinetic] .mv.in{clip-path:inset(0)}
+  .js[data-feel=luxe] .rise{transform:translateY(10px) scale(1.03);filter:blur(10px);transition:opacity 1.3s ease,transform 1.4s cubic-bezier(.2,.7,.2,1),filter 1.3s ease;transition-delay:calc(var(--i,0)*140ms)}
+  .js[data-feel=luxe] .rise.in{filter:none}
+  .js[data-feel=luxe] .mv img{filter:blur(14px) brightness(.6);transition:transform 1.8s cubic-bezier(.2,.7,.2,1),filter 1.6s ease}.js[data-feel=luxe] .mv.in img{filter:none}
+  .js[data-feel=luxe] .hw{filter:blur(8px);transform:translateY(.2em);transition:opacity 1s,transform 1.2s,filter 1s;transition-delay:calc(var(--w)*120ms)}.js[data-feel=luxe] .in .hw{filter:none}
+  .js[data-feel=cinematic] .mv{clip-path:inset(30% 0 30% 0);transition:clip-path 1.6s cubic-bezier(.7,0,.2,1)}.js[data-feel=cinematic] .mv.in{clip-path:inset(0)}
+  .js[data-feel=cinematic] .mv img{transform:translateY(var(--py,0)) scale(1.3);transition:transform 2.2s cubic-bezier(.2,.7,.2,1)}
+  .js[data-feel] .rise.in{transform:none;filter:none}.js[data-feel] .in .hw,.js[data-feel] .hw.in{opacity:1;transform:none;filter:none}
+  .js[data-feel] .mv.in img{transform:translateY(var(--py,0)) scale(1.06);filter:none}
+  @media (hover:hover){.js[data-feel] .mv.in:hover img{transform:translateY(var(--py,0)) scale(1.12)}}
 }
