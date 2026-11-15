@@ -4,7 +4,9 @@
   var E = function (s) { return SITEKIT.esc(s); };
   var items = function (S) { // dishes with a photo: cut-outs from the showcase first, then menu photos
     var a = (S.showcase || []).filter(function (s) { return s.cut; }).map(function (s) { return {name: s.name, desc: s.desc, price: s.price, img: s.cut, cut: 1}; });
-    if (a.length >= 3) return a;
+    var photos = [];
+    (S.menu || []).forEach(function (c) { (c.items || []).forEach(function (i) { if (i.img) photos.push(i); }); });
+    if (a.length >= 4 || a.length >= photos.length) return a; // a few cut-outs never hide a menu full of photos
     a = [];
     (S.menu || []).forEach(function (c) { (c.items || []).forEach(function (i) { if (i.img) a.push(i); }); });
     return a;

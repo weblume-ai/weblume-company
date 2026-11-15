@@ -32,6 +32,28 @@ DEMO = {
               "gallery": [{"src": f"assets/img/mood-{n}.webp", "alt": "الأجواء"} for n in ("hall", "stools", "tile", "yellow", "chair")]}}
 
 
+def _profiles(base: Path) -> list[tuple[dict, Path]]:
+    """Each piece is tested and pictured on a different shop, so the pieces don't all look like Loopie: the café
+    demo plus real factory sites on this laptop (flowers, grills, sweets) when they exist."""
+    from . import FEELS, load
+    out = []
+    for i, name in enumerate(("فل", "السفرة", "نوتيلا")):
+        site = OUTPUT_DIR / "factory" / name
+        if not (site / "data.js").is_file():
+            continue
+        d, dest = load(site), base.with_name(f"{base.name}-{i + 1}")
+        if not (dest / "assets").exists():
+            shutil.copytree(site / "assets", dest / "assets")
+        items = [it for c in d.get("menu") or [] for it in c.get("items") or [] if it.get("img")]
+        d["showcase"] = [{"name": it["name"], "desc": it.get("desc", ""), "price": it.get("price", ""), "cut": it["img"], "tone": t, "ink": "#ffffff"}
+                         for it, t in zip(items[:3], ("#c2410c", "#7c3aed", "#15803d"))]
+        nums = [f for f in d.get("features") or [] if any(ch.isdigit() for ch in f)]
+        d["features"] = (d.get("features") or [])[:2] + ["مفتوحين 16 ساعة", "أكتر من 20 صنف"][:max(0, 2 - len(nums))]
+        d.update(feel=FEELS[i % len(FEELS)], picked=[], review=[])
+        out.append((d, dest))
+    return out
+
+
 def main():
     dest = OUTPUT_DIR / "factory" / "_pieces-test"
     if not (dest / "assets" / "frames-d").exists():
@@ -43,10 +65,17 @@ def main():
         shutil.copy(CAFE / "pour.webp", dest / "assets" / "poster.webp")
     thumbs, bad = PIECES / "thumbs", {}
     thumbs.mkdir(exist_ok=True)
-    for pid in MANIFEST:
-        data = dict(DEMO, pieces=[pid])
-        assemble(data, dest)
-        issues, shots = review.check(dest)
+    shops = [(DEMO, dest)] + _profiles(dest)
+    from PIL import Image, ImageStat
+    blank = lambda shot: ImageStat.Stat(Image.open(shot).convert("L").crop((0, 80, 1280, 800))).stddev[0] < 12
+    for k, pid in enumerate(MANIFEST):
+        for t in range(len(shops)):  # a piece that shows nothing on this shop (missing data) is tried on the next one
+            shop, where = shops[(k + t) % len(shops)]
+            assemble(dict(shop, pieces=[pid]), where)
+            issues, shots = review.check(where)
+            desk = next((s for s in shots if "desktop_0" in s), None)
+            if pid in ("nav", "bar", "marquee-band") or not desk or not blank(desk):
+                break
         if issues:
             bad[pid] = issues
         desk = next((s for s in shots if "desktop_0" in s), None)

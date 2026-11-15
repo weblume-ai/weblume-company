@@ -400,8 +400,9 @@ def swap(data: dict):
              "hero-layers": "" if photo and len(m.get("gallery") or []) >= 2 else ("hero-split" if photo else "hero-waterline")}
     data["pieces"] = [rules.get(p) or p for p in ps]
     picked = set(data.get("picked") or [])
-    if m.get("frames") and not picked & {p for p in data["pieces"] if p.startswith("hero-")}:
-        # footage came: the scroll-played hero (Loopie's signature) is the strongest opening, unless the owner chose one
+    if m.get("frames") and sum(map(ord, str(data.get("name", "")))) % 3 == 0 and not picked & {p for p in data["pieces"] if p.startswith("hero-")}:
+        # one site in three opens with its footage played by the scroll (Loopie's way); the others open differently,
+        # so the factory's sites don't all look like Loopie (the footage still plays in features-scrub or invite-video)
         data["pieces"] = ["hero-frames" if p.startswith("hero-") else p for p in data["pieces"]]
     for p, ok in (("gallery-track", len(m.get("gallery") or []) >= 3), ("gallery-sheet", len(m.get("gallery") or []) >= 3),
                   ("gallery-stack", len(m.get("gallery") or []) >= 3), ("gallery-curve", len(m.get("gallery") or []) >= 3), ("band-chapters", has_items >= 3 or len(data.get("showcase") or []) >= 3), ("features-stats", sum(any(ch.isdigit() for ch in str(f)) for f in data.get("features") or []) >= 2), ("how-film", len(m.get("gallery") or []) >= 3 and len(data.get("caps") or data.get("features") or []) >= 3), ("features-bento", len(data.get("features") or []) >= 2), ("features-glow", len(data.get("features") or []) >= 2),
@@ -420,7 +421,7 @@ def lively(data: dict):
     photos = sum(bool(i.get("img")) for c in data.get("menu") or [] for i in c.get("items") or [])
     names = sum(len(c.get("items") or []) for c in data.get("menu") or [])
     video_hero, seed = "hero-frames" in ps, sum(map(ord, str(data.get("name", ""))))  # the same place always gets the same choice
-    opts = {"hero": (["hero-blueprint"] if m.get("heroImg") else []) + ["hero-words", "hero-wordmark"] + (["hero-orbit"] if photos >= 3 else []),
+    opts = {"hero": (["hero-blueprint"] if m.get("heroImg") else []) + ["hero-words", "hero-wordmark"] + (["hero-orbit"] if photos >= 3 else []) + (["hero-frames"] if m.get("frames") else []),
             "about": (["about-labels", "about-bubbles"] + (["about-floats"] if photos >= 3 else [])) if data.get("about") else [],
             "features": (["features-glow"] + ([] if video_hero or not (m.get("heroImg") or m.get("poster")) else ["features-scrub"]))
                         if len(data.get("features") or []) >= 2 else [],

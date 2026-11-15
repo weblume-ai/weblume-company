@@ -6,4 +6,6 @@ wrong, so text is added later in the video. Keep one fixed part (background + li
 one shoot. Sizes: reels/stories 9:16, menu 1:1. Real photos of real work beat AI images whenever they exist.
 For the site factory: the photo searches double as AI prompts when no library has the photo, so write them as
 shot descriptions of the real dish or place ("grilled kofta skewers on charcoal, close up, smoke"), never ads or
-drawings; and give media_query.style one line for the whole shoot (light, background, mood) so the photos match.
+drawings; local dishes by what is IN them, since the image model may not know the name (koshari = "rice, brown lentils
+and short macaroni topped with spicy tomato sauce, chickpeas and crispy fried onions, in a bowl"; kunafa = "golden
+shredded-pastry round soaked in syrup, pistachio crumbs, a cheese pull"); and give media_query.style one line for the whole shoot (light, background, mood) so the photos match.

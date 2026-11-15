@@ -416,6 +416,9 @@ assert "hero-blueprint" in _sw["pieces"] and "hero-frames" not in _sw["pieces"]
 _sw = {"pieces": ["nav", "hero-split"], "media": {"frames": {"n": 1}, "heroImg": "x.webp"}, "menu": []}
 _fm.swap(_sw)
 assert "hero-frames" in _sw["pieces"]
+_sw = {"name": "ac", "pieces": ["nav", "hero-blueprint"], "media": {"frames": {"n": 1}, "heroImg": "x.webp"}, "menu": []}  # sum of "ac" % 3 == 1
+_fm.swap(_sw)
+assert "hero-blueprint" in _sw["pieces"]  # not every site with footage opens like Loopie
 
 # Every site moves: the model can't pick "calm"; only a request for a still page does
 assert _fac.normalize({"name": "س", "motion": "calm", "menu": []}, "كافيه هادي", "EG")["motion"] == "lively"

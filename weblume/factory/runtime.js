@@ -55,6 +55,7 @@
 
   /* motion layer, by data.js "motion": calm (reveals only), lively (default: + drifting photos, word-by-word headings), cinematic (stronger) */
   var motion = S.motion || "lively", still = SITEKIT.reduce;
+  document.documentElement.dataset.motion = motion;
   if (!still) {
     [].forEach.call(document.querySelectorAll("section:not(.pin) figure"), function (f) { if (f.querySelector("img")) { f.classList.add("mv", "rise"); } });
     if (motion !== "calm") [].forEach.call(document.querySelectorAll("section:not(.pin):not(.hwd):not(.ctb) h2"), function (h) {
