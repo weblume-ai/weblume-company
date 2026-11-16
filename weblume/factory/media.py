@@ -166,6 +166,22 @@ AI_MAX = 6  # AI photos per site: real photos come first, these only fill what t
 _ai = {"used": 0, "style": ""}  # per site, reset by fill()
 
 
+def flux(prompt: str) -> bytes | None:
+    """One 1024x1024 JPEG from FLUX.1 [schnell] on Cloudflare Workers AI (free daily allowance), or None."""
+    acc, tok = _key("CF_ACCOUNT_ID"), _key("CF_API_TOKEN")
+    if not (acc and tok and prompt):
+        return None
+    req = urllib.request.Request(f"https://api.cloudflare.com/client/v4/accounts/{acc}/ai/run/@cf/black-forest-labs/flux-1-schnell",
+                                 data=json.dumps({"prompt": prompt[:2000], "steps": 6}).encode(),
+                                 headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            img = base64.b64decode(json.loads(r.read())["result"]["image"])
+        return img if len(img) > 5000 else None
+    except Exception:
+        return None
+
+
 def ai_photo(prompt: str, out: Path, dest: Path, credits: list) -> str:
     """When no real photo matches: one made by FLUX.1 [schnell] (Apache-2.0, commercial use allowed) on Cloudflare
     Workers AI's free daily allowance (CF_ACCOUNT_ID + CF_API_TOKEN in .env). '' without keys, quota or on any error."""
@@ -173,14 +189,10 @@ def ai_photo(prompt: str, out: Path, dest: Path, credits: list) -> str:
     if not (acc and tok and prompt) or _ai["used"] >= AI_MAX:
         return ""
     style = _ai["style"] or "professional photography, soft natural light, shallow depth of field, 85mm lens"
-    body = {"prompt": f"{prompt}, {style}, realistic photo, no text, no watermark, no logo"[:2000], "steps": 6}
-    req = urllib.request.Request(f"https://api.cloudflare.com/client/v4/accounts/{acc}/ai/run/@cf/black-forest-labs/flux-1-schnell",
-                                 data=json.dumps(body).encode(), headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
+    img = flux(f"{prompt}, {style}, realistic photo, no text, no watermark, no logo")
+    if not img:
+        return ""
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            img = base64.b64decode(json.loads(r.read())["result"]["image"])
-        if len(img) < 5000:
-            return ""
         tmp = out.with_suffix(".src")
         tmp.parent.mkdir(parents=True, exist_ok=True)
         tmp.write_bytes(img)

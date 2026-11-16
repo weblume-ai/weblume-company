@@ -35,7 +35,9 @@ def clean_spec(spec: dict, sites: list[str]) -> dict:
             sc["site"] = sites[0]
         if sc.get("type") == "image" and not str(sc.get("prompt") or "").strip():
             sc["type"] = "text"
-        if sc.get("type") not in ("hook", "text", "site", "cta", "image"):
+        if sc.get("type") == "counter" and not any(ch.isdigit() for ch in str(sc.get("text") or "")):
+            sc["type"] = "text"  # a counter needs a real number
+        if sc.get("type") not in ("hook", "text", "site", "cta", "image", "kinetic", "counter", "logo"):
             sc["type"] = "text"
         scenes.append(sc)
     scenes = [s for s in scenes if s["type"] != "cta"]
@@ -53,7 +55,13 @@ def built_sites() -> list[str]:
 
 
 def ai_image(prompt: str, out: Path, width: int = 1080, height: int = 1920) -> bool:
-    """A free AI photo from Pollinations (no key). Returns False if it didn't come back as an image."""
+    """A free AI photo: FLUX on Cloudflare when its keys are set, else Pollinations (no key). False if none came back."""
+    from ..factory.media import flux
+    img = flux(prompt)
+    if img:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(img)
+        return True
     url = ("https://image.pollinations.ai/prompt/" + quote(prompt[:400]) +
            f"?width={width}&height={height}&nologo=true&seed={abs(hash(prompt)) % 100000}")
     try:
@@ -75,15 +83,31 @@ def capture_site(browser, url: str, out: Path, laptop: bool, dur: float) -> int:
     page = browser.new_page(viewport=size, is_mobile=not laptop, has_touch=not laptop, device_scale_factor=1 if laptop else 2)
     page.goto(url, wait_until="load")
     page.wait_for_timeout(3000)
-    top, end = page.evaluate("[innerHeight * .45, (document.documentElement.scrollHeight - innerHeight) * .7]")
+    # a menu app scrolls inside its visible page, not the window: film whatever really scrolls on screen
+    find = """window.__sc = document.documentElement.scrollHeight > innerHeight + 10 ? null : [...document.querySelectorAll('*')]
+      .filter(e => e.scrollHeight > e.clientHeight + 50 && /(auto|scroll)/.test(getComputedStyle(e).overflowY)
+                   && (r => r.width > 0 && r.bottom > 0 && r.top < innerHeight && r.left < innerWidth && r.right > 0)(e.getBoundingClientRect()))
+      .sort((a, b) => b.clientHeight - a.clientHeight)[0] || null;
+      window.__to = y => window.__sc ? (window.__sc.scrollTop = y) : scrollTo(0, y);
+      document.documentElement.scrollHeight > innerHeight + 10 || window.__sc"""
+    span = "__sc ? [0, (__sc.scrollHeight - __sc.clientHeight) * .8] : [innerHeight * .45, (document.documentElement.scrollHeight - innerHeight) * .7]"
+    moves = page.evaluate(find)
+    # a paged menu whose cover doesn't scroll: show the cover, then open its first page (a [data-go] button) and scroll it
+    tap = not moves and page.evaluate("!!document.querySelector('[data-go]')")
+    top, end = page.evaluate(span)
     for f in (.25, .5, .75, 1, 0):  # warm up: let lazy photos and scroll frames load
-        page.evaluate(f"scrollTo(0, {top + (end - top) * f})")
+        page.evaluate(f"__to({top + (end - top) * f})")
         page.wait_for_timeout(700)
     n = max(1, int(dur * FPS))
     for k in range(n):
-        x = k / max(1, n - 1)
+        if tap and k == n // 3:
+            page.evaluate("document.querySelector('[data-go]').click()")
+            page.wait_for_timeout(900)
+            page.evaluate(find)
+            top, end = page.evaluate(span)
+        x = (k - n // 3) / max(1, n - 1 - n // 3) if tap and k >= n // 3 else (0 if tap else k / max(1, n - 1))
         e = x * x * (3 - 2 * x)  # smoothstep: start and stop gently
-        page.evaluate(f"scrollTo(0, {top + (end - top) * e})")
+        page.evaluate(f"__to({top + (end - top) * e})")
         page.wait_for_timeout(45)
         page.screenshot(path=str(out / f"{k:04d}.jpg"), type="jpeg", quality=88)
     page.close()

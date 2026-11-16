@@ -373,12 +373,14 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
         sites = video.built_sites()
         add("video", "hassan", "video.json",
             f"Request:\n\"\"\"{goal}\"\"\"\n\n{knowledge.taste('video')}\n\nTurn the FIRST video idea in Adam's script into "
-            "a vertical 9:16 Weblume video (black, red and white). Write it as scenes, 15–35 seconds in total. Scene types: "
+            "a vertical 9:16 motion-graphics reel (black, red and white), following your motion-graphics skill. Write it as scenes, 15–30 seconds in total. Scene types: "
+            '"kinetic" (2–5 big words that slam in one after another, the last one in red), "counter" (a TRUE number in "text" that '
+            'counts up, its meaning in "sub"), "logo" (the Weblume brand reveal, optional short "text"), '
             '"hook" (the first 2 seconds, max 7 words), "text" (one short line, optional "sub"), "site" (one of our websites '
             'scrolling inside a phone or laptop: "site" must be one of ' + json.dumps(sites, ensure_ascii=False) +
             ', "device": "phone" or "laptop", optional "caption"), "image" (a free AI photo: "prompt" in English describing a '
             'realistic photo with no text and no faces, plus a short Arabic "caption"). Each scene has "dur" in seconds '
-            '(2–5). Egyptian Arabic. Use at most 2 image scenes. '
+            '(2–5). Change something on screen every 1.5 seconds: mix kinetic, site and counter scenes. Egyptian Arabic. Use at most 2 image scenes. '
             "The code adds the closing 'contact us through the Weblume website' scene. NEVER write a phone number.\n"
             'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}',
             "A JSON object with title and scenes.", [t.get("social")])

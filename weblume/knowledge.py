@@ -25,7 +25,7 @@ SKILLS = {  # who reads which playbook in knowledge/skills/ ("quality" is everyo
     "omar": ["quality", "client-proposal"],
     "ziad": ["quality", "client-messages"],
     "adam": ["quality", "social-content"],
-    "hassan": ["quality", "social-content", "image-prompts"],
+    "hassan": ["quality", "motion-graphics", "motion", "social-content", "image-prompts"],
 }
 
 
