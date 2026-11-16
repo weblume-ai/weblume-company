@@ -218,6 +218,11 @@ config.CALL_TIMEOUT = old_timeout
 v = video.clean_spec({"scenes": [{"type": "image", "prompt": "espresso pouring", "caption": "قهوة"},
                                  {"type": "image", "caption": "بدون وصف"}]}, [])
 assert v["scenes"][0]["type"] == "image" and v["scenes"][1]["type"] == "text"
+# a kinetic line gets the wipe plus half a second per word, so no word flashes by unread
+v = video.clean_spec({"scenes": [{"type": "kinetic", "text": "المنيو الورقي بقى من الماضي", "dur": 2.5}]}, [])
+assert v["scenes"][0]["dur"] >= 3.3
+# image scenes on a client reel use that site's real photos, biggest first; none when the site has no img/ folder
+assert video.real_photos({"scenes": [{"type": "site", "site": "no-such-site"}]}) == []
 import urllib.request as _u  # noqa: E402
 _orig = _u.urlopen
 _u.urlopen = lambda *a, **k: (_ for _ in ()).throw(OSError("offline"))

@@ -31,10 +31,11 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color
 .pcap{position:absolute;left:70px;right:70px;bottom:230px;font:800 82px/1.25 Alexandria,sans-serif;text-align:center;
   background:rgba(10,10,10,.82);padding:34px 40px;border-radius:28px;border-bottom:10px solid var(--red)}
 .url b{color:var(--red)}
+.photo.cut{object-fit:contain;top:260px;left:60px;width:960px;height:1140px;filter:drop-shadow(0 40px 60px #000)}
 /* motion graphics: a drifting glow behind everything, a red wipe between scenes, kinetic words, counters, the logo reveal */
 .glow{position:absolute;width:1100px;height:1100px;border-radius:50%;background:radial-gradient(circle,#e5091455,#e5091400 65%);left:-10px;top:300px;pointer-events:none}
 .wipe{position:absolute;left:-30%;width:160%;height:2400px;top:-240px;background:var(--red);transform:translateX(120%) skewX(-14deg);z-index:9;pointer-events:none}
-.kin{font:900 210px/1 Alexandria,sans-serif;text-align:center;position:absolute;inset:0;display:grid;place-items:center;padding:0 60px}
+.kin{font:800 210px/1 Alexandria,sans-serif;text-align:center;position:absolute;inset:0;display:grid;place-items:center;padding:0 60px}
 .kin span{grid-area:1/1;opacity:0}
 .num{font:900 300px/1 Inter,sans-serif;direction:ltr;color:var(--red);letter-spacing:-6px}
 .logo-big{width:640px}
@@ -55,7 +56,7 @@ const words = (box, text) => text.split(/\s+/).filter(Boolean).map(w => { const 
 
 let SCENES = [], T = 0;
 window.DURATION = 0;
-window.ready = fetch("spec.json").then(r => r.json()).then(spec => {
+window.ready = fetch("spec.json").then(r => r.json()).then(async spec => {
   const stage = document.getElementById("stage");
   for (const sc of spec.scenes) {
     const node = el("div", "scene"), dur = Math.max(1.5, Math.min(8, +sc.dur || 3));
@@ -68,11 +69,11 @@ window.ready = fetch("spec.json").then(r => r.json()).then(spec => {
       item.parts.cv = cv; item.parts.dev = dev;
       item.parts.imgs = Array.from({length: sc.frames || 0}, (_, k) => { const im = new Image(); im.src = `/frames/${SCENES.length}/${String(k).padStart(4, "0")}.jpg`; return im });
     } else if (sc.type === "image") { // an AI photo, full screen with a slow zoom
-      const im = el("img", "photo"); im.src = `/frames/img${SCENES.length}.jpg`; node.append(im); item.parts.photo = im;
+      const im = el("img", sc.real ? "photo cut" : "photo"); im.src = `/frames/img${SCENES.length}.jpg`; node.append(im); item.parts.photo = im; // a real product cut-out sits whole on the glow
       if (sc.caption) { const c = el("div", "pcap"); item.parts.w = words(c, sc.caption); node.append(c) }
       item.parts.imgs = [im];
     } else if (sc.type === "kinetic") { // the words slam in one after another, huge; the last one stays, in red
-      const k = el("div", "kin"); item.parts.kin = (sc.text || "").split(/\s+/).filter(Boolean).map(w => { const s = el("span", "", w); s.style.fontSize = Math.min(210, Math.floor(1500 / Math.max(3, w.length))) + "px"; k.append(s); return s }); // long words still fit the width
+      const k = el("div", "kin"); item.parts.kin = (sc.text || "").split(/\s+/).filter(Boolean).map(w => { const s = el("span", "", w); k.append(s); return s }); // sized to fit once the font is loaded
       node.append(k);
       if (sc.sub) { const sb = el("div", "small", sc.sub); sb.style.marginTop = "780px"; node.append(item.parts.sub = sb) }
     } else if (sc.type === "counter") { // a true number counts up, with its line under it
@@ -97,6 +98,10 @@ window.ready = fetch("spec.json").then(r => r.json()).then(spec => {
     stage.append(node); SCENES.push(item); T += dur;
   }
   window.DURATION = T;
+  // kinetic words: measured in the real font, so even the biggest entry frame stays inside the 1080 px frame
+  await document.fonts.load("800 100px Alexandria");
+  const ctx = document.createElement("canvas").getContext("2d"); ctx.font = "800 100px Alexandria";
+  SCENES.forEach(s => (s.parts.kin || []).forEach(w => { w.style.fontSize = Math.min(220, Math.floor(100 * 820 / ctx.measureText(w.textContent).width)) + "px" }));
   // every filmed frame of the sites must be loaded before the first frame is drawn
   return Promise.all(SCENES.flatMap(s => s.parts.imgs || []).map(im => im.decode().catch(() => null)));
 });
@@ -108,6 +113,7 @@ window.seek = t => {
     if (!on) continue;
     const p = local / s.dur, inn = ease(local / .6), out = ease((s.dur - local) / .45);
     s.node.style.opacity = Math.min(inn, out);
+    if (s.sc.type === "hook" || s.sc.type === "text" || s.sc.type === "counter") s.node.style.transform = `scale(${1 + .07 * p})`;
     if (s.parts.w) s.parts.w.forEach((w, i) => { const a = (local - i * .09) / .5, k = ease(a), b = a <= 0 ? 0 : a >= 1 ? 1 : 1 + 2.4 * Math.pow(a - 1, 3) + 1.4 * Math.pow(a - 1, 2); // back-out pop
       w.style.opacity = k; w.style.transform = `translateY(${(1 - k) * 70}px) scale(${.85 + .15 * b})` });
     if (s.parts.bar) s.parts.bar.style.transform = `scaleX(${ease((local - .3) / .7)})`;
@@ -116,9 +122,9 @@ window.seek = t => {
     if (s.parts.url) s.parts.url.style.opacity = ease((local - .8) / .5);
     if (s.parts.dev) s.parts.dev.style.transform = `translateY(${(1 - ease(local / .7)) * 140}px)`;
     if (s.parts.photo) s.parts.photo.style.transform = `scale(${1.04 + .12 * p}) translateX(${(p - .5) * -40}px)`;
-    if (s.parts.kin) { const n = s.parts.kin.length, each = Math.max(.35, (s.dur - .6) / n);
-      s.parts.kin.forEach((w, i) => { const a = local - i * each, k = ease(a / .22), last = i === n - 1, gone = !last && a > each;
-        w.style.opacity = a < 0 || gone ? 0 : k; w.style.transform = `scale(${2.2 - 1.2 * k})`; w.style.filter = `blur(${(1 - k) * 14}px)`; w.style.color = last ? "var(--red)" : "" }) }
+    if (s.parts.kin) { const n = s.parts.kin.length, each = Math.max(.5, (s.dur - .8) / n);
+      s.parts.kin.forEach((w, i) => { const a = local - .45 - i * each, k = ease(a / .22), last = i === n - 1, gone = !last && a > each;
+        w.style.opacity = a < 0 || gone ? 0 : k; w.style.transform = `scale(${1.15 - .15 * k})`; w.style.filter = `blur(${(1 - k) * 6}px)`; w.style.color = last ? "var(--red)" : "" }) }
     if (s.parts.num) { const end = parseFloat(s.parts.target.replace(/[^\d.]/g, "")) || 0, k = ease((local - .2) / 1.4);
       s.parts.num.textContent = local > 1.6 ? s.parts.target : (Number.isInteger(end) ? Math.round(end * k) : (end * k).toFixed(1));
       s.parts.num.style.transform = `scale(${.7 + .3 * ease(local / .4)})` }
