@@ -479,4 +479,11 @@ assert _fm.photo("koshari bowl", _d / "assets" / "img" / "b.webp", _d, _cr) == "
 _fm.urllib.request.urlopen, _fm._find_photo = _old_open, _old_find
 del _osx.environ["CF_ACCOUNT_ID"], _osx.environ["CF_API_TOKEN"]
 
+# A search that names a dish or drink only accepts hits that show it
+assert not _fm._relevant("coffee, cup, drink, fresh, morning", "fresh juice drink in a cup")
+assert _fm._relevant("juice, orange, glass, fresh", "fresh orange juice in a glass")
+assert _fm._relevant("interior, wooden, tables, lamps", "cozy interior wooden tables")  # no dish named: two shared words
+
+assert not _fm._relevant("café, coffee, drink, cafe, cup", "fresh fruit being blended into a smoothie cafe")  # the shop type is no dish
+
 print("All rule checks passed.")

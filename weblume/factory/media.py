@@ -69,7 +69,7 @@ DISHES = {"kunafa", "knafeh", "kunefe", "kadayif", "basbousa", "revani", "baklav
           "chocolate", "waffle", "waffles", "crepe", "pancake", "cookies", "donut", "icecream", "coffee", "espresso", "latte", "cappuccino",
           "tea", "juice", "smoothie", "kebab", "kabab", "shawarma", "grill", "grilled", "barbecue", "bbq", "steak", "meat", "lamb", "chicken",
           "rice", "kabsa", "mandi", "biryani", "falafel", "hummus", "bread", "pizza", "burger", "sandwich", "salad", "soup", "fish", "seafood",
-          "restaurant", "cafe", "bakery", "dish", "meal", "plate", "tajine", "tagine", "stew", "pasta", "noodles", "sushi", "dates"}
+          "tajine", "tagine", "stew", "pasta", "noodles", "sushi", "dates"}  # no place words (cafe, restaurant, dish): the shop type is added to every search
 SEASONAL = {"christmas", "xmas", "halloween", "easter", "valentine", "santa", "thanksgiving", "pumpkin",
             "candy", "candies", "gummy", "gummies", "lollipop", "jelly", "marshmallow"}  # off-topic unless asked for
 
@@ -82,7 +82,9 @@ def _relevant(tags: str, query: str) -> bool:
         return False
     q |= {w for k, v in ALIASES.items() if k in query.lower() for w in v.split()}  # künefe counts for kunafa
     shared = t & q
-    return bool(shared & DISHES) or len(shared) >= 2
+    if q & DISHES:  # the search names a dish or drink: the hit must show it (a coffee mug is no juice, whatever else matches)
+        return bool(shared & DISHES)
+    return len(shared) >= 2
 
 
 ALIASES = {"kunafa": "kunefe", "knafeh": "kunefe", "kunafeh": "kunefe", "qatayef": "katayef pancake", "basbousa": "revani semolina cake",
@@ -428,6 +430,8 @@ def lively(data: dict):
             "menu": ["menu-rail", "menu-iso", "menu-flip"] if photos >= 4 else [],
             "gallery": ["gallery-curve", "gallery-stack", "gallery-track"] if len(m.get("gallery") or []) >= 3 else [],
             "cta": ["cta-glow", "cta-blur"]}
+    if "hero-frames" in ps and seed % 3 and "hero-frames" not in picked:  # only one site in three opens like Loopie
+        ps = [next(o for o in opts["hero"] if o != "hero-frames") if p == "hero-frames" else p for p in ps]
     out = []
     for p in ps:
         o = opts.get(MAN_TYPE(p)) or []

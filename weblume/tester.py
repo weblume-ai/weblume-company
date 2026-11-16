@@ -109,7 +109,7 @@ def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
         try:
             # the SDK waits as long as Gemini says ("retry in 20h" on a used-up quota): give each model 90 s, then move on
             data = rules.extract_json(_calls.submit(job).result(timeout=360 if m == LOCAL_VISION else 90))  # the laptop is slower, never out of quota
-            if isinstance(data, dict) and "score" in data:
+            if isinstance(data, dict) and _num(data.get("score")) > 0:  # a 0 is a broken answer (a built site never scores 0): next model
                 data["score"] = float(data["score"])
                 data["verdict"] = "PASS" if data["score"] >= PASS_SCORE else "FIX"
                 data["model"] = m
@@ -120,6 +120,13 @@ def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
         except Exception as e:  # busy model: try the next one
             last = e
     raise RuntimeError(f"Tarek couldn't get a verdict: {last}")
+
+
+def _num(v) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 GROQ_VISION = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")

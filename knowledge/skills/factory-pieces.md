@@ -3,7 +3,8 @@ The page is built from tested pieces; you only choose ids (one per type) from th
 - No client photos doesn't mean no photos: the factory fetches matching stock photos and footage for every site (client
   uploads first). Pick photo pieces normally; choose no-photo pieces only for places too unusual for stock.
 - Always: nav, a hero, a menu, visit, footer-huge, bar. Add about, features, band, cta, gallery when they help the idea.
-- Hero by what media there is: client video → hero-frames (scroll-played footage, the strongest); 2+ cut-out
+- Hero by what media there is: a client video can open the site in hero-frames (scroll-played footage, Loopie's way),
+  but only now and then: most sites open another way and play the video in features-scrub or invite-video; 2+ cut-out
   products → hero-showcase or hero-stage; 3+ dish photos → hero-ring; one good photo → hero-split, hero-arch,
   hero-name-photo, hero-blueprint (lines draw a blueprint, a window opens on the photo: cinematic), hero-wordmark (the name as big as
   the screen, products floating around it: bold); nothing →
