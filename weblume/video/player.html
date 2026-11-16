@@ -25,7 +25,8 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color
 .laptop canvas{width:928px;height:568px;display:block}
 .base{width:1080px;height:34px;background:#2a2a2a;border-radius:0 0 30px 30px;margin-top:-2px}
 .cap{margin-bottom:60px}
-.ring{width:300px;height:300px;border:12px solid var(--red);border-radius:50%;border-left-color:transparent;margin-bottom:60px}
+.endmark{position:relative;width:380px;height:380px;margin-bottom:70px}.endmark svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.endmark img{position:absolute;inset:24px;width:332px;height:332px;object-fit:cover;border-radius:50%}
 .url{font:800 54px/1 Inter,sans-serif;direction:ltr;margin-top:30px}
 .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:center 40%}
 .pcap{position:absolute;left:70px;right:70px;bottom:230px;font:800 82px/1.25 Alexandria,sans-serif;text-align:center;
@@ -86,7 +87,8 @@ window.ready = fetch("spec.json").then(r => r.json()).then(async spec => {
       [520, 1400].forEach((y, i) => { const st = el("div", "stripe"); st.style.top = y + "px"; node.append(st); (item.parts.st = item.parts.st || []).push(st) });
       if (sc.text) { const t = el("div", "mid"); t.style.marginTop = "60px"; item.parts.w = words(t, sc.text); node.append(t) }
     } else if (sc.type === "cta") {
-      node.append(item.parts.ring = el("div", "ring"));
+      const m = el("div", "endmark"); m.innerHTML = '<svg viewBox="0 0 380 380"><circle cx="190" cy="190" r="178" fill="none" stroke="#e50914" stroke-width="12" stroke-linecap="round" stroke-dasharray="1118.4"/></svg><img src="/knowledge/brand/weblume-icon.png" alt="">';
+      node.append(m); item.parts.ring = m.querySelector("circle"); item.parts.mark = m.querySelector("img"); // the circle closes once and stays: an end card, not a loading spinner
       const t = el("div", "mid"); item.parts.w = words(t, sc.text || "تواصل معانا من موقع Weblume"); node.append(t);
       const u = el("div", "url"); u.innerHTML = String(spec.website || "weblume-sa.github.io").replace(/^https?:\/\//, "").replace(/\/$/, "").replace(/^([^.]*)/, "<b>$1</b>"); node.append(u); item.parts.url = u;
     } else {
@@ -118,7 +120,8 @@ window.seek = t => {
       w.style.opacity = k; w.style.transform = `translateY(${(1 - k) * 70}px) scale(${.85 + .15 * b})` });
     if (s.parts.bar) s.parts.bar.style.transform = `scaleX(${ease((local - .3) / .7)})`;
     if (s.parts.sub) s.parts.sub.style.opacity = ease((local - .6) / .5);
-    if (s.parts.ring) s.parts.ring.style.transform = `rotate(${local * 160}deg) scale(${.6 + .4 * ease(local / .7)})`;
+    if (s.parts.ring) { s.parts.ring.style.strokeDashoffset = 1118.4 * (1 - ease(local / .9)); const k = ease((local - .1) / .5), b = k >= 1 ? 1 : 1 + 2.4 * Math.pow(k - 1, 3) + 1.4 * Math.pow(k - 1, 2);
+      s.parts.mark.style.transform = `scale(${.5 + .5 * b})`; s.parts.mark.style.opacity = k }
     if (s.parts.url) s.parts.url.style.opacity = ease((local - .8) / .5);
     if (s.parts.dev) s.parts.dev.style.transform = `translateY(${(1 - ease(local / .7)) * 140}px)`;
     if (s.parts.photo) s.parts.photo.style.transform = `scale(${1.04 + .12 * p}) translateX(${(p - .5) * -40}px)`;

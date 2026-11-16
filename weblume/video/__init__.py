@@ -156,7 +156,7 @@ def render(spec: dict, out_mp4: Path, progress=lambda f: None) -> Path:
         music = ["-stream_loop", "-1", "-i", str(MUSIC), "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-shortest",
                  "-af", f"afade=t=out:st={max(0, total - 1.2):.2f}:d=1.2"] if MUSIC.is_file() else []
         ff = subprocess.Popen([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS),
-                               "-i", "-", *music, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-movflags", "+faststart", str(out_mp4)],
+                               "-i", "-", *music, "-c:v", "libx264", "-preset", "slow", "-pix_fmt", "yuv420p", "-crf", "16", "-movflags", "+faststart", str(out_mp4)],
                               stdin=subprocess.PIPE)
         try:
             with sync_playwright() as p:
