@@ -515,3 +515,5 @@ _fx = video.apply_fixes(_sp, [{"scene": 0, "fix": {"text": "جديد", "in": "fl
 assert _fx["scenes"][0]["text"] == "جديد" and _fx["scenes"][0]["in"] == "flip" and "site" not in _fx["scenes"][0]
 assert _fx["scenes"][1]["type"] == "image" and _fx["scenes"][-1]["text"] == "تواصل معانا من موقع Weblume"
 print("Review fix checks passed.")
+assert "dur" not in video.apply_fixes(_sp, [{"scene": 0, "fix": {"dur": "0.5"}}])["scenes"][0] or \
+    video.apply_fixes(_sp, [{"scene": 0, "fix": {"dur": "0.5"}}])["scenes"][0]["dur"] != "0.5"

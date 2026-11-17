@@ -144,7 +144,9 @@ enters, and in its middle), in order. The scenes:
 {scenes}
 Find what a viewer would notice: text cut off or touching the edge, text hard to read on its background, Arabic broken
 or reversed, a black or empty frame, a photo that doesn't match the words, two scenes that look the same, a boring
-stretch, a wrong or repeated entrance. Ignore the Weblume logo at the top. Answer JSON only:
+stretch, a wrong or repeated entrance. By design (not problems): a "kinetic" scene shows ONE word at a time, a scene
+is dark for a split second while it enters, the logo reveal and end card hold still. Ignore the Weblume logo at the top.
+Answer JSON only:
 {{"problems": [{{"scene": number, "problem": "...", "fix": {{only the fields to change: "text", "sub", "caption", "dur",
 "in" (one of {trs}), "type" ("text" to replace a weak scene)}}}}]}}
 Max 5 problems, only real ones; an empty list if the reel is good."""
@@ -170,13 +172,20 @@ def review(mp4: Path, spec: dict) -> list[dict]:
     return [p for p in data["problems"][:5] if isinstance(p, dict) and isinstance(p.get("scene"), int)]
 
 
+def _num(v) -> float:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def apply_fixes(spec: dict, problems: list[dict]) -> dict:
     """The reviewer's fixes, limited to wording, timing, entrance and swapping a weak scene for a text line."""
     scenes = [dict(sc) for sc in spec["scenes"]]
     for p in problems:
         if 0 <= p["scene"] < len(scenes) - 1 and isinstance(p.get("fix"), dict):  # never the closing Weblume scene
-            fix = {k: v for k, v in p["fix"].items() if k in ("text", "sub", "caption", "dur", "in")
-                   or (k == "type" and v == "text")}
+            fix = {k: v for k, v in p["fix"].items() if k in ("text", "sub", "caption", "in")
+                   or (k == "type" and v == "text") or (k == "dur" and _num(v) >= 2)}  # shorter than 2 s can't be read
             scenes[p["scene"]].update(fix)
     for a, b in zip(scenes, scenes[1:]):  # a fix must not give two scenes in a row the same entrance
         if b.get("in") and b.get("in") == a.get("in"):
