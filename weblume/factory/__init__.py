@@ -12,6 +12,7 @@ import shutil
 import urllib.request
 from pathlib import Path
 
+from .. import config
 from ..config import OUTPUT_DIR, ROOT
 from .. import inspiration, rules
 
@@ -439,7 +440,6 @@ def judge(shots: list[str], request: str) -> dict:
     return tester.judge([Path(s) for s in shots if "desktop" in s or "phone" in s][:8], request, notes)
 
 
-ROUNDS = 2
 
 
 def build(request: str, client_photos: Path | None = None, ask=None, log=print, polisher=None, picks: list[str] | None = None,
@@ -485,7 +485,8 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
         assemble(data, dest)
         issues, shots = review.check(dest)
     verdict, best = None, None
-    for rnd in range(1, ROUNDS + 2):  # Tarek scores, the API art director fixes what he and the browser found; the last round only scores
+    rounds = config.level()["rounds"]  # high: more judge-and-fix rounds
+    for rnd in range(1, rounds + 2):  # Tarek scores, the API art director fixes what he and the browser found; the last round only scores
         try:
             verdict = judge(shots, request)
             log(f"   طارق: {verdict['score']:g}/10")
@@ -494,7 +495,7 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
             verdict = None
         if verdict and (best is None or verdict["score"] > best[0]["score"]):
             best = (verdict, json.loads(json.dumps(data)), issues, shots)
-        if (verdict is None or verdict["verdict"] == "PASS") and not issues or rnd > ROUNDS:
+        if (verdict is None or verdict["verdict"] == "PASS") and not issues or rnd > rounds:
             break
         fixes = "\n".join(f"- {p.get('where', '')}: {p.get('problem', '')} -> {p.get('fix', '')}" for p in (verdict or {}).get("problems") or [])
         fixes += "".join(f"\n- browser check: {i}" for i in issues)

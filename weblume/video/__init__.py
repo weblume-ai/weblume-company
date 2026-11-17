@@ -12,11 +12,12 @@ from pathlib import Path
 from urllib.parse import quote, unquote
 
 from .. import rules
+from .. import config
 from ..config import ROOT, WEBSITE
 
 PLAYER = Path(__file__).parent / "player.html"
+TRANSITIONS = ("wipe", "zoom", "slide", "iris", "shutter", "glitch")  # how a scene enters; player.html draws them
 MUSIC = ROOT / "knowledge" / "brand" / "music.m4a"  # the bed from Weblume's approved kinetic reel
-FPS = 24
 ALLOWED = ("/knowledge/brand/", "/output/", "/spec.json", "/player.html", "/frames/")
 
 
@@ -26,7 +27,9 @@ def clean_spec(spec: dict, sites: list[str]) -> dict:
     for sc in (spec.get("scenes") or [])[:10]:
         if not isinstance(sc, dict):
             continue
-        sc = {k: v for k, v in sc.items() if k in ("type", "text", "sub", "caption", "site", "device", "dur", "prompt")}
+        sc = {k: v for k, v in sc.items() if k in ("type", "text", "sub", "caption", "site", "device", "dur", "prompt", "in")}
+        if sc.get("in") not in TRANSITIONS:
+            sc.pop("in", None)  # the player picks a different one for each scene
         for k in ("text", "sub", "caption"):
             if isinstance(sc.get(k), str) and rules.remove_phone_numbers(sc[k])[1]:
                 sc[k] = "تواصل معانا من موقع Weblume"  # a line that carried a phone number is replaced whole
@@ -112,7 +115,7 @@ def capture_site(browser, url: str, out: Path, laptop: bool, dur: float, nth: in
     for f in (.25, .5, .75, 1, 0):  # warm up: let lazy photos and scroll frames load
         page.evaluate(f"__to({top + (end - top) * f})")
         page.wait_for_timeout(700)
-    n = max(1, int(dur * FPS))
+    n = max(1, int(dur * config.level()["fps"]))
     for k in range(n):
         if tap and k == n // 3:
             page.evaluate(f"(b => b[{nth} % b.length].click())(document.querySelectorAll('[data-go]'))")
@@ -133,6 +136,7 @@ def render(spec: dict, out_mp4: Path, progress=lambda f: None) -> Path:
     from playwright.sync_api import sync_playwright
     import imageio_ffmpeg
 
+    FPS, crf = config.level()["fps"], str(config.level()["crf"])
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         (tmp / "player.html").write_text(PLAYER.read_text(encoding="utf-8"), encoding="utf-8")
@@ -156,7 +160,7 @@ def render(spec: dict, out_mp4: Path, progress=lambda f: None) -> Path:
         music = ["-stream_loop", "-1", "-i", str(MUSIC), "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "128k", "-shortest",
                  "-af", f"afade=t=out:st={max(0, total - 1.2):.2f}:d=1.2"] if MUSIC.is_file() else []
         ff = subprocess.Popen([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS),
-                               "-i", "-", *music, "-c:v", "libx264", "-preset", "slow", "-pix_fmt", "yuv420p", "-crf", "16", "-movflags", "+faststart", str(out_mp4)],
+                               "-i", "-", *music, "-c:v", "libx264", "-preset", "slow", "-pix_fmt", "yuv420p", "-crf", crf, "-movflags", "+faststart", str(out_mp4)],
                               stdin=subprocess.PIPE)
         try:
             with sync_playwright() as p:

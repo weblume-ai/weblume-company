@@ -16,7 +16,21 @@ Weblume's approved reels (weblume-ad: Day, Kinetic, Newspaper, Never Closed, Caf
 - Numbers only when true ("counter": 3 days to launch, 0 SAR before the design). Never invented sales or clients.
 - Rhythm: hook → problem → the site (proof) → one benefit as a counter or kinetic line → the brand reveal ("logo")
   → the call to action (added by the code: the Weblume website, never a phone number).
-- Every scene enters with motion (the red wipe, words popping, devices rising); nothing sits still for a whole scene.
+- Every scene enters with motion; nothing sits still for a whole scene. Choose each scene's entrance ("in") by what
+  the cut means, like an editor:
+  - "zoom" (flies in from the lens): the hook's answer, a big reveal, the first look at the client's site.
+  - "slide" (whip pan): "and then", moving on to the next benefit; fast, so use it between two quick beats.
+  - "iris" (opens from a red circle): a reveal that echoes a round shape: the logo ring, a plate, a cup, a number.
+  - "shutter" (red bars open): a new chapter: problem → solution, or before the brand reveal.
+  - "glitch" (a red jolt): the pain point or "the old way is broken"; at most once per reel, it's loud.
+  - "wipe" (red slash): the house cut; safe anywhere.
+  Never the same entrance twice in a row; 3-4 different ones per reel feel edited, 6 different ones feel random.
+  Motivate the cut: let the shape or direction carry over (a red circle into the logo ring, a slide that follows the
+  phone's scroll). Hard cuts land on the beat of the music; slow push-ins hold the calm lines.
+- Hierarchy on every frame: one thing to read, big, centred on the safe area (no text in the top 10% or bottom 20%,
+  where the app's buttons sit). The brand red marks only the one word or number that matters.
+- Quality: the owner picks High / Medium / Fast in the dashboard. High is 60 fps and the sharpest encode; it's slow,
+  and he prefers it.
 - Look: black, red, white (Weblume), or the client's colours when the reel is about the client's site.
 - Scene types: hook, text, kinetic, counter, site (phone/laptop), image, logo; the code adds the cta.
 Reference skills on this laptop for bigger productions: motion-reel (beat grids, shot lists, critique on contact

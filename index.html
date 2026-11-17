@@ -182,6 +182,8 @@ body.chat-only .cm{font-size:15px}
         <button data-m="focused">Focused team</button>
       </div>
       <input class="goal" id="goal" placeholder="What should the company do? e.g. Build a website for Noir café in Mansoura…" autocomplete="off">
+      <select class="ghost" id="quality" title="Speed or quality: high is slowest and best (smoother video, more review rounds)">
+        <option value="high">High</option><option value="medium">Medium</option><option value="fast">Fast</option></select>
       <button class="btn" id="start">Start goal</button>
     </div>
     <div class="live" id="live"><span class="dot"></span><span id="liveTxt">Idle</span></div>
@@ -235,6 +237,7 @@ function h(tag, props, ...kids) { // builds DOM without innerHTML, so AI output 
 const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter(k => k != null && k !== false)); // skip empty parts
 const store = {get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} }};
+$("#quality").value = store.get("wl_quality", "high"); $("#quality").onchange = e => store.set("wl_quality", e.target.value);
 // Opened from the online link (GitHub Pages)? Then talk to start.bat on this computer.
 const LOCAL = /^(127\.0\.0\.1|localhost)$/.test(location.hostname), SRV = LOCAL ? "" : "http://127.0.0.1:8501";
 // 🌐 the finished site opens beside the panel (over the office); 📱 switches to phone width
@@ -332,7 +335,7 @@ async function startGoal() {
   const goal = $("#goal").value.trim();
   if (!goal) { $("#goal").focus(); return }
   try {
-    const r = await api("/api/start", {goal, mode, keys: [...picks], client: $("#client")?.value || "", names: $("#names")?.value || ""});
+    const r = await api("/api/start", {goal, mode, keys: [...picks], client: $("#client")?.value || "", names: $("#names")?.value || "", quality: $("#quality").value});
     runId = r.run; store.set("wl_run", runId); $("#goal").value = ""; showTab("progress"); poll();
   } catch (e) { alert(e.message) }
 }

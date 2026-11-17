@@ -147,7 +147,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/start":
                 run_id = company.start(str(body.get("goal", "")), "focused" if body.get("mode") == "focused" else "whole",
                                        [str(k) for k in body.get("keys") or []], str(body.get("client", "")),
-                                       str(body.get("names", "")).splitlines())
+                                       str(body.get("names", "")).splitlines(), quality=str(body.get("quality", "")))
                 return self.send(200, {"run": run_id})
             if self.path == "/api/answer":  # the owner answers a teammate's question
                 company.answer(str(body.get("run", "")), int(body.get("id", -1)), str(body.get("choice", "")), str(body.get("text", "")))

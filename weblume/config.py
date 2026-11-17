@@ -18,6 +18,14 @@ PROVIDER = os.getenv("LLM_PROVIDER", "gemini").strip().lower()
 WEBSITE = os.getenv("WEBLUME_WEBSITE", "https://weblume-sa.github.io/").strip()
 CURRENCY = os.getenv("PRICE_CURRENCY", "EGP").strip()
 MAX_RPM = int(os.getenv("MAX_REQUESTS_PER_MINUTE", "8"))  # Gemini free tier allows about 10 per minute
+# the owner's speed/quality choice, set per run from the dashboard; time doesn't matter to him, so high is the default
+LEVELS = {"high": {"fps": 60, "crf": 14, "rounds": 3}, "medium": {"fps": 30, "crf": 16, "rounds": 2},
+          "fast": {"fps": 24, "crf": 20, "rounds": 1}}
+QUALITY = os.getenv("WEBLUME_QUALITY", "high").strip().lower()
+
+
+def level() -> dict:
+    return LEVELS.get(QUALITY, LEVELS["high"])
 
 DEFAULT_MODELS = {
     "gemini": "gemini-3.5-flash",  # 2.5-flash is closed to new accounts; 3.8 is often overloaded (Nov 2026)

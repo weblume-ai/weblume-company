@@ -492,3 +492,10 @@ assert _fm._relevant("interior, wooden, tables, lamps", "cozy interior wooden ta
 assert not _fm._relevant("café, coffee, drink, cafe, cup", "fresh fruit being blended into a smoothie cafe")  # the shop type is no dish
 
 print("All rule checks passed.")
+
+# quality levels and scene entrances: an unknown entrance is dropped (the player picks one), a known one is kept
+from weblume import config as _cfg  # noqa: E402
+assert set(_cfg.LEVELS) == {"high", "medium", "fast"} and _cfg.LEVELS["high"]["fps"] > _cfg.LEVELS["fast"]["fps"]
+_v = video.clean_spec({"scenes": [{"type": "text", "text": "x", "in": "zoom"}, {"type": "text", "text": "y", "in": "explode"}]}, [])
+assert _v["scenes"][0]["in"] == "zoom" and "in" not in _v["scenes"][1]
+print("Quality and transition checks passed.")

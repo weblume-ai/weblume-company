@@ -41,6 +41,11 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color
 .num{font:900 300px/1 Inter,sans-serif;direction:ltr;color:var(--red);letter-spacing:-6px}
 .logo-big{width:640px}
 .lring{position:absolute;width:820px;height:820px;border:10px solid var(--red);border-radius:50%;border-top-color:transparent;border-bottom-color:transparent}
+.shut{position:absolute;left:0;right:0;height:0;background:var(--red);z-index:9}#shA{top:0}#shB{bottom:0}
+.iris{position:fixed;left:50%;top:50%;border:16px solid var(--red);border-radius:50%;z-index:9;opacity:0;transform:translate(-50%,-50%)}
+/* film grain: a moving noise layer gives the flat black texture and hides the banding in the red glow */
+.grain{position:absolute;inset:0;z-index:10;pointer-events:none;opacity:.09;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E")}
 .stripe{position:absolute;left:0;right:0;height:18px;background:var(--red);transform-origin:right}
 </style>
 </head>
@@ -49,6 +54,7 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color
 <div class="glow" id="glow"></div>
 <div id="stage"></div>
 <div class="wipe" id="wipe"></div>
+<div class="shut" id="shA"></div><div class="shut" id="shB"></div><div class="iris" id="iris"></div><div class="grain" id="grain"></div>
 <script>
 "use strict";
 const ease = x => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
@@ -61,7 +67,9 @@ window.ready = fetch("spec.json").then(r => r.json()).then(async spec => {
   const stage = document.getElementById("stage");
   for (const sc of spec.scenes) {
     const node = el("div", "scene"), dur = Math.max(1.5, Math.min(8, +sc.dur || 3));
-    const item = {sc, node, start: T, dur, parts: {}};
+    // how the scene enters: Hassan's choice, else a different one each scene so the cuts never repeat
+    const TR = ["wipe", "zoom", "slide", "iris", "shutter", "glitch"], tr = SCENES.length ? (TR.includes(sc.in) ? sc.in : TR[(SCENES.length - 1) % TR.length]) : "";
+    const item = {sc, node, start: T, dur, tr, parts: {}};
     if (sc.type === "site") {
       if (sc.caption) node.append(item.parts.cap = el("div", "mid cap", sc.caption));
       const dev = el("div", "device " + (sc.device === "laptop" ? "laptop" : "phone"));
@@ -113,9 +121,15 @@ window.seek = t => {
     const local = t - s.start, on = local >= 0 && local < s.dur;
     s.node.classList.toggle("on", on);
     if (!on) continue;
-    const p = local / s.dur, inn = ease(local / .6), out = ease((s.dur - local) / .45);
+    const p = local / s.dur, inn = ease(local / (s.tr ? .25 : .6)), out = ease((s.dur - local) / .45), k = ease(local / .5), q = 1 - k;
     s.node.style.opacity = Math.min(inn, out);
-    if (s.sc.type === "hook" || s.sc.type === "text" || s.sc.type === "counter") s.node.style.transform = `scale(${1 + .07 * p})`;
+    let tf = s.sc.type === "hook" || s.sc.type === "text" || s.sc.type === "counter" ? `scale(${1 + .07 * p})` : "", fl = "", cl = "";
+    if (s.tr === "zoom") { tf += ` scale(${1 + .6 * q})`; fl = `blur(${q * 24}px)` }  // flies in from close to the lens
+    if (s.tr === "slide") { tf += ` translateX(${q * 110}%) skewX(${q * -10}deg)`; fl = `blur(${q * 18}px)` }  // a whip pan
+    if (s.tr === "iris") cl = local < .5 ? `circle(${k * 80}% at 50% 50%)` : "";
+    if (s.tr === "glitch" && local < .4) { tf += ` translateX(${Math.sin(local * 140) * 30 * q}px)`;
+      fl = `drop-shadow(${16 * q}px 0 #e50914) drop-shadow(${-16 * q}px 0 #ffffffaa)` }
+    s.node.style.transform = tf; s.node.style.filter = fl; s.node.style.clipPath = cl;
     if (s.parts.w) s.parts.w.forEach((w, i) => { const a = (local - i * .09) / .5, k = ease(a), b = a <= 0 ? 0 : a >= 1 ? 1 : 1 + 2.4 * Math.pow(a - 1, 3) + 1.4 * Math.pow(a - 1, 2); // back-out pop
       w.style.opacity = k; w.style.transform = `translateY(${(1 - k) * 70}px) scale(${.85 + .15 * b})` });
     if (s.parts.bar) s.parts.bar.style.transform = `scaleX(${ease((local - .3) / .7)})`;
@@ -141,7 +155,11 @@ window.seek = t => {
   }
   document.getElementById("glow").style.transform = `translate(${Math.sin(t * .6) * 240}px,${Math.cos(t * .45) * 420}px)`;
   const cur = SCENES.find(s => t >= s.start && t < s.start + s.dur), since = cur ? t - cur.start : 9;
-  document.getElementById("wipe").style.transform = cur && cur !== SCENES[0] && since < .5 ? `translateX(${(1 - since / .5) * 240 - 120}%) skewX(-14deg)` : "translateX(140%) skewX(-14deg)";
+  const tr = cur && since < .5 ? cur.tr : "", k = ease(since / .5);
+  for (const id of ["shA", "shB"]) document.getElementById(id).style.height = tr === "shutter" ? (1 - k) * 50 + "%" : "0";
+  const ir = document.getElementById("iris"); ir.style.opacity = tr === "iris" ? 1 - k * k : 0; ir.style.width = ir.style.height = (tr === "iris" ? k * 2400 : 0) + "px";  // fixed and 0 when unused: a big layer scrolls the frame sideways
+  document.getElementById("grain").style.backgroundPosition = `${Math.floor(t * 997) % 240}px ${Math.floor(t * 577) % 240}px`;
+  document.getElementById("wipe").style.transform = tr === "wipe" ? `translateX(${(1 - since / .5) * 240 - 120}%) skewX(-14deg)` : "translateX(140%) skewX(-14deg)";
   document.getElementById("logo").style.opacity = SCENES.some(s => s.sc.type === "site" && s.node.classList.contains("on")) ? 0 : 1;
 };
 </script>

@@ -380,7 +380,9 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             'scrolling inside a phone or laptop: "site" must be one of ' + json.dumps(sites, ensure_ascii=False) +
             ', "device": "phone" or "laptop", optional "caption"), "image" (a free AI photo: "prompt" in English describing a '
             'realistic photo with no text and no faces, plus a short Arabic "caption"). Each scene has "dur" in seconds '
-            '(2–5). Change something on screen every 1.5 seconds: mix kinetic, site and counter scenes. Egyptian Arabic. Use at most 2 image scenes. '
+            '(2–5) and may have "in", how it enters: "wipe" (red slash), "zoom" (flies in from the lens), "slide" (whip pan), "iris" (opens '
+            'from a red circle), "shutter" (red bars open), "glitch" (a red jolt); pick by the beat, never the same one twice in a row. '
+            'Change something on screen every 1.5 seconds: mix kinetic, site and counter scenes. Egyptian Arabic. Use at most 2 image scenes. '
             "The code adds the closing 'contact us through the Weblume website' scene. NEVER write a phone number.\n"
             'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}',
             "A JSON object with title and scenes.", [t.get("social")])
@@ -811,7 +813,7 @@ def _job(run: Run, mode: str, keys: list[str], base: dict | None = None):
 
 
 def start(goal: str, mode: str, keys: list[str] | None = None, client: str = "", names: list[str] | None = None,
-          base: dict | None = None) -> str:
+          base: dict | None = None, quality: str = "") -> str:
     """Start a run in the background. mode: 'whole' (Layla picks the team) or 'focused' (you pick). Returns run id."""
     goal = goal.strip()
     if not goal:
@@ -822,8 +824,10 @@ def start(goal: str, mode: str, keys: list[str] | None = None, client: str = "",
     with _lock:
         if _active["thread"] and _active["thread"].is_alive():
             raise RuntimeError("A run is already in progress. Wait for it to finish.")
+        if quality in config.LEVELS:
+            config.QUALITY = quality
         run = Run(goal, mode, client.strip(), [n.strip() for n in (names or []) if n.strip()])
-        run.log("system", f"Mode: {mode}. LLM: {run.status['llm']}. Goal: {goal}")
+        run.log("system", f"Mode: {mode}. Quality: {config.QUALITY}. LLM: {run.status['llm']}. Goal: {goal}")
         th = threading.Thread(target=_job, args=(run, mode, keys, base), daemon=True)
         _active["thread"], _active["run"] = th, run
         th.start()
