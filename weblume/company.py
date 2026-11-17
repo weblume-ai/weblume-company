@@ -11,6 +11,7 @@ from pathlib import Path
 
 from crewai import Crew, Process, Task
 
+from .video import story
 from . import config, inspiration, knowledge, logo, ops, publish as publisher, rules, security, templates, tester, video
 from .config import CURRENCY, MAX_RPM, OUTPUT_DIR, PROVIDER, RUNS_DIR, WEBSITE, get_llm, model_name
 from .team import ORDER, TEAM, make_agent
@@ -398,8 +399,20 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             'A "photos" scene shows the real products of the shop as cards fanning out (when the reel is about one of our sites), with a short "caption". '
             'Change something on screen every 1.5 seconds: mix kinetic, site and counter scenes. Egyptian Arabic. Use at most 2 image scenes. '
             "The code adds the closing 'contact us through the Weblume website' scene. NEVER write a phone number.\n"
-            'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}',
-            "A JSON object with title and scenes.", [t.get("social")])
+            'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}\n\n'
+            "STORY REEL (use this instead of scenes whenever the reel is about one of our sites for a shop with a menu: café, "
+            "restaurant, sweets, juice): the owner's approved café ad is the template; its timing, camera and sound are fixed and "
+            "you only write its lines in Egyptian Arabic for this shop. The story: a paper menu with crossed-out items and "
+            "reprints → a customer's unanswered chat → a QR card → the shop's real site in a phone → the offer → the Weblume end. "
+            "Answer with JSON only: {\"format\": \"story\", \"title\": \"\", \"site\": one of the sites above, \"hook1\": 2-3 words, "
+            "\"hook2\": 2-3 words (the sting, drawn in red), \"paper1\": the paper menu's problem (max 5 words), \"paper2\": "
+            "(max 5 words), \"stamp\": the reprint stamp (max 4 words), \"chat_to\": who the message goes to, \"ask1\" and "
+            "\"ask2\": the customer's two questions (max 4 words each), \"noreply\": max 2 words, \"qr_line\": max 5 words, "
+            "\"qr_title\": the card's line (max 4 words), \"phone\": exactly 5 lines over the real site (max 5 words each), "
+            "\"items\": 4-6 of the shop's real dishes from the request (used when its site doesn't list them)}. "
+            "Put *stars* around the ONE word per line that is drawn in red. The shop's real items go on the paper menu "
+            "automatically; Weblume's offer and the end card are fixed (no phone number anywhere).",
+            "A JSON object: the story reel's lines, or title and scenes.", [t.get("social")])
     return steps
 
 
@@ -504,6 +517,20 @@ def make_video(run: Run, raw: str, name: str) -> str:
         run.update("hassan", "السيناريو اللي كتبته مش مظبوط، محتاج أكتبه تاني")
         run.write(name.replace(".json", "_invalid.txt"), raw)
         return "The video scenes were not valid JSON."
+    if data.get("format") == "story" and data.get("site") in video.built_sites():  # the approved café ad as a template
+        out = OUTPUT_DIR / "videos" / f"{run.dir.name[:17]}_{rules.slug(str(data.get('title') or data['site']))[:30]}.mp4"
+        run.write(name, json.dumps(data, ensure_ascii=False, indent=1))
+        run.update("hassan", "بصوّر الفيديو دلوقتي على قالب إعلان الكافيه المعتمد…")
+        try:
+            story.render_story(data, data["site"], out)
+        except Exception as e:
+            run.log("hassan", f"Video failed: {e}")
+            run.update("hassan", f"مقدرتش أطلّع الفيديو: {e}")
+            return f"Video failed: {e}"
+        run.status["video"] = str(out.relative_to(OUTPUT_DIR))
+        run.add_file(out)
+        run.update("hassan", "الفيديو جاهز ✓ شوفه وقولي رأيك 👍/👎 عشان أتعلم ذوقك")
+        return json.dumps(data, ensure_ascii=False, indent=1)
     cached = getattr(run, "ref", None) and run.ref.with_suffix(run.ref.suffix + ".style.json")
     if cached and cached.is_file():  # read while planning; the reel is drawn in that style
         data["style"] = json.loads(cached.read_text(encoding="utf-8"))

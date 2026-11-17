@@ -517,3 +517,14 @@ assert _fx["scenes"][1]["type"] == "image" and _fx["scenes"][-1]["text"] == "ت�
 print("Review fix checks passed.")
 assert "dur" not in video.apply_fixes(_sp, [{"scene": 0, "fix": {"dur": "0.5"}}])["scenes"][0] or \
     video.apply_fixes(_sp, [{"scene": 0, "fix": {"dur": "0.5"}}])["scenes"][0]["dur"] != "0.5"
+
+# the story reel (approved café ad as a template): Hassan's lines over the defaults, never a phone number or overflow
+from weblume.video import story as _story  # noqa: E402
+_s = _story.clean_story({"hook1": "المنيو الورق", "hook2": "اتصل 01012345678", "stamp": "ط" * 60,
+                         "phone": ["١", "٢", "٣", "٤", "٥"], "items": ["كنافة", "بسبوسة", "زلابية", "قطايف", "بلح الشام"]})
+assert _s["hook2"] == _story.DEFAULT["hook2"] and _s["stamp"] == _story.DEFAULT["stamp"]
+assert _s["phone"] == ["١", "٢", "٣", "٤", "٥"] and _s["items"][0] == "كنافة" and len(_s["offer"]) == 4
+assert _story.clean_story({"phone": ["a"]})["phone"] == _story.DEFAULT["phone"]
+print("Story reel checks passed.")
+assert _story.clean_story({"stamp": "إعادة *طباعة*", "paper1": "قلم *يشطب*"}) == {**_story.clean_story({}), "stamp": "إعادة طباعة", "paper1": "قلم *يشطب*"}
+assert _story.clean_story({"items": ["كباب", "طاجن"]})["items"] == ["كباب", "طاجن"]

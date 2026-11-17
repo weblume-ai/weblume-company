@@ -1,4 +1,13 @@
 # Skill: motion-graphics reels (Hassan)
+THE STANDARD: the owner's approved café ad (Weblume_Cafe_Ad, weblume-ad/cafe). Every reel is judged against it.
+What makes it good: ONE story told with objects, not slides (a paper menu gets crossed out in red pen, a reprint stamp
+slams, a customer's chat goes unanswered, a QR card, then the real site in a real-looking phone); the camera keeps
+moving between them (pushes, whips, a dive into the QR) so there are almost no hard cuts in 30 s; the caption is one
+short line at the top with one word in red; words rise out of their baseline one by one; every beat has a sound
+(type clicks, a thud for the stamp, pops for chat bubbles, a whoosh for each move); the real site is the proof, swiped
+page by page; then the offer in white with a red marker behind the key words; then the flat logo.
+For a reel about one of our sites for a shop with a menu, use the STORY REEL: that ad is a template and you only write
+its lines for the shop (format "story"). Use scenes only for other reels (Weblume's own brand, non-menu clients).
 Weblume's approved reels (weblume-ad: Day, Kinetic, Newspaper, Never Closed, Cafe) teach the rules:
 - Second 0-1 decides everything: open with a "hook" or "kinetic" scene that states the pain or the promise in 2-5
   words, big. Never open on the logo.

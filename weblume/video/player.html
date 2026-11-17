@@ -157,22 +157,37 @@ window.ready = fetch("spec.json").then(r => r.json()).then(async spec => {
 
 window.seek = t => {
   scrollTo(0, 0);
-  for (const s of SCENES) {
-    const local = t - s.start, on = local >= 0 && local < s.dur;
+  for (const [idx, s] of SCENES.entries()) {
+    // a cut never passes through black: the old scene stays under the new one while it enters, then leaves its own way
+    const nx = SCENES[idx + 1], lt = nx && nx.tr && t >= nx.start && t < nx.start + .5 ? t - nx.start : -1;
+    let local = t - s.start;
+    const on = (local >= 0 && local < s.dur) || lt >= 0;
     s.node.classList.toggle("on", on);
     if (!on) continue;
-    const p = local / s.dur, inn = ease(local / (s.tr ? .25 : .6)), out = ease((s.dur - local) / .45), k = ease(local / .5), q = 1 - k;
-    s.node.style.opacity = Math.min(inn, out);
+    if (lt >= 0) local = s.dur - .001;  // leaving: hold its last frame
+    const half = s.tr === "wipe" || s.tr === "shutter" || s.tr === "flip";  // these cover the old scene first, then show the new one
+    const p = local / s.dur, inn = s.tr ? (half && local < .25 ? 0 : 1) : ease(local / .6), out = nx && nx.tr ? 1 : ease((s.dur - local) / .45),
+      k = ease(local / .5), q = 1 - k, lk = ease(lt / .5), nt = lt >= 0 ? nx.tr : "";
+    s.node.style.opacity = lt >= 0 && ((nt === "wipe" || nt === "shutter" || nt === "flip") && lt >= .25) ? 0 : Math.min(inn, out);
     let tf = s.sc.type === "hook" || s.sc.type === "text" || s.sc.type === "counter" ? `scale(${1 + .07 * p})` : "", fl = "", cl = "";
     if (s.tr === "zoom") { tf += ` scale(${1 + .6 * q})`; fl = `blur(${q * 24}px)` }  // flies in from close to the lens
     if (s.tr === "slide") { tf += ` translateX(${q * 110}%) skewX(${q * -10}deg)`; fl = `blur(${q * 18}px)` }  // a whip pan
-    if (s.tr === "iris") cl = local < .5 ? `circle(${k * 80}% at 50% 50%)` : "";
+    if (s.tr === "iris") cl = local < .5 ? `circle(${k * 1250}px at 50% 50%)` : "";
     if (s.tr === "glitch" && local < .4) { tf += ` translateX(${Math.sin(local * 140) * 30 * q}px)`;
       fl = `drop-shadow(${16 * q}px 0 #e50914) drop-shadow(${-16 * q}px 0 #ffffffaa)` }
-    if (s.tr === "flip") tf += ` perspective(1600px) rotateY(${q * -90}deg)`;  // turns over like a card
+    if (s.tr === "flip") tf += ` perspective(1600px) rotateY(${(1 - ease((local - .25) / .25)) * -90}deg)`;  // the second half of a card turning over
     if (s.tr === "split") cl = local < .5 ? `inset(0 ${q * 50}% 0 ${q * 50}%)` : "";  // opens from a line in the middle
     if (s.tr === "rise") { tf += ` translateY(${q * 70}%) scale(${.9 + .1 * k})`; cl = local < .5 ? `inset(0 round ${q * 70}px)` : "" }  // swiped up like a story
-    s.node.style.transform = tf; s.node.style.filter = fl; s.node.style.clipPath = cl;
+    let mk = "";
+    if (lt >= 0) { cl = ""; fl = ""; // how the old scene leaves under the new one (scenes are see-through: never two texts at once)
+      if (nt === "iris") mk = `radial-gradient(circle at 50% 50%, transparent ${lk * 1250}px, #000 ${lk * 1250 + 1}px)`;
+      if (nt === "split") mk = `linear-gradient(to right, #000 ${50 - 50 * lk}%, transparent ${50 - 50 * lk}%, transparent ${50 + 50 * lk}%, #000 ${50 + 50 * lk}%)`;
+      if (nt === "zoom" || nt === "glitch" || nt === "rise") s.node.style.opacity = 1 - ease(lt / (nt === "rise" ? .3 : .12));
+      if (nt === "slide") { tf += ` translateX(${lk * -110}%) skewX(${lk * 10}deg)`; fl = `blur(${lk * 18}px)` }  // both on screen: a real whip pan
+      if (nt === "zoom") tf += ` scale(${1 + .5 * lk})`;
+      if (nt === "flip") tf += ` perspective(1600px) rotateY(${ease(lt / .25) * 90}deg)`;
+      if (nt === "rise") { tf += ` scale(${1 - .1 * lk})`; fl = `brightness(${1 - .6 * lk})` } }
+    s.node.style.transform = tf; s.node.style.filter = fl; s.node.style.clipPath = cl; s.node.style.maskImage = mk;
     if (s.parts.w) s.parts.w.forEach((w, i) => { const a = (local - i * STAG) / .5, k = ease(a), b = a <= 0 ? 0 : a >= 1 ? 1 : 1 + 2.4 * Math.pow(a - 1, 3) + 1.4 * Math.pow(a - 1, 2); // back-out pop
       w.style.opacity = k; w.style.transform = `translateY(${(1 - k) * 70}px) scale(${.85 + .15 * b})` });
     if (s.parts.bar) s.parts.bar.style.transform = `scaleX(${ease((local - .3) / .7)})`;
@@ -202,7 +217,7 @@ window.seek = t => {
   document.getElementById("glow").style.transform = `translate(${Math.sin(t * .6) * 240}px,${Math.cos(t * .45) * 420}px)`;
   const cur = SCENES.find(s => t >= s.start && t < s.start + s.dur), since = cur ? t - cur.start : 9;
   const tr = cur && since < .5 ? cur.tr : "", k = ease(since / .5);
-  for (const id of ["shA", "shB"]) document.getElementById(id).style.height = tr === "shutter" ? (1 - k) * 50 + "%" : "0";
+  for (const id of ["shA", "shB"]) document.getElementById(id).style.height = tr === "shutter" ? (since < .25 ? ease(since / .25) : ease((.5 - since) / .25)) * 50 + "%" : "0";  // close over the old scene, open on the new
   const ir = document.getElementById("iris"); ir.style.opacity = tr === "iris" ? 1 - k * k : 0; ir.style.width = ir.style.height = (tr === "iris" ? k * 2400 : 0) + "px";  // fixed and 0 when unused: a big layer scrolls the frame sideways
   document.getElementById("grain").style.backgroundPosition = `${Math.floor(t * 997) % 240}px ${Math.floor(t * 577) % 240}px`;
   document.getElementById("wipe").style.transform = tr === "wipe" ? `translateX(${(1 - since / .5) * 240 - 120}%) skewX(-14deg)` : "translateX(140%) skewX(-14deg)";
