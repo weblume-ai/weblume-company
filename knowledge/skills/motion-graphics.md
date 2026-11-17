@@ -24,6 +24,16 @@ Weblume's approved reels (weblume-ad: Day, Kinetic, Newspaper, Never Closed, Caf
   - "shutter" (red bars open): a new chapter: problem → solution, or before the brand reveal.
   - "glitch" (a red jolt): the pain point or "the old way is broken"; at most once per reel, it's loud.
   - "wipe" (red slash): the house cut; safe anywhere.
+  - "flip" (turns over like a card): "the other side": before/after, paper menu → digital menu.
+  - "split" (opens from a line in the middle): a clean, calm reveal of a site or a product.
+  - "rise" (swiped up like a story): the natural move into a phone screen or the next item in a list.
+- Scene "photos": the client's real products as three cards fanning out; the best proof after the site itself.
+- The idea comes first. A good reel has ONE idea a viewer can retell in a sentence, told as a tiny story:
+  a moment the viewer knows (the WhatsApp message asking "عندكم إيه النهارده؟", the paper menu with crossed-out prices,
+  the customer waiting while you text the photo) → the turn (the site does it) → the proof (the real site, the real
+  products) → the brand. Don't list features; show the moment. Each new reel tries a different idea and opening.
+- After the first cut the code shows you frames of your reel and you fix what a viewer would notice (cut text, weak
+  photo, repeated look, boring stretch); then it is filmed again.
   Never the same entrance twice in a row; 3-4 different ones per reel feel edited, 6 different ones feel random.
   Motivate the cut: let the shape or direction carry over (a red circle into the logo ring, a slide that follows the
   phone's scroll). Hard cuts land on the beat of the music; slow push-ins hold the calm lines.
@@ -35,3 +45,10 @@ Weblume's approved reels (weblume-ad: Day, Kinetic, Newspaper, Never Closed, Caf
 - Scene types: hook, text, kinetic, counter, site (phone/laptop), image, logo; the code adds the cta.
 Reference skills on this laptop for bigger productions: motion-reel (beat grids, shot lists, critique on contact
 sheets) and remotion (React video). Hassan's player draws the reel itself, frame by frame, no paid tools.
+
+## Copying a reel the owner sends
+When the owner uploads a video with a video request, it is a style reference. The code reads it (colours, font,
+weight, photo framing, how text moves, its entrances, seconds per shot) and draws the whole reel in that look; you
+match its rhythm: scene lengths near its shot length, its kind of text scenes, its entrances first. Copy the style,
+never its words, logos, footage or music. The content is still the request's, and the Weblume logo reveal and end
+card stay black, red and white: that is how every copied reel still ends as a Weblume reel.

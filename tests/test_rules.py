@@ -499,3 +499,19 @@ assert set(_cfg.LEVELS) == {"high", "medium", "fast"} and _cfg.LEVELS["high"]["f
 _v = video.clean_spec({"scenes": [{"type": "text", "text": "x", "in": "zoom"}, {"type": "text", "text": "y", "in": "explode"}]}, [])
 assert _v["scenes"][0]["in"] == "zoom" and "in" not in _v["scenes"][1]
 print("Quality and transition checks passed.")
+
+# copying a reference reel's style: only drawable values survive, junk falls back to Weblume's look
+_st = video.clean_style({"bg": "#ECE5D8", "text": "red; } body{", "font": "Comic Sans", "transitions": ["zoom", "explode"], "weight": "x"})
+assert _st["bg"] == "#ECE5D8" and _st["text"] == "#ffffff" and _st["font"] == "Alexandria"
+assert _st["transitions"] == ["zoom"] and _st["weight"] == 800
+assert video.clean_spec({"scenes": [], "style": {"bg": "#000000"}}, [])["style"]["bg"] == "#000000"
+assert "style" not in video.clean_spec({"scenes": []}, [])
+print("Reference style checks passed.")
+
+# Hassan's self-review: fixes change only wording, timing and entrances, never the closing Weblume scene
+_sp = video.clean_spec({"scenes": [{"type": "kinetic", "text": "ا ب"}, {"type": "image", "prompt": "x", "caption": "c"}]}, [])
+_fx = video.apply_fixes(_sp, [{"scene": 0, "fix": {"text": "جديد", "in": "flip", "site": "evil"}},
+                              {"scene": 1, "fix": {"type": "site"}}, {"scene": 2, "fix": {"text": "اتصل 01012345678"}}])
+assert _fx["scenes"][0]["text"] == "جديد" and _fx["scenes"][0]["in"] == "flip" and "site" not in _fx["scenes"][0]
+assert _fx["scenes"][1]["type"] == "image" and _fx["scenes"][-1]["text"] == "تواصل معانا من موقع Weblume"
+print("Review fix checks passed.")

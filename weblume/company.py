@@ -270,6 +270,7 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
     t: dict[str, Task] = {}
     steps: list[tuple[Task, str, str]] = []
     run.kind = templates.pick(f"{goal} {client}")
+    run.ref = video.take_reference() if "hassan" in keys else None  # before the factory, which takes the inbox
     if "karim" in keys:  # the owner chooses the template
         labels = {"factory": "مصنع المواقع ⭐ (قطع Loopie + فيديو + مدير فني)", "cafe": "كافيه (تصميم Loopie)",
                   "fresh": "تصميم جديد مختلف (مكتبة الإلهام)", "clinic": "عيادة/خدمات", "shop": "متجر", "game": "موقع لعبة (فيه لعبة شغالة)"}
@@ -371,8 +372,19 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             "Markdown: numbered video ideas, each with hook, script, on-screen text, caption and hashtags.", [])
     if "hassan" in keys:
         sites = video.built_sites()
+        copy = ""
+        if run.ref:  # the owner uploaded a reel: copy its style, keep Weblume's logo reveal and end card
+            try:
+                st = video.read_style(run.ref)
+                copy = ("\n\nCOPY THE STYLE of the reel the owner uploaded (the code draws its look from this; you match its "
+                        f"rhythm and voice): {st['notes']} Its shots last about {st['shot']} s, so give scenes a \"dur\" near that. "
+                        + ("Its text rises in whole lines: prefer \"text\" and \"hook\" scenes over \"kinetic\". " if st["words"] == "lines" else "")
+                        + f"Use these entrances, in this order of preference: {', '.join(st['transitions'])}. Copy the style, never its "
+                        "words, brand or footage; the content is still ours, and the logo reveal and end card stay Weblume.")
+            except Exception as e:  # no vision model answered: the reel is made in Weblume's own style
+                run.log("hassan", f"Couldn't read the reference reel's style: {e}")
         add("video", "hassan", "video.json",
-            f"Request:\n\"\"\"{goal}\"\"\"\n\n{knowledge.taste('video')}\n\nTurn the FIRST video idea in Adam's script into "
+            f"Request:\n\"\"\"{goal}\"\"\"\n\n{knowledge.taste('video')}{copy}\n\nTurn the FIRST video idea in Adam's script into "
             "a vertical 9:16 motion-graphics reel (black, red and white), following your motion-graphics skill. Write it as scenes, 15–30 seconds in total. Scene types: "
             '"kinetic" (2–5 big words that slam in one after another, the last one in red), "counter" (a TRUE number in "text" that '
             'counts up, its meaning in "sub"), "logo" (the Weblume brand reveal, optional short "text"), '
@@ -380,8 +392,10 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             'scrolling inside a phone or laptop: "site" must be one of ' + json.dumps(sites, ensure_ascii=False) +
             ', "device": "phone" or "laptop", optional "caption"), "image" (a free AI photo: "prompt" in English describing a '
             'realistic photo with no text and no faces, plus a short Arabic "caption"). Each scene has "dur" in seconds '
-            '(2–5) and may have "in", how it enters: "wipe" (red slash), "zoom" (flies in from the lens), "slide" (whip pan), "iris" (opens '
-            'from a red circle), "shutter" (red bars open), "glitch" (a red jolt); pick by the beat, never the same one twice in a row. '
+            '(2–5) and may have "in", how it enters: "wipe" (red slash), "zoom" (flies in from the lens), "flip" (turns over like a card), '
+            '"slide" (whip pan), "iris" (opens from a red circle), "split" (opens from a line in the middle), "shutter" (red bars open), '
+            '"rise" (swiped up like a story), "glitch" (a red jolt); pick by the beat, never the same one twice in a row. '
+            'A "photos" scene shows the real products of the shop as cards fanning out (when the reel is about one of our sites), with a short "caption". '
             'Change something on screen every 1.5 seconds: mix kinetic, site and counter scenes. Egyptian Arabic. Use at most 2 image scenes. '
             "The code adds the closing 'contact us through the Weblume website' scene. NEVER write a phone number.\n"
             'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}',
@@ -490,6 +504,9 @@ def make_video(run: Run, raw: str, name: str) -> str:
         run.update("hassan", "السيناريو اللي كتبته مش مظبوط، محتاج أكتبه تاني")
         run.write(name.replace(".json", "_invalid.txt"), raw)
         return "The video scenes were not valid JSON."
+    cached = getattr(run, "ref", None) and run.ref.with_suffix(run.ref.suffix + ".style.json")
+    if cached and cached.is_file():  # read while planning; the reel is drawn in that style
+        data["style"] = json.loads(cached.read_text(encoding="utf-8"))
     spec = video.clean_spec(data, video.built_sites())
     run.write(name, json.dumps(spec, ensure_ascii=False, indent=1))
     out = OUTPUT_DIR / "videos" / f"{run.dir.name[:17]}_{rules.slug(spec['title'])[:30]}.mp4"
@@ -500,6 +517,19 @@ def make_video(run: Run, raw: str, name: str) -> str:
         run.log("hassan", f"Video failed: {e}")
         run.update("hassan", f"مقدرتش أطلّع الفيديو: {e}")
         return f"Video failed: {e}"
+    if config.level()["rounds"] >= 2:  # Medium/High: Hassan watches his reel, fixes what's wrong and films it once more
+        try:
+            problems = video.review(out, spec)
+            if problems:
+                run.log("hassan", "Review: " + "; ".join(f"scene {p['scene']}: {p.get('problem', '')}" for p in problems))
+                run.update("hassan", f"لقيت {len(problems)} حاجات مش عاجباني في الفيديو، بصلحها وبصوّره تاني…")
+                spec = video.apply_fixes(spec, problems)
+                run.write(name, json.dumps(spec, ensure_ascii=False, indent=1))
+                second = out.with_name(out.stem + "_fix.mp4")  # filmed beside the first cut, which stays if this fails
+                video.render(spec, second)
+                second.replace(out)
+        except Exception as e:  # the first cut is still a finished video
+            run.log("hassan", f"Review skipped: {e}")
     run.status["video"] = str(out.relative_to(OUTPUT_DIR))
     run.add_file(out)
     run.update("hassan", "الفيديو جاهز ✓ شوفه وقولي رأيك 👍/👎 عشان أتعلم ذوقك")

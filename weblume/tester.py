@@ -86,15 +86,27 @@ Score 8 or more only if you would show it to a paying client today. Max 6 proble
 
 def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
     """Gemini looks at the screenshots. Uses Gemini whenever GEMINI_API_KEY is set, even if the team runs on Groq/Ollama."""
+    nd = sum("_desktop_" in p.name for p in shots)
+    # a 0 is a broken answer (a built site never scores 0): next model
+    data, m = look(shots, RUBRIC.format(brief=brief, nd=nd, np=len(shots) - nd, notes=notes), lambda d: _num(d.get("score")) > 0)
+    data["score"] = float(data["score"])
+    data["verdict"] = "PASS" if data["score"] >= PASS_SCORE else "FIX"
+    data["model"] = m
+    return data
+
+
+def look(shots: list[Path], prompt: str, ok=lambda d: True) -> tuple[dict, str]:
+    """Ask a vision model about images; returns (its JSON answer, the model). Gemini models first, then gemma3 on the
+    laptop (no quota), then Groq. ok(answer) rejects a well-formed but useless answer so the next model tries."""
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
-        raise RuntimeError("Tarek needs GEMINI_API_KEY in .env to look at the site.")
+        raise RuntimeError("Looking at images needs GEMINI_API_KEY in .env.")
     from google import genai
     from google.genai import types
 
-    nd = sum("_desktop_" in p.name for p in shots)
-    parts = [types.Part.from_bytes(data=p.read_bytes(), mime_type="image/png") for p in shots]
-    parts.append(RUBRIC.format(brief=brief, nd=nd, np=len(shots) - nd, notes=notes))
+    mime = lambda p: "image/png" if p.suffix == ".png" else "image/jpeg"
+    parts = [types.Part.from_bytes(data=p.read_bytes(), mime_type=mime(p)) for p in shots]
+    parts.append(prompt)
     first = model_name() if PROVIDER == "gemini" else "gemini-3.5-flash"
     models = [first, *[m.strip() for m in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.8-flash,gemini-3.1-flash-lite").split(",")
                        if m.strip() and m.strip() != first]]
@@ -102,24 +114,21 @@ def judge(shots: list[Path], brief: str, notes: str = "") -> dict:
     ask = lambda m: client.models.generate_content(model=m, contents=parts,
                                                   config=types.GenerateContentConfig(response_mime_type="application/json")).text
     jobs = [(m, lambda m=m: ask(m)) for m in models]
-    jobs.append((LOCAL_VISION, lambda: _local_vision(shots, parts[-1])))  # gemma3 on the laptop sees images: no quota
+    jobs.append((LOCAL_VISION, lambda: _local_vision(shots, prompt)))  # gemma3 on the laptop sees images: no quota
     if os.getenv("GROQ_API_KEY", "").strip():  # when every Gemini model is out of quota, a Groq vision model looks instead
-        jobs.append((GROQ_VISION, lambda: _groq_vision(shots, parts[-1])))
+        jobs.append((GROQ_VISION, lambda: _groq_vision(shots, prompt)))
     for m, job in jobs:
         try:
             # the SDK waits as long as Gemini says ("retry in 20h" on a used-up quota): give each model 90 s, then move on
             data = rules.extract_json(_calls.submit(job).result(timeout=360 if m == LOCAL_VISION else 90))  # the laptop is slower, never out of quota
-            if isinstance(data, dict) and _num(data.get("score")) > 0:  # a 0 is a broken answer (a built site never scores 0): next model
-                data["score"] = float(data["score"])
-                data["verdict"] = "PASS" if data["score"] >= PASS_SCORE else "FIX"
-                data["model"] = m
-                return data
-            last = RuntimeError("Tarek's answer was not in the expected format.")
+            if isinstance(data, dict) and ok(data):
+                return data, m
+            last = RuntimeError("The answer was not in the expected format.")
         except CallTimeout:
             last = RuntimeError(f"{m} gave no answer in 90 s (probably out of free quota)")
         except Exception as e:  # busy model: try the next one
             last = e
-    raise RuntimeError(f"Tarek couldn't get a verdict: {last}")
+    raise RuntimeError(f"No vision model could answer: {last}")
 
 
 def _num(v) -> float:
@@ -163,7 +172,7 @@ def _groq_vision(shots: list[Path], prompt: str) -> str:
     import json as _json
     import urllib.request
     content = [{"type": "text", "text": prompt}] + [
-        {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()}}
+        {"type": "image_url", "image_url": {"url": ("data:image/png;base64," if p.suffix == ".png" else "data:image/jpeg;base64,") + base64.b64encode(p.read_bytes()).decode()}}
         for p in shots[:5]]
     req = urllib.request.Request("https://api.groq.com/openai/v1/chat/completions", method="POST",
                                  data=_json.dumps({"model": GROQ_VISION, "messages": [{"role": "user", "content": content}],
