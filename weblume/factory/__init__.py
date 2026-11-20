@@ -337,6 +337,48 @@ def normalize(d: dict, request: str, country: str) -> dict:
     return d
 
 
+# ------------------------------------------------------------------ english: every site gets an EN switch
+TEXT_KEYS = ("name", "word", "tagline", "heroLines", "lede", "about", "together", "invite", "caps", "features", "menu", "showcase", "address", "hours")
+_AR = re.compile(r"[؀-ۿ]")
+
+
+def _strings(v):
+    if isinstance(v, str):
+        return [v] if _AR.search(v) else []
+    vals = v.values() if isinstance(v, dict) else v if isinstance(v, list) else []
+    return [s for x in vals for s in _strings(x)]
+
+
+def _swap(v, en: dict):
+    if isinstance(v, str):
+        return en.get(v, v)
+    if isinstance(v, list):
+        return [_swap(x, en) for x in v]
+    if isinstance(v, dict):
+        return {k: _swap(x, en) for k, x in v.items()}
+    return v
+
+
+def english(data: dict, ask=None) -> dict:
+    """data["en"]: the site's words in English, read by runtime.js when the visitor presses EN. Code walks the texts and
+    keeps their shape (photos, prices, paths stay put); the model only translates a numbered list of Arabic strings."""
+    src = {k: data[k] for k in TEXT_KEYS if data.get(k)}
+    todo = list(dict.fromkeys(s for v in src.values() for s in _strings(v)))
+    en = {}
+    for i in range(0, len(todo), 40):
+        part = dict(enumerate(todo[i:i + 40]))
+        prompt = (f"Translate the Arabic strings of a website for «{data.get('name', '')}» ({data.get('kind', '')}) into short, warm, "
+                  "natural English website copy (premium local brand, not word for word). Brand and place names: write them in Latin "
+                  "letters, never translate their meaning. Keep numbers, prices and emoji. Menu item names: their usual English name.\n"
+                  + json.dumps(part, ensure_ascii=False) + "\nAnswer with a JSON object only: the same keys, each with its English text.")
+        out = rules.extract_json((ask or _ask_cloud)(prompt)) or {}
+        en.update({part[int(k)]: str(v).strip() for k, v in out.items() if str(k).isdigit() and int(k) in part and str(v).strip()})
+    if todo and not en:
+        raise RuntimeError("the translation came back empty")
+    data["en"] = _swap(src, en)
+    return data
+
+
 # ------------------------------------------------------------------ assemble: pieces + data.js → a site folder
 def assemble(data: dict, dest: Path) -> Path:
     files = list(dict.fromkeys(MANIFEST[p]["file"] for p in data["pieces"]))
@@ -390,7 +432,7 @@ def edit(data: dict, instruction: str, request: str = "", ask=None) -> dict:
     skills; facts, media and the owner's review list are kept by code, whatever the model answers."""
     keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits", "address", "hours", "mapsLink", "order", "instagram", "tiktok", "media_query", "picked") if k in data}
     nl = "\n"
-    shown = {k: v for k, v in data.items() if k not in ("media", "review", "credits")}
+    shown = {k: v for k, v in data.items() if k not in ("media", "review", "credits", "en")}
     prompt = (f"You are the art director of Phainora, a web studio.{_director()}{nl}{nl}"
               + (f"THE CLIENT'S REQUEST:{nl}\"\"\"{request}\"\"\"{nl}{nl}" if request else "") +
               f"This is the content file of the client's website:{nl}{json.dumps(shown, ensure_ascii=False)}{nl}{nl}WHAT TO CHANGE:{nl}{instruction}{nl}{nl}"
@@ -399,6 +441,8 @@ def edit(data: dict, instruction: str, request: str = "", ask=None) -> dict:
               f"Copy must sound like a premium local brand: short, warm, specific.{nl}{nl}PIECES:{nl}{_catalog()}{nl}{nl}"
               "Answer with the whole JSON object only, same shape.")
     new = rules.extract_json((ask or _ask_cloud)(prompt))
+    if isinstance(new, dict):
+        new.pop("en", None)
     if weak(new):
         raise RuntimeError(f"The art director's edit was unusable: {weak(new)}")
     new.update(keep)
@@ -419,17 +463,27 @@ def fix_plan(data: dict, request: str, guide: str, ask=None) -> dict:
                       "following the factory-review skill; keep what is already right.\n\nTHE BRIEF:\n" + guide, request, ask)
 
 
-def polish(dest: Path, instruction: str, ask=None, log=print) -> dict:
+def polish(dest: Path, instruction: str, ask=None, log=print, translate: bool = True) -> dict:
     """The API art director edits the built site through its data only: the pieces' code is never touched, so an edit
     can't break the page. Rebuilds and re-checks it."""
     from . import media, review
     data = load(dest)
     new = edit(data, instruction, ask=ask)
+    if translate:
+        _english_or_log(new, ask, log)
     media.swap(new)
     assemble(new, dest)
     issues, shots = review.check(dest)
     log("   التعديل اتطبق واتراجع في المتصفح")
     return {"data": new, "issues": issues, "shots": shots}
+
+
+def _english_or_log(data: dict, ask=None, log=print):
+    try:
+        english(data, ask)
+    except Exception as e:  # no internet / API limit: the site works in Arabic, without the EN button
+        data.pop("en", None)
+        log(f"   الترجمة الإنجليزي مانفعتش، الموقع عربي بس: {e}")
 
 
 def judge(shots: list[str], request: str) -> dict:
@@ -501,7 +555,7 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
         fixes += "".join(f"\n- browser check: {i}" for i in issues)
         log(f"   المدير الفني بيعدّل (جولة {rnd})…")
         try:
-            out = polish(dest, (f"Tarek (QA, {verdict['score']:g}/10) and the browser check found:\n" if verdict else "The browser check found:\n") + fixes.strip(), ask=polisher, log=log)
+            out = polish(dest, (f"Tarek (QA, {verdict['score']:g}/10) and the browser check found:\n" if verdict else "The browser check found:\n") + fixes.strip(), ask=polisher, log=log, translate=False)
             data, issues, shots = out["data"], out["issues"], out["shots"]
         except Exception as e:
             log(f"   التعديل مانفعش: {e}")
@@ -510,6 +564,9 @@ def build(request: str, client_photos: Path | None = None, ask=None, log=print, 
         verdict, data, issues, shots = best
         assemble(data, dest)
         log(f"   رجعت لأحسن نسخة ({verdict['score']:g}/10)")
+    log("   بترجم الموقع إنجليزي (زرار EN)…")
+    _english_or_log(data, polisher, log)
+    assemble(data, dest)
     save_example(request, data, dest, grade(data, verdict, issues))
     zipped = shutil.make_archive(str(dest), "zip", dest)
     log("6/6 جاهز.")

@@ -403,6 +403,14 @@ assert "menu-iso" in _p["pieces"] and "menu-cols" not in _p["pieces"] and _p["pi
 _e = _fac.edit(dict(_plan, picked=["menu-iso"]), "x", _req, ask=lambda p: json.dumps(dict(_local, pieces=["menu-cols"]), ensure_ascii=False))
 assert "menu-iso" in _e["pieces"] and "menu-cols" not in _e["pieces"]
 
+# English: code keeps the shape (photos, prices stay), only Arabic strings are translated; an edit never keeps a stale copy
+_tr = lambda p: json.dumps({k: "EN " + str(k) for k in json.loads(p[p.index("{"):p.rindex("}") + 1])})
+_en = _fac.english({"name": "نفس", "tagline": "طعم البيت", "menu": [{"cat": "مشويات", "items": [{"name": "كباب", "price": "90", "photo": "kebab"}]}],
+                    "hours": [["السبت", "١٢ م"]], "colors": {"ink": "#000"}}, _tr)["en"]
+assert set(_en) == {"name", "tagline", "menu", "hours"} and _en["menu"][0]["items"][0]["price"] == "90" and _en["menu"][0]["items"][0]["photo"] == "kebab"
+assert _en["name"].startswith("EN ") and _en["hours"][0][1].startswith("EN ")
+assert "en" not in _fac.edit(dict(_plan, en={"name": "old"}), "x", _req, ask=lambda p: json.dumps(dict(_local, en={"name": "x"}), ensure_ascii=False))
+
 # An Unsplash photo stays on Unsplash (their API terms): photo() returns its URL, credits it, and it is never cut out
 _old = _fm._find_photo
 _fm._find_photo = lambda q, n=0: ("https://images.unsplash.com/photo-1?ixid=x&w=1600", "photo by A (https://unsplash.com/@a?utm_source=weblume) on Unsplash")
