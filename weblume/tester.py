@@ -11,8 +11,8 @@ from . import rules
 from .config import CallTimeout, PROVIDER, _calls, model_name
 
 PASS_SCORE = 8
-TEMPLATE_NOTES = {  # what Tarek must know about Weblume's approved templates, so he doesn't flag their design
-    "cafe": "This page is Weblume's approved animated template (the Loopie design). Its scroll scenes are intended and "
+TEMPLATE_NOTES = {  # what Tarek must know about Phainora's approved templates, so he doesn't flag their design
+    "cafe": "This page is Phainora's approved animated template (the Loopie design). Its scroll scenes are intended and "
             "screenshots catch them mid-motion: a dark circle that opens onto a photo, a coffee bean that darkens as the "
             "temperature rises, drinks dropping into a colored disc, a sticky WhatsApp/directions bar on phones, round "
             "buttons. Do NOT report any of these. Only report what the CONTENT controls: wording, Arabic/English text, "
@@ -67,7 +67,7 @@ def shoot(site_dir: Path, out_dir: Path, tag: str) -> list[Path]:
     return shots
 
 
-RUBRIC = """You are Tarek, a strict senior QA tester and art director at Weblume, a web design studio whose sites must
+RUBRIC = """You are Tarek, a strict senior QA tester and art director at Phainora, a web design studio whose sites must
 look hand-designed and premium (award-gallery quality), never generic or "AI-made".
 These are screenshots of one website for this client brief:
 \"\"\"{brief}\"\"\"

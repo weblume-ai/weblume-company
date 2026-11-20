@@ -1,4 +1,4 @@
-/* Weblume motion kit: injected into every site Karim builds. Vanilla JS, no libraries. */
+/* Phainora motion kit: injected into every site Karim builds. Vanilla JS, no libraries. */
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches, $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const ready = fn => document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", fn) : fn();

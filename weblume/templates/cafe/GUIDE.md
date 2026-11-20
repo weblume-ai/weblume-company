@@ -30,7 +30,7 @@ Fields (Arabic first, English inside `en`):
   `assets/img/mood-yellow.webp` (yellow cushions), `mood-tile.webp`, `mood-chair.webp`, `mood-stools.webp`,
   `mood-hall.webp` (big bright hall), `mood-cup.webp` (cup on the bar, warm light). If the request gives real
   photo URLs of the client, use those instead.
-- `demo`: true (shows "a preview by Weblume" until the client approves)
+- `demo`: true (shows "a preview by Phainora" until the client approves)
 - `en`: the same text fields translated (name, word, tagline, lede, address, about, invite, together, drinks
   [mood,name,desc], menuNote, menu [name, alt, items [name, desc]], aboutPhoto/visitPhoto/place alt)
 

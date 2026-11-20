@@ -1,4 +1,4 @@
-// Weblume's story reel (from the approved «الكافيه بتاعك» ad): pure function of time. window.seek(t) paints frame t.
+// Phainora's story reel (from the approved «الكافيه بتاعك» ad): pure function of time. window.seek(t) paints frame t.
 // The timing, camera and sound are the approved film's; the words, menu items and site pages come from story.json,
 // written per client by Hassan (weblume/video/__init__.py: render_story).
 // Timing is in beats (u) on the measured grid; docs/shotlist.md is the plan this file follows.
@@ -160,7 +160,7 @@ function statusBar(ctx, time, color) {
 
 // ---------------------------------------------------------------- the real Bake Home menu (assets/bakehome/pageN.png, 1170×2532 = 390×844 @3x)
 // The site is a pager: one category per page, swiped sideways. Prices are hidden for the ad (shoot-bakehome.mjs).
-const PAGES = S.pages, CREDIT_Y = S.credit_y, LIGHT = S.light;   // pages with a light background (dark status bar)                 // cover page: «تصميم وتطوير Weblume» line, as a fraction of the screen height
+const PAGES = S.pages, CREDIT_Y = S.credit_y, LIGHT = S.light;   // pages with a light background (dark status bar)                 // cover page: «تصميم وتطوير Phainora» line, as a fraction of the screen height
 // page index over time: cover, then a swipe on each beat pair, back to the cover for the credit
 function pageAt(u) { return springKeys(u, [[-99, 0], [22, 1], [23.5, 2], [25, 3], [26.5, 4], [28, 5], [34, 0]].map(([b, pg]) => [b, Math.min(pg, PAGES - 1)]), SPRING.snappy); }
 
@@ -415,14 +415,14 @@ function endCard(ctx, u, IMG) {
   const hk = springU(u, 52.5, SPRING.snappy);
   if (hk > 0) {
     ctx.save(); ctx.beginPath(); ctx.rect(0, 1310, W, 100); ctx.clip();
-    txt(ctx, '@weblume1  ·  @weblume9', W / 2, 1378 + (1 - hk) * 90, font(54, 700, UI), C.red, 'center', 'ltr');
+    txt(ctx, S.site_url, W / 2, 1378 + (1 - hk) * 90, font(54, 700, UI), C.red, 'center', 'ltr');  // the website, never a phone number
     ctx.restore();
   }
 }
 
 M.film({
   fonts: [font(100, 800, D), font(100, 900, D), font(100, 700, D), font(40, 500, UI), font(40, 700, UI)],
-  images: { logo: 'assets/weblume-logo.png', ...Object.fromEntries(Array.from({ length: PAGES }, (_, i) => [`p${i}`, `pages/p${i}.jpg`])) },
+  images: { logo: 'assets/phainora-logo.png', ...Object.fromEntries(Array.from({ length: PAGES }, (_, i) => [`p${i}`, `pages/p${i}.jpg`])) },
   hits: HITS,
   samples: 8,
   draw(ctx, u, t, IMG) {

@@ -1,4 +1,4 @@
-"""Weblume AI Company dashboard server (Python standard library only). Start with:  python server.py"""
+"""Phainora AI Company dashboard server (Python standard library only). Start with:  python server.py"""
 import json
 import mimetypes
 import os
@@ -188,7 +188,7 @@ def _quote(name: str) -> str:
 if __name__ == "__main__":
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     url = f"http://{HOST}:{PORT}"
-    print(f"\n  Weblume AI Company: {url}\n  AI model: {PROVIDER} / {model_name()}\n  Keep this window open. Close it to stop.\n")
+    print(f"\n  Phainora AI Company: {url}\n  AI model: {PROVIDER} / {model_name()}\n  Keep this window open. Close it to stop.\n")
     if not os.getenv("NO_BROWSER"):
         webbrowser.open(url)
     try:

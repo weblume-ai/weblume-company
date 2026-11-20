@@ -16,11 +16,11 @@ BRAND = KNOW / "brand"
 SKILL_DIR = KNOW / "skills"
 SKILLS = {  # who reads which playbook in knowledge/skills/ ("quality" is everyone's)
     "layla": ["quality"],
-    "karim": ["quality", "design", "site-directions", "motion", "ui-ux", "site-functionality", "copywriting", "quality-gate", "security"],
+    "karim": ["quality", "design", "site-directions", "motion", "gsap", "craft-floor", "ui-ux", "site-functionality", "copywriting", "quality-gate", "security"],
     # the API art director of the site factory: briefs the local model, then fixes its work
-    "director": ["quality", "design", "site-directions", "motion", "ui-ux", "copywriting", "arabic-dialect", "factory-brief", "factory-review", "factory-pieces"],
-    "mostafa": ["quality", "design", "motion", "ui-ux", "quality-gate", "security"],
-    "tarek": ["quality", "quality-gate", "security"],
+    "director": ["quality", "design", "site-directions", "motion", "craft-floor", "ui-ux", "copywriting", "arabic-dialect", "factory-brief", "factory-review", "factory-pieces"],
+    "mostafa": ["quality", "design", "motion", "gsap", "craft-floor", "ui-ux", "quality-gate", "security"],
+    "tarek": ["quality", "craft-floor", "quality-gate", "security"],
     "youssef": ["quality", "copywriting"],
     "omar": ["quality", "client-proposal"],
     "ziad": ["quality", "client-messages"],

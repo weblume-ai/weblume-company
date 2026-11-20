@@ -97,7 +97,7 @@
         (ph ? '<figure class="rise"><img src="' + K.esc(ph.src) + '" alt="' + K.esc(ph.alt || S.name) + '" loading="lazy"></figure>' : "") + "</section>";
     }
   };
-  P["footer-huge"] = { // the brand word as big as the screen, links and the Weblume credit
+  P["footer-huge"] = { // the brand word as big as the screen, links and the Phainora credit
     css: "footer{background:var(--ink);padding:clamp(48px,6vw,96px) var(--gut) 28px;font-size:var(--small);overflow:hidden}footer .huge{font:800 min(26vw,360px)/1 var(--display);text-align:center;color:var(--accent)}" +
       "footer .row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 28px;margin-top:28px;font-size:var(--body)}footer ul{display:flex;flex-wrap:wrap;gap:20px;font-weight:700}footer .by a{text-decoration:underline}",
     render: function (S, t) {
@@ -105,7 +105,7 @@
       return '<footer><div class="huge" aria-hidden="true">' + K.esc(S.word || S.name) + '</div><div class="row"><ul>' +
         soc.map(function (s) { return '<li><a href="' + K.esc(S[s[0]]) + '" target="_blank" rel="noopener noreferrer">' + s[1] + "</a></li>"; }).join("") +
         '<li><a href="' + K.wa() + '" target="_blank" rel="noopener noreferrer">' + t.wa + '</a></li></ul><div class="by">© ' + new Date().getFullYear() + " " + K.esc(S.name) +
-        " · " + t.design + ' <a href="https://weblume-sa.github.io/" target="_blank" rel="noopener noreferrer">Weblume</a>' +
+        " · " + t.design + ' <a href="https://weblume-sa.github.io/" target="_blank" rel="noopener noreferrer">Phainora</a>' +
         (S.credits ? ' · <a href="' + K.esc(S.credits) + '" target="_blank" rel="noopener">' + (t.lang === "en" ? "Photo credits" : "حقوق الصور") + "</a>" : "") + "</div></div></footer>";
     }
   };

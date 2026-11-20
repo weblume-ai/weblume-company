@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Weblume Company</title>
+<title>Phainora Company</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Cairo:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -766,7 +766,7 @@ function makeWorld() {
     lathe(fem ? [[0, .1], [.15, .1], [.135, .22], [.15, .34], [.17, .44], [.175, .5], [.15, .55], [.07, .59], [0, .59]]
               : [[0, .1], [.16, .1], [.155, .22], [.17, .34], [.2, .45], [.205, .51], [.18, .56], [.08, .6], [0, .6]], shirt, torso).scale.set(1.12, 1, .66);
     cyl(.055, .06, .05, M("#f2f2f2", {roughness: .8}), 0, .6, 0, torso, 16);
-    // what each person wears on top: an open blazer, a hoodie, or just the shirt; everyone has a Weblume badge
+    // what each person wears on top: an open blazer, a hoodie, or just the shirt; everyone has a Phainora badge
     const outfit = {layla: "blazer", omar: "blazer", karim: "hoodie", adam: "hoodie"}[t.key] || "shirt";
     const jacket = M(t.key === "layla" ? "#1c1c1f" : "#26303d", {roughness: .8, side: THREE.DoubleSide}), sleeve = outfit === "blazer" ? jacket : shirt;
     if (outfit === "blazer") { // open at the front so the shirt shows
@@ -1007,7 +1007,7 @@ function apply3d() {
   if (world) world.setOn(!hide3d);
 }
 $("#hide3d").addEventListener("click", () => { hide3d = !hide3d; store.set("wl_hide3d", hide3d); apply3d() });
-if (CHAT_ONLY) { document.body.classList.add("chat-only"); document.title = "Weblume Chat"; showTab("chat") }
+if (CHAT_ONLY) { document.body.classList.add("chat-only"); document.title = "Phainora Chat"; showTab("chat") }
 else { try { world = makeWorld() } catch (e) { console.error(e); $("#stage").classList.add("off") } apply3d(); if (store.get("wl_big", false)) { showTab("chat"); setBig(true) } }
 poll();
 </script>

@@ -264,7 +264,7 @@
     ar: { days: ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"], midnight: "12 بالليل", am: "ص", pm: "م", to: " إلى ", closed: "مغلق", preview: "تصور مبدئي من", drinks: "المشروبات", menu: "المنيو", place: "الأجواء", visit: "زورونا", wa: "واتساب", open: "القائمة", close: "إغلاق", other: "English", otherLang: "en", see: "شوف المنيو", hint: "انزل وشوف قهوتك بتتحضّر", caps: ["حصاد.", "طحن.", "استخلاص.", "صبّ."], location: "الموقع", shotT: "زمن الاستخلاص", shotY: "الكمية", grams: " جم", roastHead: "من الأخضر للغامق", roast: [["حبة خضراء", "نكهة عشبية، قبل ما تلمسها النار"], ["تحميص متوسط", "حلاوة وحموضة متوازنة"], ["تحميص غامق", "جسم أثقل ونكهة شوكولاتة"]], how: "إيش جوك اليوم؟", pick: "اختر جوك", rating: function (v, n) { return v + " على خرائط جوجل، من " + n + " تقييم"; }, together: "لوباي يجمعنا.", cur: " ر.س", allDay: "مفتوح 24 ساعة، ما عدا الجمعة من 4 الفجر لـ12 الظهر", order: "اطلب من هنقرستيشن", kcal: " سعرة حرارية", maps: "افتح في خرائط جوجل", ig: "إنستجرام", tt: "تيك توك", design: "تصميم", quick: "إجراءات سريعة", directions: "الاتجاهات" },
     en: { days: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], midnight: "12 am", am: "am", pm: "pm", to: " to ", closed: "Closed", preview: "A preview by", drinks: "Drinks", menu: "Menu", place: "The mood", visit: "Visit", wa: "WhatsApp", open: "Menu", close: "Close", other: "عربي", otherLang: "ar", see: "See the menu", hint: "Scroll and watch your coffee come together", caps: ["Harvest.", "Grind.", "Extract.", "Pour."], location: "Location", shotT: "Shot time", shotY: "Yield", grams: " g", roastHead: "From green to dark", roast: [["Green bean", "Grassy, before the fire touches it"], ["Medium roast", "Balanced sweetness and acidity"], ["Dark roast", "Fuller body with chocolate notes"]], how: "What's your mood today?", pick: "Choose your mood", rating: function (v, n) { return v + " on Google Maps, from " + n + " ratings"; }, together: "Loopie brings us together.", cur: " SAR", allDay: "Open 24 hours, except Fridays from 4 am to 12 noon", order: "Order on HungerStation", kcal: " kcal", maps: "Open in Google Maps", ig: "Instagram", tt: "TikTok", design: "Design by", quick: "Quick actions", directions: "Directions" }
   }, t = T[lang], D = t.days;
-  /* Weblume template: the client's colors, line and currency come from data.js */
+  /* Phainora template: the client's colors, line and currency come from data.js */
   var K = C.colors || {}, rs = document.documentElement.style;
   if (K.ink) rs.setProperty("--ink", K.ink); if (K.accent) rs.setProperty("--yellow", K.accent); if (K.muted) rs.setProperty("--muted", K.muted);
   t.together = C.together || C.name; t.cur = " " + (C.currency || "");
@@ -293,7 +293,7 @@
   var lines = String(C.tagline || "").split(/\.\.\s*/);
   var h = "";
 
-  if (C.demo) h += '<div class="ribbon">' + t.preview + ' <a href="https://weblume-sa.github.io" target="_blank" rel="noopener">Weblume</a></div>';
+  if (C.demo) h += '<div class="ribbon">' + t.preview + ' <a href="https://weblume-sa.github.io" target="_blank" rel="noopener">Phainora</a></div>';
 
   h += '<header class="nav"><a class="brand" href="#top" aria-label="' + esc(C.name) + '">' + RINGS + '<span>' + esc(C.word) + '</span></a>' +
        '<ul><li><a href="#drinks">' + t.drinks + '</a></li><li><a href="#menu">' + t.menu + '</a></li><li><a href="#place">' + t.place + '</a></li><li><a href="#visit">' + t.visit + '</a></li></ul>' +
@@ -377,7 +377,7 @@
   if (C.instagram) h += '<li><a href="https://instagram.com/' + esc(C.instagram) + '" target="_blank" rel="noopener">' + t.ig + '</a></li>';
   if (C.tiktok) h += '<li><a href="https://www.tiktok.com/@' + esc(C.tiktok) + '" target="_blank" rel="noopener">' + t.tt + '</a></li>';
   if (waUrl) h += '<li><a href="' + esc(waUrl) + '" target="_blank" rel="noopener">' + t.wa + '</a></li>';
-  h += '</ul><div class="by">© ' + new Date().getFullYear() + ' ' + esc(C.name) + ' · ' + t.design + ' <a href="https://weblume-sa.github.io" target="_blank" rel="noopener">Weblume</a></div></div></footer>';
+  h += '</ul><div class="by">© ' + new Date().getFullYear() + ' ' + esc(C.name) + ' · ' + t.design + ' <a href="https://weblume-sa.github.io" target="_blank" rel="noopener">Phainora</a></div></div></footer>';
 
   h += '<nav class="bar" aria-label="' + t.quick + '">' + (waUrl ? '<a href="' + esc(waUrl) + '" target="_blank" rel="noopener">' + t.wa + '</a>' : "") + '<a href="' + esc(mapsUrl) + '" target="_blank" rel="noopener">' + t.directions + '</a></nav>';
 

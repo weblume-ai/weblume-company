@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>Weblume video</title>
+<title>Phainora video</title>
 <style>
 /* the house fonts live on the laptop: filming never waits on Google Fonts (it hung the renderer, Nov 2026) */
 @font-face{font-family:'Alexandria';font-weight:600;font-display:block;src:url(/knowledge/brand/fonts/alexandria-arabic-600.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FEFC}
@@ -16,7 +16,7 @@
 @font-face{font-family:Inter;font-weight:700;font-display:block;src:url(/knowledge/brand/fonts/inter-latin-700.woff2) format('woff2')}
 @font-face{font-family:Inter;font-weight:800;font-display:block;src:url(/knowledge/brand/fonts/inter-latin-800.woff2) format('woff2')}
 @font-face{font-family:Inter;font-weight:900;font-display:block;src:url(/knowledge/brand/fonts/inter-latin-900.woff2) format('woff2')}
-/* 1080x1920 canvas for Weblume's TikTok / Reels. Every frame is a pure function of time: seek(t) draws it. */
+/* 1080x1920 canvas for Phainora's TikTok / Reels. Every frame is a pure function of time: seek(t) draws it. */
 :root{--red:#e50914;--ink:#0a0a0a;--white:#fff;--font:Alexandria;--wt:800;--align:center;--items:center;--grain:.09}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color:var(--white);font-family:'IBM Plex Sans Arabic',sans-serif}
@@ -49,7 +49,7 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color
   background:color-mix(in srgb,var(--white) 9%,var(--ink));box-shadow:0 50px 90px #0009}.fcard img{width:100%;height:100%;object-fit:contain}
 .photo.card{top:220px;left:80px;width:920px;height:1180px;border-radius:44px;box-shadow:0 50px 100px #0008}
 .logo.badge{border-radius:20px}
-/* the Weblume brand reveal and end card keep Weblume's own black, red and white whatever style the reel copies */
+/* the Phainora brand reveal and end card keep Phainora's own black, red and white whatever style the reel copies */
 .brand{background:#0a0a0a;color:#fff;--red:#e50914;--white:#fff;--ink:#0a0a0a;--font:Alexandria;--wt:800;--align:center;--items:center}
 .photo.cut{object-fit:contain;top:260px;left:60px;width:960px;height:1140px;filter:drop-shadow(0 40px 60px #000)}
 /* motion graphics: a drifting glow behind everything, a red wipe between scenes, kinetic words, counters, the logo reveal */
@@ -69,7 +69,7 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ink);color
 </style>
 </head>
 <body>
-<img class="logo" id="logo" src="/knowledge/brand/weblume-logo.png" alt="">
+<img class="logo" id="logo" src="/knowledge/brand/phainora-logo.png" alt="">
 <div class="glow" id="glow"></div>
 <div id="stage"></div>
 <div class="wipe" id="wipe"></div>
@@ -96,7 +96,7 @@ window.ready = fetch("spec.json").then(r => r.json()).then(async spec => {
       await Promise.race([document.fonts.load(`${wt} 100px "${font}"`), new Promise(r => setTimeout(r, 10000))]);
       if (!document.fonts.check(`${wt} 100px "${font}"`)) { l.remove(); R.setProperty("--font", "Alexandria") } } // a stuck font would freeze every screenshot
     const c = st.bg.match(/\w\w/g).map(h => parseInt(h, 16)); // a light background hides the white "Web": show the icon badge
-    if (.299 * c[0] + .587 * c[1] + .114 * c[2] > 140) { const lg = document.getElementById("logo"); lg.src = "/knowledge/brand/weblume-icon.png"; lg.classList.add("badge") }
+    if (.299 * c[0] + .587 * c[1] + .114 * c[2] > 140) { const lg = document.getElementById("logo"); lg.src = "/knowledge/brand/phainora-icon.png"; lg.classList.add("badge") }
   }
   for (const sc of spec.scenes) {
     const node = el("div", "scene"), dur = Math.max(1.5, Math.min(8, +sc.dur || 3));
@@ -129,14 +129,14 @@ window.ready = fetch("spec.json").then(r => r.json()).then(async spec => {
     } else if (sc.type === "logo") { // the brand reveal: ring draws around the mark, stripes sweep, the line rises
       node.classList.add("brand");
       node.append(item.parts.lring = el("div", "lring"));
-      const im = el("img", "logo-big"); im.src = "/knowledge/brand/weblume-logo.png"; node.append(item.parts.lg = im);
+      const im = el("img", "logo-big"); im.src = "/knowledge/brand/phainora-logo.png"; node.append(item.parts.lg = im);
       [520, 1400].forEach((y, i) => { const st = el("div", "stripe"); st.style.top = y + "px"; node.append(st); (item.parts.st = item.parts.st || []).push(st) });
       if (sc.text) { const t = el("div", "mid"); t.style.marginTop = "60px"; item.parts.w = words(t, sc.text); node.append(t) }
     } else if (sc.type === "cta") {
       node.classList.add("brand");
-      const m = el("div", "endmark"); m.innerHTML = '<svg viewBox="0 0 380 380"><circle cx="190" cy="190" r="178" fill="none" stroke="#e50914" stroke-width="12" stroke-linecap="round" stroke-dasharray="1118.4"/></svg><img src="/knowledge/brand/weblume-icon.png" alt="">';
+      const m = el("div", "endmark"); m.innerHTML = '<svg viewBox="0 0 380 380"><circle cx="190" cy="190" r="178" fill="none" stroke="#e50914" stroke-width="12" stroke-linecap="round" stroke-dasharray="1118.4"/></svg><img src="/knowledge/brand/phainora-icon.png" alt="">';
       node.append(m); item.parts.ring = m.querySelector("circle"); item.parts.mark = m.querySelector("img"); // the circle closes once and stays: an end card, not a loading spinner
-      const t = el("div", "mid"); item.parts.w = words(t, sc.text || "تواصل معانا من موقع Weblume"); node.append(t);
+      const t = el("div", "mid"); item.parts.w = words(t, sc.text || "تواصل معانا من موقع Phainora"); node.append(t);
       const u = el("div", "url"); u.innerHTML = String(spec.website || "weblume-sa.github.io").replace(/^https?:\/\//, "").replace(/\/$/, "").replace(/^([^.]*)/, "<b>$1</b>"); node.append(u); item.parts.url = u;
     } else {
       const t = el("div", sc.type === "hook" ? "big" : "mid"); item.parts.w = words(t, sc.text || ""); node.append(t);

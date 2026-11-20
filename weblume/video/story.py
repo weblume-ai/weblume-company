@@ -1,9 +1,9 @@
-"""The story reel: Weblume's approved café ad (weblume-ad/cafe, «الكافيه بتاعك») as a template. Its timing, camera,
+"""The story reel: Phainora's approved café ad (weblume-ad/cafe, «الكافيه بتاعك») as a template. Its timing, camera,
 synthesized sound and look stay exactly as approved; Hassan writes the words for each client and the code films the
 client's own site into the phone and puts the shop's real items on the paper menu.
 
 Story: paper menu → crossed-out items and reprints → unanswered chat → QR → the real site in a phone → the offer
-→ the Weblume end card. It fits any shop with a menu (cafés, restaurants, sweets, juice bars)."""
+→ the Phainora end card. It fits any shop with a menu (cafés, restaurants, sweets, juice bars)."""
 import functools
 import json
 import shutil
@@ -27,7 +27,7 @@ DEFAULT = {
     "qr_line": "خلّيه *يمسح…* ويشوف كل حاجة.", "qr_title": "امسح وشوف المنيو", "qr_sub": "المنيو كله بالصور",
     "phone": ["ده شغل من *تصميمنا*", "المنيو كله *بالصور*", "يقلّب… *ويختار*", "أي تعديل… من *غير* طباعة", "باسم *محلك…* وبهويته"],
     "offer": ["تشوف التصميم الأول", "قبل ما تدفع", "موقع باسم محلك", "مش قالب جاهز"],
-    "end1": "كلّمنا من الموقع اللي في البايو", "end2": "وكمان نعملك فيديو إعلاني لمحلك",
+    "end1": "كلّمنا من الموقع اللي في البايو", "end2": "وكمان نعملك فيديو إعلاني لمحلك", "site_url": "",
 }
 LIMITS = {"hook1": 22, "hook2": 22, "paper1": 34, "paper2": 34, "stamp": 22, "chat_to": 30, "ask1": 24, "ask2": 24,
           "noreply": 14, "qr_line": 34, "qr_title": 22, "qr_sub": 26, "end1": 40, "end2": 40}
@@ -60,7 +60,7 @@ SITE_JS = """() => {
     const t = (e.innerText || '').trim().split('\\n')[0];
     if (t && t.length <= 20 && /[\\u0600-\\u06FF]/.test(t) && !seen.has(t)) { seen.add(t); items.push(t) }
   }
-  const credit = [...document.querySelectorAll('body *')].find(e => !e.children.length && /Weblume/i.test(e.textContent || '')
+  const credit = [...document.querySelectorAll('body *')].find(e => !e.children.length && /Weblume|Phainora/i.test(e.textContent || '')
     && e.getBoundingClientRect().top > innerHeight * .6 && e.getBoundingClientRect().bottom <= innerHeight);
   const r = credit && credit.getBoundingClientRect();
   return {items: items.slice(0, 8), credit: r ? (r.top + r.height / 2) / innerHeight : null,
@@ -139,7 +139,8 @@ def render_story(lines: dict, site: str, out_mp4: Path, progress=lambda f: None)
                 shot = film_pages(browser, f"{base}/site/index.html", work / "pages")
                 if len(shot["items"]) >= 2:  # the shop's real items from its own site win over anything written
                     story["items"] = shot["items"][:6]
-                story.update(pages=shot["pages"], light=shot["light"], credit_y=shot["credit_y"])
+                story.update(pages=shot["pages"], light=shot["light"], credit_y=shot["credit_y"],
+                             site_url=config.WEBSITE.replace("https://", "").strip("/"))
                 (work / "story.json").write_text(json.dumps(story, ensure_ascii=False), encoding="utf-8")
                 page = browser.new_page(viewport={"width": 1080, "height": 1920}, device_scale_factor=1)
                 errors = []

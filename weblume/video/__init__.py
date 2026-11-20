@@ -1,5 +1,5 @@
 """Hassan's free video mode: a vertical 9:16 video drawn by player.html, captured frame by frame in the
-installed Chrome and encoded to MP4 with ffmpeg. Text scenes, Weblume branding, and our websites scrolling
+installed Chrome and encoded to MP4 with ffmpeg. Text scenes, Phainora branding, and our websites scrolling
 inside phone / laptop mockups."""
 import functools
 import json
@@ -18,12 +18,12 @@ from ..config import ROOT, WEBSITE
 
 PLAYER = Path(__file__).parent / "player.html"
 TRANSITIONS = ("wipe", "zoom", "flip", "slide", "iris", "split", "shutter", "rise", "glitch")  # how a scene enters; player.html draws them
-MUSIC = ROOT / "knowledge" / "brand" / "music.m4a"  # the bed from Weblume's approved kinetic reel
+MUSIC = ROOT / "knowledge" / "brand" / "music.m4a"  # the bed from Phainora's approved kinetic reel
 ALLOWED = ("/knowledge/brand/", "/output/", "/spec.json", "/player.html", "/frames/")
 
 
 def clean_spec(spec: dict, sites: list[str]) -> dict:
-    """Keep only scenes we can draw, never a phone number, always end on 'contact us through the Weblume website'."""
+    """Keep only scenes we can draw, never a phone number, always end on 'contact us through the Phainora website'."""
     scenes = []
     for sc in (spec.get("scenes") or [])[:10]:
         if not isinstance(sc, dict):
@@ -33,7 +33,7 @@ def clean_spec(spec: dict, sites: list[str]) -> dict:
             sc.pop("in", None)  # the player picks a different one for each scene
         for k in ("text", "sub", "caption"):
             if isinstance(sc.get(k), str) and rules.remove_phone_numbers(sc[k])[1]:
-                sc[k] = "تواصل معانا من موقع Weblume"  # a line that carried a phone number is replaced whole
+                sc[k] = "تواصل معانا من موقع Phainora"  # a line that carried a phone number is replaced whole
         if sc.get("type") == "site" and sc.get("site") not in sites:
             if not sites:
                 continue
@@ -48,12 +48,12 @@ def clean_spec(spec: dict, sites: list[str]) -> dict:
             sc["dur"] = max(float(sc.get("dur") or 3), round(.8 + .5 * len(str(sc.get("text") or "").split()), 1))
         scenes.append(sc)
     scenes = [s for s in scenes if s["type"] != "cta"]
-    scenes.append({"type": "cta", "text": "تواصل معانا من موقع Weblume", "dur": 3})
+    scenes.append({"type": "cta", "text": "تواصل معانا من موقع Phainora", "dur": 3})
     total = sum(max(1.5, min(8, float(s.get("dur") or 3))) for s in scenes)
     if total > 45:  # short-form: keep it under ~45s
         for s in scenes:
             s["dur"] = max(1.5, float(s.get("dur") or 3) * 45 / total)
-    out = {"title": str(spec.get("title") or "Weblume"), "website": WEBSITE, "scenes": scenes}
+    out = {"title": str(spec.get("title") or "Phainora"), "website": WEBSITE, "scenes": scenes}
     if isinstance(spec.get("style"), dict):  # set by the code from a reference reel, never trusted raw
         out["style"] = clean_style(spec["style"])
     return out
@@ -145,7 +145,7 @@ enters, and in its middle), in order. The scenes:
 Find what a viewer would notice: text cut off or touching the edge, text hard to read on its background, Arabic broken
 or reversed, a black or empty frame, a photo that doesn't match the words, two scenes that look the same, a boring
 stretch, a wrong or repeated entrance. By design (not problems): a "kinetic" scene shows ONE word at a time, a scene
-is dark for a split second while it enters, the logo reveal and end card hold still. Ignore the Weblume logo at the top.
+is dark for a split second while it enters, the logo reveal and end card hold still. Ignore the Phainora logo at the top.
 Answer JSON only:
 {{"problems": [{{"scene": number, "problem": "...", "fix": {{only the fields to change: "text", "sub", "caption", "dur",
 "in" (one of {trs}), "type" ("text" to replace a weak scene)}}}}]}}
@@ -183,7 +183,7 @@ def apply_fixes(spec: dict, problems: list[dict]) -> dict:
     """The reviewer's fixes, limited to wording, timing, entrance and swapping a weak scene for a text line."""
     scenes = [dict(sc) for sc in spec["scenes"]]
     for p in problems:
-        if 0 <= p["scene"] < len(scenes) - 1 and isinstance(p.get("fix"), dict):  # never the closing Weblume scene
+        if 0 <= p["scene"] < len(scenes) - 1 and isinstance(p.get("fix"), dict):  # never the closing Phainora scene
             fix = {k: v for k, v in p["fix"].items() if k in ("text", "sub", "caption", "in")
                    or (k == "type" and v == "text") or (k == "dur" and _num(v) >= 2)}  # shorter than 2 s can't be read
             scenes[p["scene"]].update(fix)
@@ -323,14 +323,14 @@ def render(spec: dict, out_mp4: Path, progress=lambda f: None) -> Path:
                             dest.write_bytes(real.pop(0).read_bytes())
                             sc["real"] = True
                         elif not ai_image(sc["prompt"], dest):
-                            sc.update(type="text", text=sc.get("caption") or "Weblume")
+                            sc.update(type="text", text=sc.get("caption") or "Phainora")
                     if sc["type"] == "photos":  # needs the client's real product photos; without them it's a text line
                         sc["n"] = min(3, len(real))
                         for j in range(sc["n"]):
                             (tmp / "frames").mkdir(parents=True, exist_ok=True)
                             (tmp / "frames" / f"ph{i}_{j}.jpg").write_bytes(real.pop(0).read_bytes())
                         if not sc["n"]:
-                            sc.update(type="text", text=sc.get("caption") or "Weblume")
+                            sc.update(type="text", text=sc.get("caption") or "Phainora")
                     if sc["type"] == "site":
                         seen[sc["site"]] = seen.get(sc["site"], -1) + 1
                         sc["frames"] = capture_site(browser, f"{base_url}/output/{quote(sc['site'])}/index.html",

@@ -1,4 +1,4 @@
-"""The nine Weblume employees: who they are and what each one is asked to do."""
+"""The nine Phainora employees: who they are and what each one is asked to do."""
 from crewai import Agent
 
 from . import knowledge, research
@@ -6,7 +6,7 @@ from . import knowledge, research
 RESEARCHERS = {"omar", "youssef", "karim", "ziad", "adam", "hassan", "layla"}  # may look things up on the web
 from .config import CURRENCY, WEBSITE
 
-BRAND = ("Weblume is a web design & development studio. Tagline: \"Websites that make an impact\". "
+BRAND = ("Phainora (formerly Phainora) is a tech studio: websites, AI and business automation. "
          "Brand colors: black, red and white. Clients are small businesses: cafés, restaurants, shops, clinics.")
 
 TEAM = {
@@ -31,10 +31,10 @@ TEAM = {
     },
     "karim": {
         "ar": "كريم", "name": "Karim", "role": "Front-end Developer", "emoji": "💻",
-        "goal": "Turn Weblume's premium templates into the client's own website, polished to award-gallery quality.",
+        "goal": "Turn Phainora's premium templates into the client's own website, polished to award-gallery quality.",
         "backstory": f"{BRAND} You build mobile-first sites with semantic HTML, modern CSS (grid, flex, clamp, "
                      "custom properties) and a little vanilla JS. No frameworks, no build step. Arabic pages are "
-                     "dir=\"rtl\". You start every site from Weblume's ready premium templates (the Loopie design for "
+                     "dir=\"rtl\". You start every site from Phainora's ready premium templates (the Loopie design for "
                      "cafés) and make them the client's own: their words, colors, menu and photos. When Mostafa or Tarek "
                      "report a problem you fix exactly that.",
     },
@@ -53,21 +53,21 @@ TEAM = {
     "ziad": {
         "ar": "زياد", "name": "Ziad", "role": "Lead Finder", "emoji": "🎯",
         "goal": "Find the right kinds of local businesses to target and write short, personal outreach messages.",
-        "backstory": f"{BRAND} Weblume's offer: a free domain, and the client sees the design before paying. You "
+        "backstory": f"{BRAND} Phainora's offer: a free domain, and the client sees the design before paying. You "
                      "write in Egyptian Arabic like a real person, never like spam: one specific compliment or "
                      "observation, the offer, one simple question. You never contact a business twice.",
     },
     "adam": {
         "ar": "آدم", "name": "Adam", "role": "Social Media Manager", "emoji": "📱",
-        "goal": "Plan TikTok and Instagram videos for Weblume: ideas, scripts and captions in Egyptian Arabic.",
+        "goal": "Plan TikTok and Instagram videos for Phainora: ideas, scripts and captions in Egyptian Arabic.",
         "backstory": f"{BRAND} You know short-form video: a hook in the first 2 seconds, one idea per video, a "
                      f"clear call to action. Rule you never break: no phone numbers anywhere. People contact "
-                     f"Weblume through the website: {WEBSITE}",
+                     f"Phainora through the website: {WEBSITE}",
     },
     "hassan": {
         "ar": "حسن", "name": "Hassan", "role": "Video Producer", "emoji": "🎬",
         "goal": "Turn Adam's scripts into short vertical videos for TikTok and Instagram that make people want a website.",
-        "backstory": f"{BRAND} You make 9:16 videos with bold animated Arabic text, Weblume's black/red/white branding and "
+        "backstory": f"{BRAND} You make 9:16 videos with bold animated Arabic text, Phainora's black/red/white branding and "
                      "real websites we built scrolling inside phone and laptop mockups. One idea per video, a hook in the "
                      f"first 2 seconds. Rule you never break: no phone numbers; people contact us through {WEBSITE}",
     },
@@ -83,6 +83,6 @@ def label(key: str) -> str:
 
 def make_agent(key: str, llm) -> Agent:
     a = TEAM[key]
-    return Agent(role=f"{a['name']}, {a['role']} at Weblume", goal=a["goal"], backstory=a["backstory"] + knowledge.skills(key),
+    return Agent(role=f"{a['name']}, {a['role']} at Phainora", goal=a["goal"], backstory=a["backstory"] + knowledge.skills(key),
                  llm=llm, allow_delegation=False, verbose=False, max_iter=8,
                  tools=[research.web_search, research.read_web_page] if key in RESEARCHERS else [])

@@ -208,7 +208,7 @@
   "needs": [
    "media.heroImg"
   ],
-  "from": "Weblume code after a pattern in the award-site library (name under a photograph)",
+  "from": "Phainora code after a pattern in the award-site library (name under a photograph)",
   "thumb": "thumbs/hero-name-photo.webp",
   "tested": "360/768/1280 OK"
  },
@@ -226,7 +226,7 @@
   "needs": [
    "media.video or media.heroImg"
   ],
-  "from": "Weblume code after a pattern in the award-site library (film title on the bottom edge)",
+  "from": "Phainora code after a pattern in the award-site library (film title on the bottom edge)",
   "thumb": "thumbs/hero-film-title.webp",
   "tested": "360/768/1280 OK"
  },
@@ -248,7 +248,7 @@
   "needs": [
    "media.heroImg"
   ],
-  "from": "Weblume code after a pattern in the award-site library (card over a dim room)",
+  "from": "Phainora code after a pattern in the award-site library (card over a dim room)",
   "thumb": "thumbs/hero-card-room.webp",
   "tested": "360/768/1280 OK"
  },
@@ -264,7 +264,7 @@
    "simple"
   ],
   "needs": [],
-  "from": "Weblume code after a pattern in the award-site library (headline across two fields); works with no photo",
+  "from": "Phainora code after a pattern in the award-site library (headline across two fields); works with no photo",
   "thumb": "thumbs/hero-waterline.webp",
   "tested": "360/768/1280 OK"
  },
@@ -281,7 +281,7 @@
   "needs": [
    "menu"
   ],
-  "from": "Weblume code after a pattern in the award-site library (moving strip)",
+  "from": "Phainora code after a pattern in the award-site library (moving strip)",
   "thumb": "thumbs/marquee-band.webp",
   "tested": "360/768/1280 OK"
  },
@@ -299,7 +299,7 @@
   "needs": [
    "about"
   ],
-  "from": "Weblume code after a pattern in the award-site library (two-line statement, full width)",
+  "from": "Phainora code after a pattern in the award-site library (two-line statement, full width)",
   "thumb": "thumbs/about-statement.webp",
   "tested": "360/768/1280 OK"
  },
@@ -323,7 +323,7 @@
    "menu",
    "media.about or heroImg"
   ],
-  "from": "Weblume code after a pattern in the award-site library (menu column beside a sticky photo)",
+  "from": "Phainora code after a pattern in the award-site library (menu column beside a sticky photo)",
   "thumb": "thumbs/menu-sticky-photo.webp",
   "tested": "360/768/1280 OK"
  },
@@ -345,7 +345,7 @@
   "needs": [
    "menu[].items[].img"
   ],
-  "from": "Weblume code after a pattern in the award-site library (specimen catalogue)",
+  "from": "Phainora code after a pattern in the award-site library (specimen catalogue)",
   "thumb": "thumbs/menu-tiles.webp",
   "tested": "360/768/1280 OK"
  },
@@ -361,7 +361,7 @@
   "needs": [
    "media.gallery (3+)"
   ],
-  "from": "Weblume code after a pattern in the award-site library (contact sheet)",
+  "from": "Phainora code after a pattern in the award-site library (contact sheet)",
   "thumb": "thumbs/gallery-sheet.webp",
   "tested": "360/768/1280 OK"
  },
@@ -381,7 +381,7 @@
   "needs": [
    "whatsapp"
   ],
-  "from": "Weblume (order in 3 steps)",
+  "from": "Phainora (order in 3 steps)",
   "thumb": "thumbs/steps-order.webp",
   "tested": "360/768/1280 OK"
  },
@@ -404,7 +404,7 @@
   "needs": [
    "media.heroImg"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): arched window",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): arched window",
   "thumb": "thumbs/hero-arch.webp",
   "tested": "360/768/1280 OK"
  },
@@ -422,7 +422,7 @@
   "needs": [
    "media.heroImg or gallery"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): text appearing word by word (Blur Text)",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): text appearing word by word (Blur Text)",
   "thumb": "thumbs/hero-words.webp",
   "tested": "360/768/1280 OK"
  },
@@ -441,7 +441,7 @@
    "media.heroImg",
    "media.gallery (2+)"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): parallax layers",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): parallax layers",
   "thumb": "thumbs/hero-layers.webp",
   "tested": "360/768/1280 OK"
  },
@@ -459,7 +459,7 @@
   "needs": [
    "about"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): circular text badge (Circular Text)",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): circular text badge (Circular Text)",
   "thumb": "thumbs/about-badge.webp",
   "tested": "360/768/1280 OK"
  },
@@ -477,7 +477,7 @@
   "needs": [
    "media.gallery (3+)"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): stacked cards on scroll (Scroll Stack)",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): stacked cards on scroll (Scroll Stack)",
   "thumb": "thumbs/gallery-stack.webp",
   "tested": "360/768/1280 OK"
  },
@@ -498,7 +498,7 @@
   "needs": [
    "menu[].items[].img"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): flip cards",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): flip cards",
   "thumb": "thumbs/menu-flip.webp",
   "tested": "360/768/1280 OK"
  },
@@ -518,7 +518,7 @@
   "needs": [
    "menu[].items[].img"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): polaroid photos",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): polaroid photos",
   "thumb": "thumbs/menu-polaroid.webp",
   "tested": "360/768/1280 OK"
  },
@@ -536,7 +536,7 @@
   "needs": [
    "features (2+ real facts)"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): bento grid",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): bento grid",
   "thumb": "thumbs/features-bento.webp",
   "tested": "360/768/1280 OK"
  },
@@ -552,7 +552,7 @@
   "needs": [
    "invite"
   ],
-  "from": "Weblume code after an effect idea in the design skills (React Bits / ui-ux-pro-max): words coming out of the blur",
+  "from": "Phainora code after an effect idea in the design skills (React Bits / ui-ux-pro-max): words coming out of the blur",
   "thumb": "thumbs/cta-blur.webp",
   "tested": "360/768/1280 OK"
  },
@@ -574,7 +574,7 @@
   "needs": [
    "2+ product photos (cut out automatically)"
   ],
-  "from": "Weblume code after the owner's reference video (flavour carousel with cut-out products)",
+  "from": "Phainora code after the owner's reference video (flavour carousel with cut-out products)",
   "thumb": "thumbs/hero-showcase.webp",
   "tested": "360/768/1280 OK"
  },
@@ -596,7 +596,7 @@
   "needs": [
    "3+ dish photos (menu[].items[].img or showcase)"
   ],
-  "from": "Weblume code after the design idea of motionsites.ai 'Outfit Carousel' (idea only, no prompt text or assets)",
+  "from": "Phainora code after the design idea of motionsites.ai 'Outfit Carousel' (idea only, no prompt text or assets)",
   "thumb": "thumbs/hero-ring.webp",
   "tested": "360/768/1280 OK"
  },
@@ -618,7 +618,7 @@
   "needs": [
    "menu[].items[].img (4+)"
   ],
-  "from": "Weblume code after the design idea of motionsites.ai 'Clothing Rail' (idea only, no prompt text or assets)",
+  "from": "Phainora code after the design idea of motionsites.ai 'Clothing Rail' (idea only, no prompt text or assets)",
   "thumb": "thumbs/menu-rail.webp",
   "tested": "360/768/1280 OK"
  },
@@ -637,7 +637,7 @@
    "features (2+)",
    "media.video or media.heroImg"
   ],
-  "from": "Weblume code after the design idea of motionsites.ai 'Freight Scroll Hero' (idea only, no prompt text or assets)",
+  "from": "Phainora code after the design idea of motionsites.ai 'Freight Scroll Hero' (idea only, no prompt text or assets)",
   "thumb": "thumbs/features-scrub.webp",
   "tested": "360/768/1280 OK"
  },
@@ -659,7 +659,7 @@
   "needs": [
    "3+ dish photos (cut-outs from showcase look best)"
   ],
-  "from": "Weblume code after a figurine-carousel design idea Asser shared (idea only, no prompt text or assets)",
+  "from": "Phainora code after a figurine-carousel design idea Asser shared (idea only, no prompt text or assets)",
   "thumb": "thumbs/hero-stage.webp",
   "tested": "360/768/1280 OK"
  },
@@ -677,7 +677,7 @@
   "needs": [
    "features (2+)"
   ],
-  "from": "Uiverse.io 'swift-bullfrog-34' by SelfMadeSystem (MIT), reworked by Weblume into a section",
+  "from": "Uiverse.io 'swift-bullfrog-34' by SelfMadeSystem (MIT), reworked by Phainora into a section",
   "thumb": "thumbs/features-glow.webp",
   "tested": "360/768/1280 OK"
  },
@@ -699,7 +699,7 @@
   "needs": [
    "menu[].items[].img (4+)"
   ],
-  "from": "Uiverse.io 'popular-walrus-75' by JaydipPrajapati1910 (MIT), reworked by Weblume into a section",
+  "from": "Uiverse.io 'popular-walrus-75' by JaydipPrajapati1910 (MIT), reworked by Phainora into a section",
   "thumb": "thumbs/menu-iso.webp",
   "tested": "360/768/1280 OK"
  },
@@ -716,7 +716,7 @@
   "needs": [
    "caps or features"
   ],
-  "from": "Uiverse.io 'afraid-sheep-52' by jeremyssocial (MIT), reworked by Weblume into a section",
+  "from": "Uiverse.io 'afraid-sheep-52' by jeremyssocial (MIT), reworked by Phainora into a section",
   "thumb": "thumbs/band-stripes.webp",
   "tested": "360/768/1280 OK"
  },
@@ -734,7 +734,7 @@
   "needs": [
    "about"
   ],
-  "from": "Uiverse.io 'lovely-monkey-46' by csemszepp (MIT), reworked by Weblume into a section",
+  "from": "Uiverse.io 'lovely-monkey-46' by csemszepp (MIT), reworked by Phainora into a section",
   "thumb": "thumbs/about-bubbles.webp",
   "tested": "360/768/1280 OK"
  },
@@ -750,7 +750,7 @@
    "luxury"
   ],
   "needs": [],
-  "from": "Uiverse.io 'rare-rattlesnake-22' by Aryan-81 (MIT), reworked by Weblume into a section",
+  "from": "Uiverse.io 'rare-rattlesnake-22' by Aryan-81 (MIT), reworked by Phainora into a section",
   "thumb": "thumbs/cta-glow.webp",
   "tested": "360/768/1280 OK"
  },
@@ -769,7 +769,7 @@
   "needs": [
    "media.heroImg (optional)"
   ],
-  "from": "Weblume code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
+  "from": "Phainora code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
   "thumb": "thumbs/hero-blueprint.webp",
   "tested": "360/768/1280 OK"
  },
@@ -787,7 +787,7 @@
   "needs": [
    "media.gallery (3+)"
   ],
-  "from": "Weblume code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
+  "from": "Phainora code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
   "thumb": "thumbs/gallery-curve.webp",
   "tested": "360/768/1280 OK"
  },
@@ -805,7 +805,7 @@
   "needs": [
    "about"
   ],
-  "from": "Weblume code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
+  "from": "Phainora code after a studio site in a screen recording Asser shared (idea only: no code, images or brand)",
   "thumb": "thumbs/about-labels.webp",
   "tested": "360/768/1280 OK"
  },
@@ -823,7 +823,7 @@
   "needs": [
    "product photos (optional, they float)"
   ],
-  "from": "Weblume code after a studio site in a screen recording Asser shared (NOTHIN'; idea only: no code, images or brand)",
+  "from": "Phainora code after a studio site in a screen recording Asser shared (NOTHIN'; idea only: no code, images or brand)",
   "thumb": "thumbs/hero-wordmark.webp",
   "tested": "360/768/1280 OK"
  },
@@ -847,7 +847,7 @@
    "about",
    "3+ product photos"
   ],
-  "from": "Weblume code after a studio site in a screen recording Asser shared (NOTHIN'; idea only: no code, images or brand)",
+  "from": "Phainora code after a studio site in a screen recording Asser shared (NOTHIN'; idea only: no code, images or brand)",
   "thumb": "thumbs/about-floats.webp",
   "tested": "360/768/1280 OK"
  },
@@ -869,7 +869,7 @@
   "needs": [
    "3+ product or dish photos"
   ],
-  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "from": "Phainora code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
   "thumb": "thumbs/hero-orbit.webp",
   "tested": "360/768/1280 OK"
  },
@@ -891,7 +891,7 @@
   "needs": [
    "3+ product or dish photos"
   ],
-  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "from": "Phainora code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
   "thumb": "thumbs/band-chapters.webp",
   "tested": "360/768/1280 OK"
  },
@@ -910,7 +910,7 @@
    "caps or features (3+)",
    "media.gallery (3+)"
   ],
-  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "from": "Phainora code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
   "thumb": "thumbs/how-film.webp",
   "tested": "360/768/1280 OK"
  },
@@ -928,7 +928,7 @@
   "needs": [
    "2+ features that carry a TRUE number (24 ساعة, 15 سنة, 3 فروع)"
   ],
-  "from": "Weblume code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
+  "from": "Phainora code after product-showroom screen recordings Asser shared (idea only: no code, images or brands)",
   "thumb": "thumbs/features-stats.webp",
   "tested": "360/768/1280 OK"
  }

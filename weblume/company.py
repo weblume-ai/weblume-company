@@ -133,7 +133,7 @@ class Run:
 PLAN_HINT = {
     "omar": "client brief -> project spec and price",
     "youssef": "website copy in Egyptian Arabic + English",
-    "karim": "builds the website from Weblume's premium templates",
+    "karim": "builds the website from Phainora's premium templates",
     "mostafa": "reviews the site's code and content, sends fixes to Karim",
     "tarek": "tests the finished site in a real browser and judges if it's good enough",
     "ziad": "lead finding and outreach messages",
@@ -147,7 +147,7 @@ def plan_task(goal: str, agent) -> Task:
     team = "\n".join(f"- {k}: {TEAM[k]['name']} ({v})" for k, v in PLAN_HINT.items())
     return Task(
         description=(
-            f"The owner of Weblume asked:\n\"\"\"{goal}\"\"\"\n\n"
+            f"The owner of Phainora asked:\n\"\"\"{goal}\"\"\"\n\n"
             f"Your team:\n{team}\n\n"
             "Decide who is needed. A new website normally needs omar, youssef, karim, mostafa and tarek. "
             "Pick only who the request really needs.\n"
@@ -224,7 +224,7 @@ def _karim_brief(kind: str) -> str:
                 "the client's content as ONE JSON object in exactly the shape of the example below, following the "
                 f"guide. {NO_FAKES}\n\nGUIDE:\n{templates.guide(kind)}\n\nEXAMPLE (another café's content: copy the "
                 f"shape, not the words):\n{templates.load(kind)}\n\nOutput ONLY the JSON object, nothing before or after.")
-    return ("Build the website by EDITING the ready Weblume template below. Fill it with the real content from the "
+    return ("Build the website by EDITING the ready Phainora template below. Fill it with the real content from the "
             "spec and copy (Arabic in the markup, English in data-en), set the client's brand colors in the :root "
             "variables, keep the sections the client needs, remove the rest, and put the client's WhatsApp number in "
             "<body data-wa>. Keep it one file, mobile-first, with <title>, meta description and Open Graph filled in. "
@@ -318,7 +318,7 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
     if "mostafa" in keys:
         add("review", "mostafa", "review.md",
             f"Request:\n\"\"\"{goal}\"\"\"\n\nReview Karim's work. "
-            + ("It is the site's content as JSON for a finished Weblume template: check every field the guide asks "
+            + ("It is the site's content as JSON for a finished Phainora template: check every field the guide asks "
                "for is there and correct, valid JSON shape, natural Egyptian Arabic and clean English, the "
                "translations match, images come only from the allowed list, brand colors are set, nothing is "
                "invented (prices, ratings, reviews). " if ext == ".json" else
@@ -366,29 +366,29 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             "A JSON object with targets and leads.", [])
     if "adam" in keys:
         add("social", "adam", "social.md",
-            f"Request:\n\"\"\"{goal}\"\"\"\n\nPlan TikTok / Instagram content for Weblume (black, red and white "
+            f"Request:\n\"\"\"{goal}\"\"\"\n\nPlan TikTok / Instagram content for Phainora (black, red and white "
             "brand). For each video idea: title, hook (first 2 seconds), full short script with shots, on-screen "
             "text, caption in Egyptian Arabic, and hashtags. The call to action always sends people to the "
-            f"Weblume website ({WEBSITE}). NEVER write a phone number or WhatsApp number anywhere.",
+            f"Phainora website ({WEBSITE}). NEVER write a phone number or WhatsApp number anywhere.",
             "Markdown: numbered video ideas, each with hook, script, on-screen text, caption and hashtags.", [])
     if "hassan" in keys:
         sites = video.built_sites()
         copy = ""
-        if run.ref:  # the owner uploaded a reel: copy its style, keep Weblume's logo reveal and end card
+        if run.ref:  # the owner uploaded a reel: copy its style, keep Phainora's logo reveal and end card
             try:
                 st = video.read_style(run.ref)
                 copy = ("\n\nCOPY THE STYLE of the reel the owner uploaded (the code draws its look from this; you match its "
                         f"rhythm and voice): {st['notes']} Its shots last about {st['shot']} s, so give scenes a \"dur\" near that. "
                         + ("Its text rises in whole lines: prefer \"text\" and \"hook\" scenes over \"kinetic\". " if st["words"] == "lines" else "")
                         + f"Use these entrances, in this order of preference: {', '.join(st['transitions'])}. Copy the style, never its "
-                        "words, brand or footage; the content is still ours, and the logo reveal and end card stay Weblume.")
-            except Exception as e:  # no vision model answered: the reel is made in Weblume's own style
+                        "words, brand or footage; the content is still ours, and the logo reveal and end card stay Phainora.")
+            except Exception as e:  # no vision model answered: the reel is made in Phainora's own style
                 run.log("hassan", f"Couldn't read the reference reel's style: {e}")
         add("video", "hassan", "video.json",
             f"Request:\n\"\"\"{goal}\"\"\"\n\n{knowledge.taste('video')}{copy}\n\nTurn the FIRST video idea in Adam's script into "
             "a vertical 9:16 motion-graphics reel (black, red and white), following your motion-graphics skill. Write it as scenes, 15–30 seconds in total. Scene types: "
             '"kinetic" (2–5 big words that slam in one after another, the last one in red), "counter" (a TRUE number in "text" that '
-            'counts up, its meaning in "sub"), "logo" (the Weblume brand reveal, optional short "text"), '
+            'counts up, its meaning in "sub"), "logo" (the Phainora brand reveal, optional short "text"), '
             '"hook" (the first 2 seconds, max 7 words), "text" (one short line, optional "sub"), "site" (one of our websites '
             'scrolling inside a phone or laptop: "site" must be one of ' + json.dumps(sites, ensure_ascii=False) +
             ', "device": "phone" or "laptop", optional "caption"), "image" (a free AI photo: "prompt" in English describing a '
@@ -398,12 +398,12 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             '"rise" (swiped up like a story), "glitch" (a red jolt); pick by the beat, never the same one twice in a row. '
             'A "photos" scene shows the real products of the shop as cards fanning out (when the reel is about one of our sites), with a short "caption". '
             'Change something on screen every 1.5 seconds: mix kinetic, site and counter scenes. Egyptian Arabic. Use at most 2 image scenes. '
-            "The code adds the closing 'contact us through the Weblume website' scene. NEVER write a phone number.\n"
+            "The code adds the closing 'contact us through the Phainora website' scene. NEVER write a phone number.\n"
             'Answer with JSON only: {"title": "", "scenes": [{"type": "hook", "text": "", "dur": 2.5}]}\n\n'
             "STORY REEL (use this instead of scenes whenever the reel is about one of our sites for a shop with a menu: café, "
             "restaurant, sweets, juice): the owner's approved café ad is the template; its timing, camera and sound are fixed and "
             "you only write its lines in Egyptian Arabic for this shop. The story: a paper menu with crossed-out items and "
-            "reprints → a customer's unanswered chat → a QR card → the shop's real site in a phone → the offer → the Weblume end. "
+            "reprints → a customer's unanswered chat → a QR card → the shop's real site in a phone → the offer → the Phainora end. "
             "Answer with JSON only: {\"format\": \"story\", \"title\": \"\", \"site\": one of the sites above, \"hook1\": 2-3 words, "
             "\"hook2\": 2-3 words (the sting, drawn in red), \"paper1\": the paper menu's problem (max 5 words), \"paper2\": "
             "(max 5 words), \"stamp\": the reprint stamp (max 4 words), \"chat_to\": who the message goes to, \"ask1\" and "
@@ -411,7 +411,7 @@ def build_tasks(keys: list[str], goal: str, client: str, names: list[str], agent
             "\"qr_title\": the card's line (max 4 words), \"phone\": exactly 5 lines over the real site (max 5 words each), "
             "\"items\": 4-6 of the shop's real dishes from the request (used when its site doesn't list them)}. "
             "Put *stars* around the ONE word per line that is drawn in red. The shop's real items go on the paper menu "
-            "automatically; Weblume's offer and the end card are fixed (no phone number anywhere).",
+            "automatically; Phainora's offer and the end card are fixed (no phone number anywhere).",
             "A JSON object: the story reel's lines, or title and scenes.", [t.get("social")])
     return steps
 

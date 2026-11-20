@@ -1,4 +1,4 @@
-# Weblume motion kit — how to use it
+# Phainora motion kit — how to use it
 
 The animation engine (CSS + JS) is injected automatically where these two markers are. Keep both markers exactly:
 `<!--WEBLUME:MOTION_CSS-->` inside `<head>`, `<!--WEBLUME:MOTION_JS-->` just before `</body>`.

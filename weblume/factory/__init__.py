@@ -1,4 +1,4 @@
-"""Weblume site factory: ready, tested pieces (from Loopie and Weblume's own sites) + a data file the local model writes
+"""Phainora site factory: ready, tested pieces (from Loopie and Phainora's own sites) + a data file the local model writes
 + real media + an automatic browser review. The model never writes the site's code, only its content and which pieces.
 
     python -m weblume.factory "اعمل موقع لمطعم مشويات اسمه السفرة في الرياض، واتساب 9665…"
@@ -114,7 +114,7 @@ SCHEMA = """{
  "style": "luxury | bold | simple | playful | heritage | modern",
  "shape": "the shape of photos, cards and buttons: round | arch | sharp | soft | organic (pick what suits the place)",
  "feel": "the motion personality, from the place's character: cinematic (slow reveals, curtain) | playful (bouncy pops) | editorial (wipes, drawn lines) | kinetic (fast sliding type) | luxe (soft blur, slow)",
- "motion": "lively | cinematic (how much the page moves; Weblume sites always move: calm only when the request asks for little motion)",
+ "motion": "lively | cinematic (how much the page moves; Phainora sites always move: calm only when the request asks for little motion)",
  "blend": "one line: what you took from A, B and C",
  "features": ["2 to 4 real strengths from the request, 2-4 words each (delivery, open late, family hall…); empty if none are known"],
  "tagline": "6 words max", "heroLines": ["2 or 3 short lines, the headline"], "lede": "one sentence under the headline",
@@ -168,7 +168,7 @@ def _director() -> str:
 def brief(request: str, ask=None) -> str:
     """The stronger API model reads the request and writes clear instructions for the local model (facts to copy
     exactly, what's missing, dialect, idea, colours, menu plan, pieces, traps). Plain text, short."""
-    prompt = (f"You are the art director of Weblume, a web studio. A junior model on our laptop will write this client's website "
+    prompt = (f"You are the art director of Phainora, a web studio. A junior model on our laptop will write this client's website "
               f"content as JSON. Write its brief, following the factory-brief skill.{_director()}\n\n"
               f"THE CLIENT'S REQUEST:\n\"\"\"{request}\"\"\"\n\nPIECES:\n{_catalog()}\n\n"
               "Answer with the brief only: the headings FACTS, MISSING, DIALECT, IDEA, COLOURS, MENU PLAN, PIECES, WATCH OUT, "
@@ -179,7 +179,7 @@ def brief(request: str, ask=None) -> str:
 def plan(request: str, ask=None, guide: str = "") -> dict:
     country = _country(request)
     pieces = _catalog()
-    prompt = (f"You write the content of a website for Weblume (a web studio). The client's request:\n\"\"\"{request}\"\"\"\n\n"
+    prompt = (f"You write the content of a website for Phainora (a web studio). The client's request:\n\"\"\"{request}\"\"\"\n\n"
               + (f"THE ART DIRECTOR'S BRIEF (follow it exactly; it wins over the general rules below):\n{guide}\n\n" if guide else "") +
               f"Write natural Arabic in the client's dialect ({'Saudi' if country == 'SA' else 'Egyptian' if country == 'EG' else 'simple Arabic'}). "
               "Use every fact the request gives (name, menu, prices, address, WhatsApp, links). When something is missing, write a "
@@ -391,7 +391,7 @@ def edit(data: dict, instruction: str, request: str = "", ask=None) -> dict:
     keep_media, keep = data.get("media", {}), {k: data[k] for k in ("whatsapp", "country", "currency", "lang", "credits", "address", "hours", "mapsLink", "order", "instagram", "tiktok", "media_query", "picked") if k in data}
     nl = "\n"
     shown = {k: v for k, v in data.items() if k not in ("media", "review", "credits")}
-    prompt = (f"You are the art director of Weblume, a web studio.{_director()}{nl}{nl}"
+    prompt = (f"You are the art director of Phainora, a web studio.{_director()}{nl}{nl}"
               + (f"THE CLIENT'S REQUEST:{nl}\"\"\"{request}\"\"\"{nl}{nl}" if request else "") +
               f"This is the content file of the client's website:{nl}{json.dumps(shown, ensure_ascii=False)}{nl}{nl}WHAT TO CHANGE:{nl}{instruction}{nl}{nl}"
               "Rewrite the file to fix all of it. You may change texts, the menu, colors, fonts and which pieces are used and their "
@@ -435,7 +435,7 @@ def polish(dest: Path, instruction: str, ask=None, log=print) -> dict:
 def judge(shots: list[str], request: str) -> dict:
     """Tarek looks at the screenshots (vision model): a score and the most important problems."""
     from .. import tester
-    notes = ("This site is assembled from Weblume's tested pieces: judge the design, copy, photos and colors, not the code. "
+    notes = ("This site is assembled from Phainora's tested pieces: judge the design, copy, photos and colors, not the code. "
              "The hero plays footage with the scroll, so a frame may look blurred mid-motion; pinned sections are caught mid-animation (a clip still small, a row mid-slide). None of these are problems.")
     return tester.judge([Path(s) for s in shots if "desktop" in s or "phone" in s][:8], request, notes)
 

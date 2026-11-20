@@ -158,7 +158,7 @@ with tempfile.TemporaryDirectory() as d:
 from weblume import video  # noqa: E402
 v = video.clean_spec({"scenes": [{"type": "text", "text": "كلمنا 01012345678"}, {"type": "site", "site": "nope"},
                                  {"type": "weird", "text": "x"}]}, ["noir"])
-assert v["scenes"][0]["text"] == "تواصل معانا من موقع Weblume" and v["scenes"][1]["site"] == "noir"
+assert v["scenes"][0]["text"] == "تواصل معانا من موقع Phainora" and v["scenes"][1]["site"] == "noir"
 assert v["scenes"][2]["type"] == "text" and v["scenes"][-1]["type"] == "cta" and "01012345678" not in str(v)
 
 # Omar's project price is read from his price heading, not the menu prices
@@ -500,7 +500,7 @@ _v = video.clean_spec({"scenes": [{"type": "text", "text": "x", "in": "zoom"}, {
 assert _v["scenes"][0]["in"] == "zoom" and "in" not in _v["scenes"][1]
 print("Quality and transition checks passed.")
 
-# copying a reference reel's style: only drawable values survive, junk falls back to Weblume's look
+# copying a reference reel's style: only drawable values survive, junk falls back to Phainora's look
 _st = video.clean_style({"bg": "#ECE5D8", "text": "red; } body{", "font": "Comic Sans", "transitions": ["zoom", "explode"], "weight": "x"})
 assert _st["bg"] == "#ECE5D8" and _st["text"] == "#ffffff" and _st["font"] == "Alexandria"
 assert _st["transitions"] == ["zoom"] and _st["weight"] == 800
@@ -508,12 +508,12 @@ assert video.clean_spec({"scenes": [], "style": {"bg": "#000000"}}, [])["style"]
 assert "style" not in video.clean_spec({"scenes": []}, [])
 print("Reference style checks passed.")
 
-# Hassan's self-review: fixes change only wording, timing and entrances, never the closing Weblume scene
+# Hassan's self-review: fixes change only wording, timing and entrances, never the closing Phainora scene
 _sp = video.clean_spec({"scenes": [{"type": "kinetic", "text": "ا ب"}, {"type": "image", "prompt": "x", "caption": "c"}]}, [])
 _fx = video.apply_fixes(_sp, [{"scene": 0, "fix": {"text": "جديد", "in": "flip", "site": "evil"}},
                               {"scene": 1, "fix": {"type": "site"}}, {"scene": 2, "fix": {"text": "اتصل 01012345678"}}])
 assert _fx["scenes"][0]["text"] == "جديد" and _fx["scenes"][0]["in"] == "flip" and "site" not in _fx["scenes"][0]
-assert _fx["scenes"][1]["type"] == "image" and _fx["scenes"][-1]["text"] == "تواصل معانا من موقع Weblume"
+assert _fx["scenes"][1]["type"] == "image" and _fx["scenes"][-1]["text"] == "تواصل معانا من موقع Phainora"
 print("Review fix checks passed.")
 assert "dur" not in video.apply_fixes(_sp, [{"scene": 0, "fix": {"dur": "0.5"}}])["scenes"][0] or \
     video.apply_fixes(_sp, [{"scene": 0, "fix": {"dur": "0.5"}}])["scenes"][0]["dur"] != "0.5"

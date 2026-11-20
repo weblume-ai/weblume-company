@@ -11,8 +11,8 @@ _WA_LINK = re.compile(r"(?:https?://)?(?:wa\.me|api\.whatsapp\.com|chat\.whatsap
 
 
 def remove_phone_numbers(text: str) -> tuple[str, int]:
-    """Replace phone numbers and WhatsApp links with the Weblume website. Returns (text, how many replaced)."""
-    note = f"(تواصل معانا من موقع Weblume: {WEBSITE})"
+    """Replace phone numbers and WhatsApp links with the Phainora website. Returns (text, how many replaced)."""
+    note = f"(تواصل معانا من موقع Phainora: {WEBSITE})"
     count = 0
 
     def repl(m):

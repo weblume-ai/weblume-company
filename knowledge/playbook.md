@@ -13,7 +13,7 @@
 - **First client of a new kind (platform, app, booking system)**: price it as a project, not a 1000 SAR site:
   list the parts, estimate days, quote a range, and start with a small paid first version.
 
-## Prices and offers (Weblume)
+## Prices and offers (Phainora)
 - Basic site ≈1000 SAR (menu, hours, location); with online pre-ordering ≈2000 SAR. Promo video: separate price.
 - Free domain: first year only, first 5 clients only. The client always sees the design before paying.
 
@@ -30,7 +30,7 @@
 - **Domain for a client**: buy it from the client's preferred registrar in his name, point it to GitHub Pages
   (CNAME file + DNS records), and keep the login with the client.
 
-## Marketing (Weblume)
+## Marketing (Phainora)
 - Post real work only: before/after of a site, a site on a phone, a 15-second reel with a hook in the first 2 s.
 - Never a phone number in posts or videos; send people to weblume-sa.github.io. Not tied to one country.
 - Outreach: cafés/restaurants on Google Maps with no website; one personal message with a real compliment;

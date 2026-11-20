@@ -1,4 +1,4 @@
-/* Weblume site factory runtime: reads window.SITE (data.js), renders the chosen pieces in order, then wires motion.
+/* Phainora site factory runtime: reads window.SITE (data.js), renders the chosen pieces in order, then wires motion.
    Pieces register with PIECE({id, css, render(S, t), init(S, t)}). No piece depends on another. */
 (function () {
   "use strict";

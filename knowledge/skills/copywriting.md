@@ -1,6 +1,6 @@
 # Skill: site copy that sells
 - Client sites: the client's dialect and currency (Egypt: light Egyptian + ج.م; Saudi/Gulf: simple Saudi or easy
-  Arabic + ر.س). Weblume's own marketing: no country, city or currency.
+  Arabic + ر.س). Phainora's own marketing: no country, city or currency.
 - Headline = a feeling or benefit in 3-6 words, not the business name. Café = mood, restaurant = taste,
   clinic = reassurance, shop = value.
 - Tagline: activity · area. Description: two sentences max, who it's for and why choose it.

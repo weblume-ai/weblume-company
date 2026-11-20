@@ -66,7 +66,7 @@ def to_github(site_dir: Path, name: str, owner: str = OWNER) -> str:
     if code == 404:
         where = "/user/repos" if owner.lower() == me["login"].lower() else f"/orgs/{owner}/repos"
         code, res = _call("POST", where, token, {"name": name, "private": False, "auto_init": False,
-                                                  "description": "Website by Weblume"})
+                                                  "description": "Website by Phainora"})
         if code != 201:
             raise RuntimeError(f"GitHub refused to create the repo: {res.get('message', code)}")
     with tempfile.TemporaryDirectory() as tmp:

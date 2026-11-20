@@ -4,7 +4,7 @@
 - Menu/product filters: buttons with data-filter, active state, short fade.
 - WhatsApp order (cafés, shops): cart in localStorage (inside try/catch), +/- qty, total, checkout opens
   https://wa.me/<the CLIENT's number>?text=... with encodeURIComponent. Only the client's number from the request;
-  if none, leave PHONE empty and say so. Never Weblume's or the owner's number.
+  if none, leave PHONE empty and say so. Never Phainora's or the owner's number.
 - Booking/contact form: validate required fields, send through WhatsApp or mailto, show a success state.
 - AR/EN switch: flips lang and dir, remembers the choice.
 - Gallery lightbox with arrows and Escape. FAQ with <details>. Footer year from new Date().
